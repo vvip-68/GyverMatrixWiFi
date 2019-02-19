@@ -23,12 +23,9 @@ byte listSize = sizeof(overlayList);
 bool overlayEnabled = getClockOverlayEnabled();
 CRGB clockLED[5] = {HOUR_COLOR, HOUR_COLOR, DOT_COLOR, MIN_COLOR, MIN_COLOR};
 
-#if (USE_WIFI == 1)
 // send an NTP request to the time server at the given address
-unsigned long sendNTPpacket(IPAddress& address) {
-#if (BT_MODE == 0)  
+ unsigned long sendNTPpacket(IPAddress& address) {
   Serial.println("sending NTP packet...");
-#endif  
   // set all bytes in the buffer to 0
   memset(packetBuffer, 0, NTP_PACKET_SIZE);
   // Initialize values needed to form NTP request
@@ -51,9 +48,7 @@ unsigned long sendNTPpacket(IPAddress& address) {
 }
 
 void parseNTP() {
-#if (BT_MODE == 0)  
     Serial.println("Parsing NTP data");
-#endif
     ntp_t = 0;
     init_time = 1;
     //udp.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
@@ -65,10 +60,8 @@ void parseNTP() {
     // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
     unsigned long seventyYears = 2208988800UL ;
     time_t t = secsSince1900 - seventyYears + (timeZoneOffset) * 3600;
-#if (BT_MODE == 0)  
     Serial.print("Seconds since 1970: ");
     Serial.println(t);
-#endif
     setTime(t);
 }
 
@@ -82,8 +75,6 @@ void getNTP() {
   ntp_t = millis();
 }
 
-#endif
-
 boolean overlayAllowed() {
 #if (OVERLAY_CLOCK == 1)  
   // Оверлей разрешен общими настройками часов?
@@ -95,15 +86,12 @@ boolean overlayAllowed() {
       if (allowed) break;
     }
   }
-  #if (BT_MODE == 1 || USE_WIFI == 1)  
 
   // Эффекты Дыхание, Цвета, Радуга пикс. и Часы, a также функция isColorEffect() есть только при включенных опциях BT_MODE или USE_WIFI
   // Оверлей разрешен настройками параметров эффекта? (в эффектах Дыхание, Цвета, Радуга пикс. и Часы оверлей часов не разрешен)
   if (allowed && BTcontrol && effectsFlag && !(isColorEffect(effect) || effect == MC_CLOCK)) {
     allowed = getEffectClock(effect);   
   }
-  
-  #endif
   
   // Если в режиме авто - найти соответствие номера отображаемого режима номеру эффекта и проверить - разрешен ли для него оверлей часов
   if (allowed && !BTcontrol) {
@@ -120,14 +108,8 @@ boolean overlayAllowed() {
 
 String clockCurrentText() {
   
-#if (USE_RTC == 1 && (MCU_TYPE == 0 || MCU_TYPE == 1))
-    DateTime now = rtc.now();
-    hrs = now.hour();
-    mins = now.minute();
-#elif (MCU_TYPE == 1) 
-    hrs = hour();
-    mins = minute();
-#endif
+  hrs = hour();
+  mins = minute();
 
   String sHrs = "0" + String(hrs);  
   String sMin = "0" + String(mins);
@@ -138,16 +120,9 @@ String clockCurrentText() {
 
 String dateCurrentTextShort() {
   
-#if (USE_RTC == 1 && (MCU_TYPE == 0 || MCU_TYPE == 1))
-    DateTime now = rtc.now();
-    aday = now.day();
-    amnth = now.month();
-    ayear = now.year();
-#elif (MCU_TYPE == 1) 
-    aday = day();
-    amnth = month();
-    ayear = year();
-#endif
+  aday = day();
+  amnth = month();
+  ayear = year();
 
   String sDay = "0" + String(aday);  
   String sMnth = "0" + String(amnth);
@@ -159,16 +134,9 @@ String dateCurrentTextShort() {
 
 String dateCurrentTextLong() {
   
-#if (USE_RTC == 1 && (MCU_TYPE == 0 || MCU_TYPE == 1))
-    DateTime now = rtc.now();
-    aday = now.day();
-    amnth = now.month();
-    ayear = now.year();
-#elif (MCU_TYPE == 1) 
-    aday = day();
-    amnth = month();
-    ayear = year();
-#endif
+  aday = day();
+  amnth = month();
+  ayear = year();
 
   String sDay = "0" + String(aday);  
   String sMnth = "";
@@ -212,10 +180,9 @@ void clockColor() {
 
 // нарисовать часы
 void drawClock(byte hrs, byte mins, boolean dots, byte X, byte Y) {
-#if (MCU_TYPE == 1) 
+
   hrs = hour();
   mins = minute();
-#endif
   
   if (CLOCK_ORIENT == 0) {
     if (hrs > 9) drawDigit3x5(hrs / 10, X + (hrs / 10 == 1 ? 1 : 0), Y, clockLED[0]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
@@ -251,12 +218,6 @@ void drawClock(byte hrs, byte mins, boolean dots, byte X, byte Y) {
 
 void clockRoutine() {
   if (loadingFlag) {
-#if (USE_RTC == 1 && (MCU_TYPE == 0 || MCU_TYPE == 1))
-    DateTime now = rtc.now();
-    secs = now.second();
-    mins = now.minute();
-    hrs = now.hour();
-#endif
     loadingFlag = false;
     modeCode = MC_CLOCK;
   }
@@ -277,39 +238,14 @@ void clockRoutine() {
 
 void clockTicker() {
   if (halfsecTimer.isReady()) {
+
     clockHue += HUE_STEP;
 
-#if (OVERLAY_CLOCK == 1)
-    setOverlayColors();
-#endif
+    #if (OVERLAY_CLOCK == 1)
+      setOverlayColors();
+    #endif
 
     dotFlag = !dotFlag;
-// С библиотекой OldTime "закат солнца вручную" не нужен )
-#if (MCU_TYPE != 1)
-    if (dotFlag) {          // каждую секунду пересчёт времени
-      secs++;
-      if (secs > 59) {      // каждую минуту
-        secs = 0;
-        mins++;
-
-  #if (USE_RTC == 1 && (MCU_TYPE == 0 || MCU_TYPE == 1))
-        DateTime now = rtc.now();
-    #if (MCU_TYPE == 1)        
-        time_t t = now; // Устанавливаем время в библиотеке OldTimer
-        setTime(t);
-    #endif
-        secs = now.second();
-        mins = now.minute();
-        hrs = now.hour();
-  #endif
-      }
-      if (mins > 59) {      // каждый час
-        mins = 0;
-        hrs++;
-        if (hrs > 23) hrs = 0;  // сутки!
-      }
-    }
-#endif
   }
 }
 

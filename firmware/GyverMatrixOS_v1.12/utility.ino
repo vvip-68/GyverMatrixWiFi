@@ -273,3 +273,7 @@ uint16_t getPixelNumber(int8_t x, int8_t y) {
     return (THIS_Y * _WIDTH + _WIDTH - THIS_X - 1);
   }
 }
+
+boolean checkButtons() {
+  return false;
+}

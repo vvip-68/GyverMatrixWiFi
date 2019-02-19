@@ -56,7 +56,7 @@ void loadSettings() {
     AUTOPLAY = true;
     autoplayTime = ((long)AUTOPLAY_PERIOD * 1000);     // секунды -> миллисек
     idleTime = ((long)IDLE_TIME * 60 * 1000);          // минуты -> миллисек
-#if (USE_CLOCK == 1 && USE_WIFI == 1)  
+#if (USE_CLOCK == 1)  
     overlayEnabled = true;
     useNtp = true;
     SYNC_TIME_PERIOD = 60;
@@ -71,7 +71,7 @@ void loadSettings() {
   gameTimer.setInterval(gameSpeed);
   idleTimer.setInterval(idleTime);
   
-#if (USE_CLOCK == 1 && USE_WIFI == 1)    
+#if (USE_CLOCK == 1)    
   ntpTimer.setInterval(1000 * 60 * SYNC_TIME_PERIOD);
 #endif    
   
@@ -94,7 +94,7 @@ void saveDefaults() {
   EEPROMwrite(7, autoplayTime / 1000);
   EEPROMwrite(8, constrain(idleTime / 60 / 1000, 0, 255));
 
-#if (USE_CLOCK == 1 && USE_WIFI == 1)  
+#if (USE_CLOCK == 1)  
   EEPROMwrite(5, overlayEnabled);
   EEPROMwrite(9, useNtp ? 1 : 0);
   EEPROM_int_write(10, SYNC_TIME_PERIOD);
@@ -125,13 +125,8 @@ void saveSettings() {
   // Поставить отметку, что EEPROM инициализировано параметрами эффектов
   EEPROMwrite(0, EEPROM_OK);
   
-#if (MCU_TYPE == 1)
   EEPROM.commit();
-#endif
-
-#if (BT_MODE == 0)
   Serial.println("Настройки сохранены в EEPROM");
-#endif
   
   eepromModified = false;
 }
@@ -260,7 +255,6 @@ void saveClockOverlayEnabled(boolean enabled) {
   }
 }
 
-#if (USE_WIFI == 1)
 void saveUseNtp(boolean value) {
   if (value != getUseNtp()) {
     EEPROMwrite(9, value);
@@ -318,7 +312,6 @@ void saveClockColorMode(byte ColorMode) {
     eepromModified = true;
   }
 }
-#endif
 
 // ----------------------------------------------------------
 byte EEPROMread(byte addr) {    
@@ -326,11 +319,7 @@ byte EEPROMread(byte addr) {
 }
 
 void EEPROMwrite(byte addr, byte value) {    
-#if (MCU_TYPE == 1)
   EEPROM.write(addr, value);
-#else
-  EEPROM.update(addr, value);
-#endif  
 }
 
 // чтение uint16_t
@@ -375,14 +364,12 @@ void saveEffectClock(byte effect, boolean overlay) { }
 boolean getEffectClock(byte effect) { return overlayAllowed(); }
 boolean getClockOverlayEnabled() { return overlayEnabled; }
 void saveClockOverlayEnabled(boolean enabled) { }
-#if (USE_WIFI == 1)
 void saveUseNtp(boolean value) { }
 bool getUseNtp() { return useNtp;}
 void saveNtpSyncTime(uint16_t value) { }
 uint16_t getNtpSyncTime() { return SYNC_TIME_PERIOD; }
 void saveTimeZone(int8_t value) { }
 int8_t getTimeZone() { return timeZoneOffset; }
-#endif
 byte getClockOrientation() { return CLOCK_ORIENT; }
 void saveClockOrientation(byte orientation) { }
 byte getClockColorMode() { return COLOR_MODE; }

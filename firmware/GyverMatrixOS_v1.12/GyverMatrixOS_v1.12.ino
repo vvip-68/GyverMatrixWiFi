@@ -1,17 +1,16 @@
 // Скетч к проекту "Адресная матрица"
 // Гайд по постройке матрицы: https://alexgyver.ru/matrix_guide/
-// Страница проекта (схемы, описания): https://alexgyver.ru/GyverMatrixBT/
-// Подробное описание прошивки: https://alexgyver.ru/gyvermatrixos-guide/
-// Исходники на GitHub: https://github.com/AlexGyver/GyverMatrixBT/
-// Нравится, как написан код? Поддержи автора! https://alexgyver.ru/support_alex/
+// Страница базового проекта (схемы, описания): https://alexgyver.ru/GyverMatrixBT/
+// Страница проекта на GitHub: https://github.com/vvip-68/GyverMatrixWiFi
 // Автор: AlexGyver Technologies, 2018
+// Дальнейшее развитие: vvip, 2019
 // https://AlexGyAver.ru/
 
 // GyverMatrixOS
-// Версия прошивки 1.12, совместима с приложением GyverMatrixBT версии 1.13 и выше
+// Версия прошивки 1.12, совместима с приложением GyverMatrixWiFi версии 1.13 и выше
+// поддерживает микроконтроллеры на базе ESP8266 (NodeMCU, Wemos D1)
 
 // ************************ МАТРИЦА *************************
-// если прошивка не лезет в Arduino NANO - отключай режимы! Строка 66 и ниже
 
 #include "FastLED.h"
 
@@ -29,11 +28,6 @@
 #define STRIP_DIRECTION 0     // направление ленты из угла: 0 - вправо, 1 - вверх, 2 - влево, 3 - вниз
 // при неправильной настрйоке матрицы вы получите предупреждение "Wrong matrix parameters! Set to default"
 // шпаргалка по настройке матрицы здесь! https://alexgyver.ru/matrix_guide/
-
-#define MCU_TYPE 1            // микроконтроллер: 
-//                            0 - AVR (Arduino NANO/MEGA/UNO)
-//                            1 - ESP8266 (NodeMCU, Wemos D1)
-//                            2 - STM32 (Blue Pill)
 
 // ******************** ЭФФЕКТЫ И РЕЖИМЫ ********************
 #define D_TEXT_SPEED 100      // скорость бегущего текста по умолчанию (мс)
@@ -66,17 +60,12 @@ boolean AUTOPLAY = 1;         // 0 выкл / 1 вкл автоматическ�
 // внимание! отключение модуля НЕ УБИРАЕТ его эффекты из списка воспроизведения!
 // Это нужно сделать вручную во вкладке custom, удалив ненужные функции
 
-#define USE_BUTTONS 1       // использовать физические кнопки управления играми (0 нет, 1 да)
-#define BT_MODE 0           // использовать управление по блютус (0 нет, 1 да) - СИЛЬНО ЖРЁТ ПАМЯТЬ!!!
-#define WIFI_MODE 1         // использовать управление по WiFi (0 нет, 1 да) - для MCU_TYPE == 1 
 #define USE_NOISE_EFFECTS 1 // крутые полноэкранные эффекты (0 нет, 1 да) СИЛЬНО ЖРУТ ПАМЯТЬ!!!
 #define USE_FONTS 1         // использовать буквы (бегущая строка) (0 нет, 1 да)
 #define USE_CLOCK 1         // использовать часы (0 нет, 1 да)
 #define OVERLAY_CLOCK 1     // часы на фоне всех эффектов и игр. Жрёт SRAM память!
-#define USE_RTC 0           // использовать часы реального времени DS3231 (0 нет, 1 да)
 #define USE_ANIMATION 1     // использовать эффект анимации (0 нет, 1 да)
 #define USE_EEPROM 1        // Использовать сохранение настроек эффектов во флэш-памяти    
-#define USE_WEATHER 0       // Использовать прогноз погоды с интернета
 
 // игры
 #define USE_SNAKE 1         // игра змейка (0 нет, 1 да)
@@ -86,37 +75,12 @@ boolean AUTOPLAY = 1;         // 0 выкл / 1 вкл автоматическ�
 #define USE_FLAPPY 1        // игра flappy bird
 #define USE_ARKAN 1         // игра арканоид
 
-#define SMOOTH_CHANGE 1     // плавная смена режимов через чёрный
+#define SMOOTH_CHANGE 0     // плавная смена режимов через чёрный
 
 // ****************** ПИНЫ ПОДКЛЮЧЕНИЯ *******************
-// Arduino (Nano, Mega)
-#if (MCU_TYPE == 0)
-#define LED_PIN 6           // пин ленты
-#define BUTT_UP 3           // кнопка вверх
-#define BUTT_DOWN 5         // кнопка вниз
-#define BUTT_LEFT 2         // кнопка влево
-#define BUTT_RIGHT 4        // кнопка вправо
-#define BUTT_SET 7          // кнопка выбор/игра
-
 // пины подписаны согласно pinout платы, а не надписям на пинах!
-// esp8266 - плату выбирал "Node MCU 1.0 (SP-12E Module)"
-#elif (MCU_TYPE == 1)
+// esp8266 - плату выбирал "Node MCU v3 (SP-12E Module)"
 #define LED_PIN 2           // пин ленты
-#define BUTT_UP 14          // кнопка вверх
-#define BUTT_DOWN 13        // кнопка вниз
-#define BUTT_LEFT 0         // кнопка влево
-#define BUTT_RIGHT 12       // кнопка вправо
-#define BUTT_SET 15         // кнопка выбор/игра
-
-// STM32 (BluePill) - плату выбирал STM32F103C
-#elif (MCU_TYPE == 2)
-#define LED_PIN PB12         // пин ленты
-#define BUTT_UP PA1          // кнопка вверх
-#define BUTT_DOWN PA3        // кнопка вниз
-#define BUTT_LEFT PA0        // кнопка влево
-#define BUTT_RIGHT PA2       // кнопка вправо
-#define BUTT_SET PA4         // кнопка выбор/игра
-#endif
 
 // ******************************** ДЛЯ РАЗРАБОТЧИКОВ ********************************
 #define DEBUG 0
@@ -124,12 +88,10 @@ boolean AUTOPLAY = 1;         // 0 выкл / 1 вкл автоматическ�
 
 CRGB leds[NUM_LEDS];
 
-#define USE_WIFI (WIFI_MODE == 1 && MCU_TYPE == 1)           // WiFI поддерживается только для NodeMCU, Wemos D1
-#define GET_WEATHER (USE_WEATHER == 1 && USE_WIFI == 1)      // Прогноз погоды с интернета - только при наличии WiFi
-
 #if (USE_CLOCK == 1)
 byte CLOCK_ORIENT = 0;         // 0 горизонтальные, 1 вертикальные
 
+// Макрос центрирования отображения часов на матрице
 #define CLOCK_X_H (byte(float(WIDTH - (4*3 + 3*1)) / 2 + 0.51)) // 4 цифры * (шрифт 3 пикс шириной) 3 + пробела между цифрами), /2 - в центр 
 #define CLOCK_Y_H (byte(float(HEIGHT - 1*5) / 2 + 0.51))        // Одна строка цифр 5 пикс высотой  / 2 - в центр
 #define CLOCK_X_V (byte(float(WIDTH - (2*3 + 1)) / 2 + 0.51))   // 2 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
@@ -169,7 +131,7 @@ byte COLOR_MODE = 0;           // Режим цвета часов
 #define MC_FIRE 20
 #define MC_IMAGE 21
 
-// эффекты, в которых отображаются часы в наложении
+// эффекты, в которых могут отображаться часы в наложении
 #if (USE_CLOCK == 1 && OVERLAY_CLOCK == 1)
 byte overlayList[] = {
   MC_NOISE_MADNESS,
@@ -194,30 +156,23 @@ byte overlayList[] = {
 #endif
 
 #if (SMOOTH_CHANGE == 1)
-byte fadeMode = 4;
-boolean modeDir;
+  byte fadeMode = 4;
+  boolean modeDir;
 #endif
 
-#if (MCU_TYPE == 1)
-  #define FASTLED_INTERRUPT_RETRY_COUNT 0
-  #define FASTLED_ALLOW_INTERRUPTS 0
-  #include <ESP8266WiFi.h>
-  #include <WiFiUdp.h>
+#define FASTLED_INTERRUPT_RETRY_COUNT 0
+#define FASTLED_ALLOW_INTERRUPTS 0
+#include <ESP8266WiFi.h>
+#include <WiFiUdp.h>
 
-  #if (USE_CLOCK == 1)
-    #include <OldTime.h>
-  #endif
-
-  #if (GET_WEATHER == 1)
-    #include <ArduinoJson.h> // Качаем библиотеку для парсинга данных о погоде версии 5.xx. Версия 6.xx - не совместима
-    #include <WiFiClient.h>  // Для запроса о погоде
-  #endif
+#if (USE_CLOCK == 1)
+  #include <OldTime.h>
 #endif
 
 String runningText = "";
+byte buttons = 4;                  // 0 - верх, 1 - право, 2 - низ, 3 - лево, 4 - не нажата - управление играми
 
 static const byte maxDim = max(WIDTH, HEIGHT);
-byte buttons = 4;   // 0 - верх, 1 - право, 2 - низ, 3 - лево, 4 - не нажата
 int globalBrightness = BRIGHTNESS;
 byte breathBrightness;
 uint32_t globalColor = 0xffffff;   // цвет рисования при запуске белый
@@ -227,6 +182,7 @@ int scrollSpeed = D_TEXT_SPEED;    // скорость прокрутки тек
 int gameSpeed = DEMO_GAME_SPEED;   // скорость в играх 
 int effectSpeed = D_EFFECT_SPEED;  // скрость изменения эффекта
 
+boolean BTcontrol = false;         // флаг: true - ручное управление эффектами и играми; false - в режиме Autoplay
 boolean loadingFlag = true;
 boolean runningFlag;               // текущий режим ручном режиме - бегущая строка
 boolean drawingFlag;               // текущий режим в ручном режиме - рисование или картинка на матрице
@@ -240,7 +196,6 @@ byte effect;                       // индекс текущего эффект
 
 boolean gameDemo = true;           // игра в демо-режиме
 boolean idleState = true;          // флаг холостого режима работы
-boolean BTcontrol = false;         // флаг контроля с блютус или WiFi. Если false - управление с кнопок
 int8_t thisMode = 0;               // текущий режим
 boolean mazeMode = false;      
 int8_t hrs = 0, mins = 0, secs = 0, aday = 1, amnth = 1;
@@ -249,8 +204,9 @@ boolean dotFlag;
 byte modeCode;                     // 0 бегущая, 1 часы, 2 игры, 3 нойс маднесс и далее, 21 гифка или картинка,
 boolean fullTextFlag = false;
 boolean clockSet = false;
-
 bool eepromModified = false;
+String text;
+
 #if (USE_EEPROM == 1)
 #include <EEPROM.h>
 #endif
@@ -281,43 +237,23 @@ timerMinim idleTimer(idleTime);
 #define MODES_AMOUNT 28
 #endif
 
-#if (USE_CLOCK == 1 && (MCU_TYPE == 0 || MCU_TYPE == 1))
-  #include "RTClib.h"
-  #if (USE_RTC == 1)
-  #include <Wire.h>
-  RTC_DS3231 rtc;
-  // RTC_DS1307 rtc;
-  #endif
-#endif
 
-  String text;
-
-#if (MCU_TYPE == 1)
-
-// Раскомментируйте следующую строку, если параметры подключения к WiFiсерверу задаются
+// Раскомментируйте следующую строку, если параметры подключения к WiFi-серверу задаются
 // явным образом в блоке ниже. Если строка закомментирована - блок определения параметров подключения в
 // точно таком же формате вынесен в отдельный файл 'WiFiNet.h' и переменные при сборке скетча будут браться из него.
 
 // #define public
-#if (USE_WIFI == 1)
-  #ifndef public 
-    #include "WiFiNet.h"          // приватные данные и пароли доступа к WiFi сети
-  #else
-    char ssid[] = "****";       // SSID (имя) вашего роутера
-    char pass[] = "****";       // пароль роутера
-
-    // Регистрационные данные к погодному серверу
-    #if (GET_WEATHER == 1)
-      const char server[] = "api.openweathermap.org"; // Сервер для получения погоды
-      String nameOfCity = "london,uk";                // Задаем город и страну через зяпятую
-      String apiKey = "*****";                        // Указываем свой ключ, полученный при регистрации на openweathermap.org
-    #endif
-  #endif
-  WiFiUDP udp;
-  unsigned int localPort = 2390;       // local port to listen for UDP packets
+#ifndef public 
+  #include "WiFiNet.h"          // приватные данные и пароли доступа к WiFi сети
+#else
+  char ssid[] = "****";         // SSID (имя) вашего роутера
+  char pass[] = "****";         // пароль роутера
 #endif
 
-#if (USE_CLOCK == 1 || GET_WEATHER == 1)
+WiFiUDP udp;
+unsigned int localPort = 2390;  // local port to listen for UDP packets
+
+#if (USE_CLOCK == 1)
   timerMinim WifiTimer(500);  
 #endif 
 
@@ -336,61 +272,21 @@ timerMinim idleTimer(idleTime);
   timerMinim ntpTimer(1000 * 60 * SYNC_TIME_PERIOD);            // Сверяем время через SYNC_TIME_PERIOD минут
 #endif
 
-#if (GET_WEATHER == 1)
-  WiFiClient client;
-
-  #define SYNC_WEATHER_PERIOD 60
-  long weather_t = 0;
-  byte init_weather = 0;
-
-  int jsonend = 0;
-  boolean startJson = false;
-  int status = WL_IDLE_STATUS;
-
-  #define JSON_BUFF_DIMENSION 2500
-  #define HPaTomm 0.7500637554192
-
-  timerMinim WeatherCheck(1000 * 60 * SYNC_WEATHER_PERIOD);
-#endif
-  
-#endif
-
 void setup() {
-#if (BT_MODE == 1)
-  Serial.begin(9600);
-  delay(10);
-#endif
 
 #if (USE_EEPROM == 1)
-  #if (MCU_TYPE == 1)
   EEPROM.begin(256);
-  #endif
   loadSettings();
 #endif
   
-#if (MCU_TYPE == 1 && USE_WIFI == 1)
-// Если BT не используется - в Serial выводятся диагностические сообщения.
-// Если BT используется - Serial исполльзуется для коммуникации через BT
-#if (BT_MODE == 0)
   Serial.begin(115200);
   delay(10);
-#endif
+
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
   WiFi.begin(ssid, pass);
   delay(100);
-  udp.begin(localPort);
-#endif
 
-#if (USE_CLOCK == 1 && USE_RTC == 1 && (MCU_TYPE == 0 || MCU_TYPE == 1))
-  rtc.begin();
-  if (rtc.lostPower()) {
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  }
-  DateTime now = rtc.now();
-  secs = now.second();
-  mins = now.minute();
-  hrs = now.hour();
-#endif
+  udp.begin(localPort);
 
   // Таймер бездействия
   if (idleTime == 0) // Таймер Idle  отключен
@@ -419,7 +315,6 @@ void loop() {
 
 // -----------------------------------------
 
-#if (MCU_TYPE == 1 && USE_WIFI == 1)
 bool wifi_connected = false;
 bool printed_1 = false;
 bool printed_2 = false;
@@ -431,11 +326,9 @@ void checkWiFiConnection() {
   if (!wifi_connected) {
     if (!printed_1)
     {      
-#if (BT_MODE == 0)
       Serial.print("Connecting to ");
       Serial.print(ssid);
       Serial.println("...");
-#endif  
       printed_1 = true;
       printed_2 = false;
     }
@@ -443,15 +336,10 @@ void checkWiFiConnection() {
 
   // Сразу после подключения - печатаем результат подключения
   if (wifi_connected && !printed_2) {
-#if (BT_MODE == 0)
     Serial.print("WiFi подключен. IP адрес: ");
     Serial.println(WiFi.localIP());
     Serial.printf("UDP-сервер на порту %d\n", localPort);
-#endif  
     printed_1 = false;
     printed_2 = true;
   }
 }
-#else
-void checkWiFiConnection() { } 
-#endif  

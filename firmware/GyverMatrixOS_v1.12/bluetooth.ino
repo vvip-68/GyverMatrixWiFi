@@ -1,27 +1,17 @@
-#if (BT_MODE == 1 || USE_WIFI == 1)
-#define PARSE_AMOUNT 4       // максимальное количество значений в массиве, который хотим получить
-#define header '$'           // стартовый символ
-#define divider ' '          // разделительный символ
-#define ending ';'           // завершающий символ
+#define PARSE_AMOUNT 4          // максимальное количество значений в массиве, который хотим получить
+#define header '$'              // стартовый символ
+#define divider ' '             // разделительный символ
+#define ending ';'              // завершающий символ
 
-#if (USE_WIFI == 1)
 int16_t intData[PARSE_AMOUNT];  // массив численных значений после парсинга - для WiFi часы время синхр м.б отрицательным + 
-                                // период синхронизации м.б больше 255 сек - нужен тип int16_t В MCU_TYPE == 1 памяти много, можно не экономить
-#else                           // в ардуино TZ и ТЕЗ yt используются - принимаемые значения байты - экономим память
-byte intData[PARSE_AMOUNT];     // массив численных значений после парсинга
-#endif
-
+                                // период синхронизации м.б больше 255 мин - нужен тип int16_t
 uint32_t prevColor;
 boolean recievedFlag;
 byte lastMode = 0;
 boolean parseStarted;
 String pictureLine;
 
-#if (USE_WIFI==1)
 char incomeBuffer[UDP_TX_PACKET_MAX_SIZE];        // Буфер для приема строки команды из wifi udp сокета
-#else
-char incomeBuffer[18];                            // Буфер для разбора строки команды передачи картинки из BT-соединения
-#endif
 char replyBuffer[7];                              // ответ клиенту - подтверждения получения команды: "ack;/r/n/0"
 
 unsigned long ackCounter = 0;
@@ -32,40 +22,18 @@ void bluetoothRoutine() {
   // на время принятия данных матрицу не обновляем!
   if (!parseStarted) {                          
 
-    #if (MCU_TYPE == 1 && USE_WIFI == 1 && (USE_CLOCK == 1 || GET_WEATHER == 1))
-      if (WifiTimer.isReady() && wifi_connected) {
-  
-        #if (USE_CLOCK == 1)    
-          if (useNtp) {
-            if (ntp_t > 0 && millis() - ntp_t > 3000) {
-            #if (BT_MODE == 0)  
-              Serial.println("NTP request timeout!");
-            #endif  
-              init_time = 0;
-              ntp_t = 0;
-            }
-            if (ntpTimer.isReady() || (init_time == 0 && ntp_t == 0)) {
-              getNTP();
-            }
+    #if (USE_CLOCK == 1)
+      if (WifiTimer.isReady() && wifi_connected) {  
+        if (useNtp) {
+          if (ntp_t > 0 && millis() - ntp_t > 3000) {
+            Serial.println("NTP request timeout!");
+            init_time = 0;
+            ntp_t = 0;
           }
-        #endif
-      
-        #if (GET_WEATHER == 1)    
-          if (weather_t > 0 && millis() - weather_t > 5000) {
-            init_weather = 0;
-            weather_t = 0;
-            #if (BT_MODE == 0)  
-            Serial.println("Weather request timeout!");
-            #endif
-            client.stop();
+          if (ntpTimer.isReady() || (init_time == 0 && ntp_t == 0)) {
+            getNTP();
           }
-          if (weather_t > 0) {
-            parseWeather();
-          }
-          if (WeatherCheck.isReady() || (init_weather == 0 && weather_t == 0)) {
-            weatherRequest();
-          }
-        #endif
+        }
       }
     #endif    
 
@@ -151,18 +119,11 @@ byte parse_index;
 String string_convert = "";
 enum modes {NORMAL, COLOR, TEXT} parseMode;
 
-bool fromWiFi = false;
-bool fromBT = false;
 bool haveIncomeData = false;
 char incomingByte;
 
-#if (MCU_TYPE == 1)
-int  bufIdx = 0;         // В MCU_TYPE == 1 могут приниматься пакеты > 255 байт
-int  packetSize = 0;
-#else
-byte  bufIdx = 0;
-byte  packetSize = 0;
-#endif
+int16_t  bufIdx = 0;         // Могут приниматься пакеты > 255 байт - nbg int16_t
+int16_t  packetSize = 0;
 
 // разбор строки картинки - команда $5
 char *pch;
@@ -277,95 +238,50 @@ void parsing() {
         drawingFlag = true;
         loadingFlag = false;
 
-        // строка картинки - в pictureLine в формате:  для UDP:  'Y colorHEX X|colorHEX X|...|colorHEX X'
-        //                                             для BT будет один пакет 'colorHEX X Y' из за ограничения размера приемного буфера
-
-        if (fromWiFi) {
-          // Разбираем СТРОКУ из принятого буфера формата 'Y colorHEX X|colorHEX X|...|colorHEX X'
-          // Получить номер строки (Y) для которой получили строку с данными 
-          b_tmp = pictureLine.indexOf(" ");
-          str = pictureLine.substring(0, b_tmp);
-          pntY = str.toInt();
-          pictureLine = pictureLine.substring(b_tmp+1);
-          
-          pictureLine.toCharArray(incomeBuffer, pictureLine.length()+1);
-          pch = strtok (incomeBuffer,"|");
-          pntIdx = 0;
-          while (pch != NULL)
-          {
-            pntPart[pntIdx++] = String(pch);
-            pch = strtok (NULL, "|");
-          }
-          
-          for (int i=0; i<pntIdx; i++) {
-            str = pntPart[i];
-            str.toCharArray(buf, str.length()+1);
-  
-            pntColor=HEXtoInt(String(strtok(buf," ")));
-            pntX=atoi(strtok(NULL," "));
-  
-            // начало картинки - очистить матрицу
-            if ((pntX == 0) && (pntY == HEIGHT - 1)) {
-              FastLED.clear(); 
-              FastLED.show();
-            }
-            
-            drawPixelXY(pntX, pntY, gammaCorrection(pntColor));
-          }
-  
-          // Выводить построчно для ускорения вывода на экран
-          if (pntX == WIDTH - 1)
-            FastLED.show();
-  
-          // Подтвердить прием строки изображения
-          str = "$5 " + String(pntY)+ "-" + String(pntX) + " ack" + String(ackCounter++) + ";";
-    
-  #if (USE_WIFI == 1)
-          if (fromWiFi) { 
-            str.toCharArray(incomeBuffer, str.length()+1);    
-            udp.beginPacket(udp.remoteIP(), udp.remotePort());
-            udp.write(incomeBuffer);
-            udp.endPacket();
-            delay(0);
-          }  
-  #endif
+        // Разбираем СТРОКУ из принятого буфера формата 'Y colorHEX X|colorHEX X|...|colorHEX X'
+        // Получить номер строки (Y) для которой получили строку с данными 
+        b_tmp = pictureLine.indexOf(" ");
+        str = pictureLine.substring(0, b_tmp);
+        pntY = str.toInt();
+        pictureLine = pictureLine.substring(b_tmp+1);
+        
+        pictureLine.toCharArray(incomeBuffer, pictureLine.length()+1);
+        pch = strtok (incomeBuffer,"|");
+        pntIdx = 0;
+        while (pch != NULL)
+        {
+          pntPart[pntIdx++] = String(pch);
+          pch = strtok (NULL, "|");
         }
+        
+        for (int i=0; i<pntIdx; i++) {
+          str = pntPart[i];
+          str.toCharArray(buf, str.length()+1);
 
-        if (fromBT) {
-          // Разбираем массив принятых параметров intData[2]..intData[3], где
-          // intData[2] - координата X
-          // intData[3] - координата Y
-          // Цвет точки - в globalColor
-          pntX = intData[2];
-          pntY = intData[3];
-          
+          pntColor=HEXtoInt(String(strtok(buf," ")));
+          pntX=atoi(strtok(NULL," "));
+
           // начало картинки - очистить матрицу
           if ((pntX == 0) && (pntY == HEIGHT - 1)) {
             FastLED.clear(); 
             FastLED.show();
           }
-
-          drawPixelXY(pntX, pntY, gammaCorrection(globalColor));
-  
-          // Выводить построчно для ускорения вывода на экран
-          if (pntX == WIDTH - 1)
-            FastLED.show();
-  
-          // Подтвердить прием строки изображения
-          str = "$5 " + String(pntY)+ "-" + String(pntX) + " ack" + String(ackCounter++) + ";";
-  
-  #if (BT_MODE == 1)
-          // После отправки команды из Андроид-программы, она ждет подтверждения получения"
-          if (fromBT) {
-            Serial.println(str);
-          }
-  #endif  
+          
+          drawPixelXY(pntX, pntY, gammaCorrection(pntColor));
         }
-        
-        // так как Acknowledge не отправляется, а вместо этогоо тправляется ответная посылка,
-        // флаги откуда получена команда сбрасываем здесь. Для других команд - сбрасываются в sendAcknowledge()
-        fromWiFi = false;
-        fromBT = false;
+
+        // Выводить построчно для ускорения вывода на экран
+        if (pntX == WIDTH - 1)
+          FastLED.show();
+
+        // Подтвердить прием строки изображения
+        str = "$5 " + String(pntY)+ "-" + String(pntX) + " ack" + String(ackCounter++) + ";";
+  
+        str.toCharArray(incomeBuffer, str.length()+1);    
+        udp.beginPacket(udp.remoteIP(), udp.remotePort());
+        udp.write(incomeBuffer);
+        udp.endPacket();
+        delay(0);
         break;
       case 6:
         loadingFlag = true;
@@ -584,14 +500,11 @@ void parsing() {
              saveClockOverlayEnabled(intData[2] == 1);
              break;
            case 2:               // $19 2 X; - Использовать синхронизацию часов NTP  X: 0 - нет, 1 - да
-#if (USE_WIFI == 1)
              useNtp = intData[2] == 1;
              saveUseNtp(useNtp);
              init_time = 0; ntp_t = 0;
-#endif             
              break;
            case 3:               // $19 3 N Z; - Период синхронизации часов NTP и Часовой пояс
-#if (USE_WIFI == 1)
              SYNC_TIME_PERIOD = intData[2];
              timeZoneOffset = (int8_t)intData[3];
              saveTimeZone(timeZoneOffset);
@@ -599,7 +512,6 @@ void parsing() {
              saveTimeZone(timeZoneOffset);
              ntpTimer.setInterval(1000 * 60 * SYNC_TIME_PERIOD);
              init_time = 0; ntp_t = 0;
-#endif             
              break;
            case 4:               // $19 4 X; - Ориентация часов  X: 0 - горизонтально, 1 - вертикально
              CLOCK_ORIENT = intData[2] == 1 ? 1  : 0;
@@ -631,7 +543,6 @@ void parsing() {
   // ****************** ПАРСИНГ *****************
   haveIncomeData = false;
 
-#if (USE_WIFI == 1)
   if (!haveIncomeData) {
 
     // Если предыдущий буфер еще не разобран - новых данных из сокета не читаем, продолжаем разбор уже считанного буфера
@@ -644,16 +555,12 @@ void parsing() {
         // read the packet into packetBufffer
         int len = udp.read(incomeBuffer, UDP_TX_PACKET_MAX_SIZE);
         if (len > 0) {
-          fromWiFi = true;
           incomeBuffer[len] =0;
         }
         bufIdx = 0;
         
         delay(0);            // ESP8266 при вызове delay отпрабатывает стек IP протокола, дадим ему поработать        
 
-        // Если управление через BT включено - Serial для коммуникации через BT,
-        // если выключено - используем для вывода диагностики в монитор порта  
-#if (BT_MODE == 0)
         Serial.print("UDP пакeт размером ");
         Serial.print(packetSize);
         Serial.print(" от ");
@@ -670,7 +577,6 @@ void parsing() {
           Serial.print("Содержимое: ");
           Serial.println(incomeBuffer);
         }
-#endif
       }
 
 #if (USE_CLOCK == 1)
@@ -708,29 +614,6 @@ void parsing() {
       } 
     }       
   }
-#endif
-
-  // Если есть не разобранный буфер от WiFi сокета - данные BT пока не разбираем
-  // Кроме команд от BT, еслион не подключен - можновводить команды в монитор порта
-  if (!haveIncomeData) {
-    haveIncomeData = Serial.available() > 0;
-    if (haveIncomeData) {
-      fromBT = true;
-      if (parseMode == TEXT) {              // если нужно принять строку
-        str = Serial.readString();          // принимаем всю
-        if (intData[0] == 6) {            // текст бегущей строки
-          runningText = str;
-          runningText.trim();
-          if (runningText == ".") runningText = "";
-        }
-
-        incomingByte = ending;              // сразу завершаем парс
-        parseMode = NORMAL;
-      } else {
-        incomingByte = Serial.read();        // обязательно ЧИТАЕМ входящий символ
-      }
-    }
-  }
   
   if (haveIncomeData) {
 
@@ -741,8 +624,8 @@ void parsing() {
         if (parse_index == 0) {
           byte cmdMode = string_convert.toInt();
           intData[0] = cmdMode;
-          if (cmdMode == 0 || (fromBT && cmdMode == 5)) parseMode = COLOR;                      // передача цвета (в отдельную переменную)
-          else if (cmdMode == 6 || (fromWiFi && cmdMode == 5)) {
+          if (cmdMode == 0) parseMode = COLOR;                      // передача цвета (в отдельную переменную)
+          else if (cmdMode == 6 || cmdMode == 5) {
             parseMode = TEXT;
           }
           else parseMode = NORMAL;
@@ -868,12 +751,9 @@ void sendPageParams(int page) {
       break;
     case 7:  // Настройки часов. Вернуть: Оверлей вкл/выкл
 #if (USE_CLOCK == 1)      
-      str="$18 CE:"+String(getClockOverlayEnabled()) + "|CC:" + String(COLOR_MODE)
-#if (USE_WIFI == 1)      
-      + "|NP:"; 
+      str="$18 CE:"+String(getClockOverlayEnabled()) + "|CC:" + String(COLOR_MODE) + "|NP:"; 
       if (useNtp)  str+="1|NT:"; else str+="0|NT:";
       str+=String(SYNC_TIME_PERIOD) + "|NZ:" + String(timeZoneOffset)  
-#endif      
       + ";";
 #endif      
       break;
@@ -881,42 +761,24 @@ void sendPageParams(int page) {
   
   if (str.length() > 0) {
     // Отправить клиенту запрошенные параметры страницы / режимов
-#if (BT_MODE == 1)
-    // После отправки команды из Андроид-программы, она ждет подтверждения получения - ответ "ack;"
-    Serial.println(str);
-#endif
-#if (USE_WIFI == 1)
     str.toCharArray(incomeBuffer, str.length()+1);    
     udp.beginPacket(udp.remoteIP(), udp.remotePort());
     udp.write(incomeBuffer);
     udp.endPacket();
     delay(0);
-#endif
   } else {
     sendAcknowledge();
   }
 }
 
 void sendAcknowledge() {
-#if (BT_MODE == 1)
-  // После отправки команды из Андроид-программы, она ждет подтверждения получения - ответ "ack;"
-  if (fromBT) {
-    Serial.println("ack" + String(ackCounter++) + ";");
-  }
-#endif
-#if (USE_WIFI == 1)
-  // Если данные были получены по WiFi - отправить подтверждение, чтобы клиентский сокет прервал ожидание
-  if (fromWiFi) {
-    String reply = "ack" + String(ackCounter++) + ";";
-    reply.toCharArray(replyBuffer, reply.length()+1);    
-    udp.beginPacket(udp.remoteIP(), udp.remotePort());
-    udp.write(replyBuffer);
-    udp.endPacket();
-    delay(0);
-  }
-  fromWiFi = false;
-  fromBT = false;
-#endif  
+  // Отправить подтверждение, чтобы клиентский сокет прервал ожидание
+  String reply = "ack" + String(ackCounter++) + ";";
+  reply.toCharArray(replyBuffer, reply.length()+1);    
+  udp.beginPacket(udp.remoteIP(), udp.remotePort());
+  udp.write(replyBuffer);
+  udp.endPacket();
+  delay(0);
 }
 
 // hex string to uint32_t
@@ -942,12 +804,6 @@ bool isColorEffect(byte effect) {
   // Они могут работать с custom демо режимами
   return (effect >= 0 && effect <= 1) || effect == 5;
 }
-
-#else
-void bluetoothRoutine() {
-  customRoutine();
-}
-#endif
 
 byte mapEffectToMode(byte effect) {
   byte tmp_mode = 255;

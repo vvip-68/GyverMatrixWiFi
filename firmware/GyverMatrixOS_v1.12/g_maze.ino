@@ -27,13 +27,13 @@ void newGameMaze() {
 
   buttons = 4;
 
-  if (MCU_TYPE == 0) {
+//  if (MCU_TYPE == 0) {
     smartMaze();   // "умная" генерация лабиринта. Работает только для AVR!
     makeHoles();   // дырявим несколько стен
-  } else {
-    GenerateMaze(maze, MAZE_WIDTH, MAZE_HEIGHT);    // генерировать лабиринт обычным способом
-    SolveMaze(maze, MAZE_WIDTH, MAZE_HEIGHT);       // найти путь
-  }
+//  } else {
+//    GenerateMaze(maze, MAZE_WIDTH, MAZE_HEIGHT);    // генерировать лабиринт обычным способом
+//    SolveMaze(maze, MAZE_WIDTH, MAZE_HEIGHT);       // найти путь
+//  }
 
   if (!(GAMEMODE || mazeMode)) {
     for (byte y = 0; y < HEIGHT; y++) {
