@@ -69,7 +69,7 @@
 
 <a id="chapter-2"></a>
 ## Схемы
-![SCHEME](https://github.com/vvip-68/GyverMatrixWiFi/blob/master/schemes/nodemcu.png)
+![SCHEME](https://github.com/vvip-68/GyverMatrixWiFi/blob/master/schemes/scheme.jpg)
 
 <a id="chapter-3"></a>
 ## Материалы и компоненты
