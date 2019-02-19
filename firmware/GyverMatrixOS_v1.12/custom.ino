@@ -69,58 +69,32 @@ void customModes() {
       text = runningText == "" ? "RGB LED" : runningText;
       fillString(text, 2);
       break;
-    case DEMO_NOISE_MADNESS: madnessNoise();
-      break;
-    case DEMO_NOISE_CLOUD: cloudNoise();
-      break;
-    case DEMO_NOISE_LAVA: lavaNoise();
-      break;
-    case DEMO_NOISE_PLASMA: plasmaNoise();
-      break;
-    case DEMO_NOISE_RAINBOW: rainbowNoise();
-      break;
-    case DEMO_NOISE_RAINBOW_STRIP: rainbowStripeNoise();
-      break;
-    case DEMO_NOISE_ZEBRA: zebraNoise();
-      break;
-    case DEMO_NOISE_FOREST: forestNoise();
-      break;
-    case DEMO_NOISE_OCEAN: oceanNoise();
-      break;
-    case DEMO_SNOW: snowRoutine();
-      break;
-    case DEMO_SPARKLES: sparklesRoutine();
-      break;
-    case DEMO_MATRIX: matrixRoutine();
-      break;
-    case DEMO_STARFALL: starfallRoutine();
-      break;
-    case DEMO_BALL: ballRoutine();
-      break;
-    case DEMO_BALLS: ballsRoutine();
-      break;
-    case DEMO_RAINBOW: rainbowRoutine();
-      break;
-    case DEMO_RAINBOW_DIAG: rainbowDiagonalRoutine();
-      break;
-    case DEMO_FIRE: fireRoutine();
-      break;
-    case DEMO_SNAKE: snakeRoutine();
-      break;
-    case DEMO_TETRIS: tetrisRoutine();
-      break;
-    case DEMO_MAZE: mazeRoutine();
-      break;
-    case DEMO_RUNNER: runnerRoutine();
-      break;
-    case DEMO_FLAPPY: flappyRoutine();
-      break;
-    case DEMO_ARKANOID: arkanoidRoutine();
-      break;
-    case DEMO_CLOCK: clockRoutine();
-      break;
-    case DEMO_ANIMATION: animation();
-      break;
+    case DEMO_NOISE_MADNESS:       madnessNoise(); break;
+    case DEMO_NOISE_CLOUD:         cloudNoise(); break;
+    case DEMO_NOISE_LAVA:          lavaNoise(); break;
+    case DEMO_NOISE_PLASMA:        plasmaNoise(); break;
+    case DEMO_NOISE_RAINBOW:       rainbowNoise(); break;
+    case DEMO_NOISE_RAINBOW_STRIP: rainbowStripeNoise(); break;
+    case DEMO_NOISE_ZEBRA:         zebraNoise(); break;
+    case DEMO_NOISE_FOREST:        forestNoise(); break;
+    case DEMO_NOISE_OCEAN:         oceanNoise(); break;
+    case DEMO_SNOW:                snowRoutine(); break;
+    case DEMO_SPARKLES:            sparklesRoutine(); break;
+    case DEMO_MATRIX:              matrixRoutine(); break;
+    case DEMO_STARFALL:            starfallRoutine(); break;
+    case DEMO_BALL:                ballRoutine(); break;
+    case DEMO_BALLS:               ballsRoutine(); break;
+    case DEMO_RAINBOW:             rainbowRoutine(); break;
+    case DEMO_RAINBOW_DIAG:        rainbowDiagonalRoutine(); break;
+    case DEMO_FIRE:                fireRoutine(); break;
+    case DEMO_SNAKE:               snakeRoutine(); break;
+    case DEMO_TETRIS:              tetrisRoutine(); break;
+    case DEMO_MAZE:                mazeRoutine(); break;
+    case DEMO_RUNNER:              runnerRoutine(); break;
+    case DEMO_FLAPPY:              flappyRoutine(); break;
+    case DEMO_ARKANOID:            arkanoidRoutine(); break;
+    case DEMO_CLOCK:               clockRoutine(); break;
+    case DEMO_ANIMATION:           animation(); break;
   }
 }
 
@@ -147,7 +121,7 @@ static void prevMode() {
 void nextModeHandler() {
   byte aCnt = 0;
   byte curMode = thisMode;
-  
+
   while (aCnt < MODES_AMOUNT) {
     // Берем следующий режим по циклу режимов
     aCnt++; thisMode++;  
@@ -175,6 +149,7 @@ void nextModeHandler() {
 void prevModeHandler() {
   byte aCnt = 0;
   byte curMode = thisMode;
+
   while (aCnt < MODES_AMOUNT) {
     // Берем предыдущий режим по циклу режимов
     aCnt++; thisMode--;  
@@ -190,7 +165,7 @@ void prevModeHandler() {
       break;
     }    
   }
-
+  
   loadingFlag = true;
   gamemodeFlag = false;
   autoplayTimer = millis();
@@ -335,7 +310,6 @@ void checkIdleState() {
 #if (SMOOTH_CHANGE == 1)
   modeFader();
 #endif
-
   
   if (idleState) {
     if (fullTextFlag && SHOW_TEXT_ONCE) {

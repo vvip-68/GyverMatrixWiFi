@@ -74,7 +74,7 @@ void bluetoothRoutine() {
       customRoutine();        
     }
 
-    // Бегущая строка (0,1,2) или Часы в основном режиме и эффект Дыхание или Цвета, Радуга пикс
+    // Бегущая строка или Часы в основном режиме и эффект Дыхание или Цвета, Радуга пикс
     else if ((thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2 || thisMode == DEMO_CLOCK) && effectsFlag && isColorEffect(effect)) { 
 
       // Подготовить изображение
@@ -105,12 +105,9 @@ void effects() {
     
   if (effectTimer.isReady()) {
     switch (effect) {
-      case 0: brightnessRoutine();         // Дыхание
-        break;
-      case 1: colorsRoutine();             // Цвет
-        break;
-      case 5: rainbowColorsRoutine();      // Радуга пикс.
-        break;
+      case EFFECT_BREATH: brightnessRoutine(); break;         // Дыхание
+      case EFFECT_COLOR: colorsRoutine(); break;              // Цвет
+      case EFFECT_RAINBOW_PIX: rainbowColorsRoutine(); break; // Радуга пикс.
     }
     FastLED.show();
   }
@@ -368,6 +365,7 @@ void parsing() {
         buttons = 0;
         controlFlag = true;
         gamePaused = false;
+        gameDemo = false;
         sendAcknowledge();
         break;
       case 11:
@@ -375,6 +373,7 @@ void parsing() {
         buttons = 1;
         controlFlag = true;
         gamePaused = false;
+        gameDemo = false;
         sendAcknowledge();
         break;
       case 12:
@@ -382,6 +381,7 @@ void parsing() {
         buttons = 2;
         controlFlag = true;
         gamePaused = false;
+        gameDemo = false;
         sendAcknowledge();
         break;
       case 13:
@@ -389,6 +389,7 @@ void parsing() {
         buttons = 3;
         controlFlag = true;
         gamePaused = false;
+        gameDemo = false;
         sendAcknowledge();
         break;
       case 14:
@@ -438,6 +439,8 @@ void parsing() {
         idleState = !BTcontrol && AUTOPLAY; 
         if (AUTOPLAY) {
           autoplayTimer = millis(); // При включении автоматического режима сбросить таймер автосмены режимов
+          controlFlag = false; 
+          gameDemo = true;
         }
         saveAutoplay(AUTOPLAY);
 
@@ -470,10 +473,13 @@ void parsing() {
         idleTime = ((long)intData[2] * 60 * 1000);  // минуты -> миллисек
         saveAutoplayTime(autoplayTime);
         saveIdleTime(idleTime);
-        idleState = !BTcontrol && AUTOPLAY; 
         if (AUTOPLAY) {
           autoplayTimer = millis();
+          BTcontrol = false;
+          controlFlag = false; 
+          gameDemo = true;
         }
+        idleState = !BTcontrol && AUTOPLAY; 
         if (idleState) {
           if (idleTime == 0) // тамймер отключен
             idleTimer.setInterval(4294967295);
@@ -803,38 +809,38 @@ uint32_t HEXtoInt(String hexValue) {
 bool isColorEffect(byte effect) {
   // Цветовые эффекты - Дыхание, Цвет или Радуга пикс.
   // Они могут работать с custom демо режимами
-  return (effect >= 0 && effect <= 1) || effect == 5;
+  return effect == EFFECT_BREATH || effect == EFFECT_COLOR || effect == EFFECT_RAINBOW_PIX;
 }
 
 byte mapEffectToMode(byte effect) {
   byte tmp_mode = 255;
   
   switch (effect) {
-    case 2:  tmp_mode = 12; break;       // snowRoutine();
-    case 3:  tmp_mode = 16; break;       // ballRoutine();
-    case 4:  tmp_mode = 18; break;       // rainbowRoutine();
-    case 6:  tmp_mode = 20; break;       // fireRoutine()
-    case 7:  tmp_mode = 14; break;       // matrixRoutine();
-    case 8:  tmp_mode = 17; break;       // ballsRoutine();
-    case 9:  tmp_mode = 27; break;       // clockRoutine();
-    case 10: tmp_mode = 15; break;       // starfallRoutine()
-    case 11: tmp_mode = 13; break;       // sparklesRoutine()
-    case 12: tmp_mode = 19; break;       // rainbowDiagonalRoutine();
-    case 13: tmp_mode = 3;  break;       // madnessNoise();
-    case 14: tmp_mode = 4;  break;       // cloudNoise();
-    case 15: tmp_mode = 5;  break;       // lavaNoise();
-    case 16: tmp_mode = 6;  break;       // plasmaNoise();
-    case 17: tmp_mode = 7;  break;       // rainbowNoise();
-    case 18: tmp_mode = 8;  break;       // rainbowStripeNoise();
-    case 19: tmp_mode = 9;  break;       // zebraNoise();
-    case 20: tmp_mode = 10; break;       // forestNoise();
-    case 21: tmp_mode = 11; break;       // oceanNoise();
-    case 22: tmp_mode = 28; break;       // animation();
+    case EFFECT_SNOW:                tmp_mode = DEMO_SNOW; break;                 // snowRoutine();
+    case EFFECT_BALL:                tmp_mode = DEMO_BALL; break;                 // ballRoutine();
+    case EFFECT_RAINBOW:             tmp_mode = DEMO_RAINBOW; break;              // rainbowRoutine();
+    case EFFECT_FIRE:                tmp_mode = DEMO_FIRE; break;                 // fireRoutine()
+    case EFFECT_MATRIX:              tmp_mode = DEMO_MATRIX; break;               // matrixRoutine();
+    case EFFECT_BALLS:               tmp_mode = DEMO_BALLS; break;                // ballsRoutine();
+    case EFFECT_CLOCK:               tmp_mode = DEMO_CLOCK; break;                // clockRoutine();
+    case EFFECT_STARFALL:            tmp_mode = DEMO_STARFALL; break;             // starfallRoutine()
+    case EFFECT_SPARKLES:            tmp_mode = DEMO_SPARKLES; break;             // sparklesRoutine()
+    case EFFECT_RAINBOW_DIAG:        tmp_mode = DEMO_RAINBOW_DIAG; break;         // rainbowDiagonalRoutine();
+    case EFFECT_NOISE_MADNESS:       tmp_mode = DEMO_NOISE_MADNESS;  break;       // madnessNoise();
+    case EFFECT_NOISE_CLOUD:         tmp_mode = DEMO_NOISE_CLOUD;  break;         // cloudNoise();
+    case EFFECT_NOISE_LAVA:          tmp_mode = DEMO_NOISE_LAVA;  break;          // lavaNoise();
+    case EFFECT_NOISE_PLASMA:        tmp_mode = DEMO_NOISE_PLASMA;  break;        // plasmaNoise();
+    case EFFECT_NOISE_RAINBOW:       tmp_mode = DEMO_NOISE_RAINBOW;  break;       // rainbowNoise();
+    case EFFECT_NOISE_RAINBOW_STRIP: tmp_mode = DEMO_NOISE_RAINBOW_STRIP;  break; // rainbowStripeNoise();
+    case EFFECT_NOISE_ZEBRA:         tmp_mode = DEMO_NOISE_ZEBRA;  break;         // zebraNoise();
+    case EFFECT_NOISE_FOREST:        tmp_mode = DEMO_NOISE_FOREST; break;         // forestNoise();
+    case EFFECT_NOISE_OCEAN:         tmp_mode = DEMO_NOISE_OCEAN; break;          // oceanNoise();
+    case EFFECT_ANIMATION:           tmp_mode = DEMO_ANIMATION; break;            // animation();
 
     // Нет соответствия - выполняются для текущего режима thisMode
-    case 0:  // Дыхание
-    case 1:  // Цвет
-    case 5:  // Радуга пикс
+    case EFFECT_BREATH:              // Дыхание
+    case EFFECT_COLOR:               // Цвет
+    case EFFECT_RAINBOW_PIX:         // Радуга пикс
       break;
   }
 
@@ -845,12 +851,12 @@ byte mapGameToMode(byte game) {
   byte tmp_mode = 255;
   
   switch (game) {
-    case 0: tmp_mode = 21; break;  // snakeRoutine(); 
-    case 1: tmp_mode = 22; break;  // tetrisRoutine();
-    case 2: tmp_mode = 23; break;  // mazeRoutine();
-    case 3: tmp_mode = 24; break;  // runnerRoutine();
-    case 4: tmp_mode = 25; break;  // flappyRoutine();
-    case 5: tmp_mode = 26; break;  // arkanoidRoutine();
+    case GAME_SNAKE:    tmp_mode = DEMO_SNAKE;    break;  // snakeRoutine(); 
+    case GAME_TETRIS:   tmp_mode = DEMO_TETRIS;   break;  // tetrisRoutine();
+    case GAME_MAZE:     tmp_mode = DEMO_MAZE;     break;  // mazeRoutine();
+    case GAME_RUNNER:   tmp_mode = DEMO_RUNNER;   break;  // runnerRoutine();
+    case GAME_FLAPPY:   tmp_mode = DEMO_FLAPPY;   break;  // flappyRoutine();
+    case GAME_ARKANOID: tmp_mode = DEMO_ARKANOID; break;  // arkanoidRoutine();
   }
 
   return tmp_mode;
@@ -860,38 +866,38 @@ byte mapModeToEffect(byte aMode) {
   byte tmp_effect = 255;
   // Если режима нет в списке - ему нет соответствия среди эффектов - значит это игра или бегущий текст
   switch (aMode) {
-    case 3:  tmp_effect = 13; break;       // madnessNoise();
-    case 4:  tmp_effect = 14; break;       // cloudNoise();
-    case 5:  tmp_effect = 15; break;       // lavaNoise();
-    case 6:  tmp_effect = 16; break;       // plasmaNoise();
-    case 7:  tmp_effect = 17; break;       // rainbowNoise();
-    case 8:  tmp_effect = 18; break;       // rainbowStripeNoise();
-    case 9:  tmp_effect = 19; break;       // zebraNoise();
-    case 10: tmp_effect = 20; break;       // forestNoise();
-    case 11: tmp_effect = 21; break;       // oceanNoise();
-    case 12: tmp_effect = 2;  break;       // snowRoutine();
-    case 13: tmp_effect = 11; break;       // sparklesRoutine()
-    case 14: tmp_effect = 7;  break;       // matrixRoutine();
-    case 15: tmp_effect = 10; break;       // starfallRoutine()
-    case 16: tmp_effect = 3;  break;       // ballRoutine();
-    case 17: tmp_effect = 8;  break;       // ballsRoutine();
-    case 18: tmp_effect = 4;  break;       // rainbowRoutine();
-    case 19: tmp_effect = 12; break;       // rainbowDiagonalRoutine();
-    case 20: tmp_effect = 6;  break;       // fireRoutine()
-    case 28: tmp_effect = 22; break;       // animation();
+    case DEMO_NOISE_MADNESS:        tmp_effect = EFFECT_NOISE_MADNESS; break;       // madnessNoise();
+    case DEMO_NOISE_CLOUD:          tmp_effect = EFFECT_NOISE_CLOUD; break;         // cloudNoise();
+    case DEMO_NOISE_LAVA:           tmp_effect = EFFECT_NOISE_LAVA; break;          // lavaNoise();
+    case DEMO_NOISE_PLASMA:         tmp_effect = EFFECT_NOISE_PLASMA; break;        // plasmaNoise();
+    case DEMO_NOISE_RAINBOW:        tmp_effect = EFFECT_NOISE_RAINBOW; break;       // rainbowNoise();
+    case DEMO_NOISE_RAINBOW_STRIP:  tmp_effect = EFFECT_NOISE_RAINBOW_STRIP; break; // rainbowStripeNoise();
+    case DEMO_NOISE_ZEBRA:          tmp_effect = EFFECT_NOISE_ZEBRA; break;         // zebraNoise();
+    case DEMO_NOISE_FOREST:         tmp_effect = EFFECT_NOISE_FOREST; break;        // forestNoise();
+    case DEMO_NOISE_OCEAN:          tmp_effect = EFFECT_NOISE_OCEAN; break;         // oceanNoise();
+    case DEMO_SNOW:                 tmp_effect = EFFECT_SNOW;  break;               // snowRoutine();
+    case DEMO_SPARKLES:             tmp_effect = EFFECT_SPARKLES; break;            // sparklesRoutine()
+    case DEMO_MATRIX:               tmp_effect = EFFECT_MATRIX;  break;             // matrixRoutine();
+    case DEMO_STARFALL:             tmp_effect = EFFECT_STARFALL; break;            // starfallRoutine()
+    case DEMO_BALL:                 tmp_effect = EFFECT_BALL;  break;               // ballRoutine();
+    case DEMO_BALLS:                tmp_effect = EFFECT_BALLS;  break;              // ballsRoutine();
+    case DEMO_RAINBOW:              tmp_effect = EFFECT_RAINBOW;  break;            // rainbowRoutine();
+    case DEMO_RAINBOW_DIAG:         tmp_effect = EFFECT_RAINBOW_DIAG; break;        // rainbowDiagonalRoutine();
+    case DEMO_FIRE:                 tmp_effect = EFFECT_FIRE;  break;               // fireRoutine()
+    case DEMO_ANIMATION:            tmp_effect = EFFECT_ANIMATION; break;           // animation();
 
-    case 0:  break;  // Бегущий текст
-    case 1:  break;  // Бегущий текст
-    case 2:  break;  // Бегущий текст
+    case DEMO_TEXT_0 :  break;      // Бегущий текст
+    case DEMO_TEXT_1 :  break;      // Бегущий текст
+    case DEMO_TEXT_2 :  break;      // Бегущий текст
 
-    case 21: break;  // snakeRoutine(); 
-    case 22: break;  // tetrisRoutine();
-    case 23: break;  // mazeRoutine();
-    case 24: break;  // runnerRoutine();
-    case 25: break;  // flappyRoutine();
-    case 26: break;  // arkanoidRoutine();
+    case DEMO_SNAKE: break;         // snakeRoutine(); 
+    case DEMO_TETRIS: break;        // tetrisRoutine();
+    case DEMO_MAZE: break;          // mazeRoutine();
+    case DEMO_RUNNER: break;        // runnerRoutine();
+    case DEMO_FLAPPY: break;        // flappyRoutine();
+    case DEMO_ARKANOID: break;      // arkanoidRoutine();
     
-    case 27: break;  // clockRoutine();     
+    case DEMO_CLOCK: break;         // clockRoutine();     
   }
   return tmp_effect;
 }
@@ -900,38 +906,38 @@ byte mapModeToGame(byte aMode) {
   byte tmp_game = 255;
   // Если режима нет в списке - ему нет соответствия среди тгр - значит это эффект или бегущий текст
   switch (aMode) {
-    case 3:  break;  // madnessNoise();
-    case 4:  break;  // cloudNoise();
-    case 5:  break;  // lavaNoise();
-    case 6:  break;  // plasmaNoise();
-    case 7:  break;  // rainbowNoise();
-    case 8:  break;  // rainbowStripeNoise();
-    case 9:  break;  // zebraNoise();
-    case 10: break;  // forestNoise();
-    case 11: break;  // oceanNoise();
-    case 12: break;  // snowRoutine();
-    case 13: break;  // sparklesRoutine()
-    case 14: break;  // matrixRoutine();
-    case 15: break;  // starfallRoutine()
-    case 16: break;  // ballRoutine();
-    case 17: break;  // ballsRoutine();
-    case 18: break;  // rainbowRoutine();
-    case 19: break;  // rainbowDiagonalRoutine();
-    case 20: break;  // fireRoutine()
-    case 28: break;  // animation();
+    case DEMO_NOISE_MADNESS:        break;       // madnessNoise();
+    case DEMO_NOISE_CLOUD:          break;       // cloudNoise();
+    case DEMO_NOISE_LAVA:           break;       // lavaNoise();
+    case DEMO_NOISE_PLASMA:         break;       // plasmaNoise();
+    case DEMO_NOISE_RAINBOW:        break;       // rainbowNoise();
+    case DEMO_NOISE_RAINBOW_STRIP:  break;       // rainbowStripeNoise();
+    case DEMO_NOISE_ZEBRA:          break;       // zebraNoise();
+    case DEMO_NOISE_FOREST:         break;       // forestNoise();
+    case DEMO_NOISE_OCEAN:          break;       // oceanNoise();
+    case DEMO_SNOW:                 break;       // snowRoutine();
+    case DEMO_SPARKLES:             break;       // sparklesRoutine()
+    case DEMO_MATRIX:               break;       // matrixRoutine();
+    case DEMO_STARFALL:             break;       // starfallRoutine()
+    case DEMO_BALL:                 break;       // ballRoutine();
+    case DEMO_BALLS:                break;       // ballsRoutine();
+    case DEMO_RAINBOW:              break;       // rainbowRoutine();
+    case DEMO_RAINBOW_DIAG:         break;       // rainbowDiagonalRoutine();
+    case DEMO_FIRE:                 break;       // fireRoutine()
+    case DEMO_ANIMATION:            break;       // animation();
 
-    case 0:  break;  // Бегущий текст
-    case 1:  break;  // Бегущий текст
-    case 2:  break;  // Бегущий текст
+    case DEMO_TEXT_0:               break;       // Бегущий текст
+    case DEMO_TEXT_1:               break;       // Бегущий текст
+    case DEMO_TEXT_2:               break;       // Бегущий текст
 
-    case 21: tmp_game = 0; break;  // snakeRoutine(); 
-    case 22: tmp_game = 1; break;  // tetrisRoutine();
-    case 23: tmp_game = 2; break;  // mazeRoutine();
-    case 24: tmp_game = 3; break;  // runnerRoutine();
-    case 25: tmp_game = 4; break;  // flappyRoutine();
-    case 26: tmp_game = 5; break;  // arkanoidRoutine();
-    
-    case 27: break;  // clockRoutine();     
+    case DEMO_SNAKE:    tmp_game = GAME_SNAKE;    break;     // snakeRoutine(); 
+    case DEMO_TETRIS:   tmp_game = GAME_TETRIS;   break;     // tetrisRoutine();
+    case DEMO_MAZE:     tmp_game = GAME_MAZE;     break;     // mazeRoutine();
+    case DEMO_RUNNER:   tmp_game = GAME_RUNNER;   break;     // runnerRoutine();
+    case DEMO_FLAPPY:   tmp_game = GAME_FLAPPY;   break;     // flappyRoutine();
+    case DEMO_ARKANOID: tmp_game = GAME_ARKANOID; break;     // arkanoidRoutine();
+
+    case DEMO_CLOCK: break;  // clockRoutine();     
   }
   return tmp_game;
 }

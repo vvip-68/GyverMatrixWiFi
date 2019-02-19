@@ -97,42 +97,83 @@ byte CLOCK_ORIENT = 0;         // 0 горизонтальные, 1 вертик
 #define CLOCK_X_V (byte(float(WIDTH - (2*3 + 1)) / 2 + 0.51))   // 2 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
 #define CLOCK_Y_V (byte(float(HEIGHT - (2*5 + 1)) / 2 + 0.51))  // Две строки цифр 5 пикс высотой + 1 пробел между строкми / 2 - в центр
 
-byte CLOCK_X = CLOCK_X_H;      // Для вертикальных часов CLOCK_X_V и CLOCK_Y_V
+byte CLOCK_X = CLOCK_X_H;     // Для вертикальных часов CLOCK_X_V и CLOCK_Y_V
 byte CLOCK_Y = CLOCK_Y_H;
-byte COLOR_MODE = 0;           // Режим цвета часов
-//                                0 - заданные ниже цвета
-//                                1 - радужная смена (каждая цифра)
-//                                2 - радужная смена (часы, точки, минуты)
+byte COLOR_MODE = 0;          // Режим цвета часов
+//                              0 - заданные ниже цвета
+//                              1 - радужная смена (каждая цифра)
+//                              2 - радужная смена (часы, точки, минуты)
 #endif
 
 #define MAX_EFFECT 22         // количество эффектов, определенных в прошивке
-#define MAX_GAME 6            // количество игр, определенных в прошивке
+#define MAX_GAME    6         // количество игр, определенных в прошивке
 
-// ID эффектов (или групп - текст, игры)
-#define MC_TEXT 0
-#define MC_CLOCK 1
-#define MC_GAME 2
-#define MC_NOISE_MADNESS 3
-#define MC_NOISE_CLOUD 4
-#define MC_NOISE_LAVA 5
-#define MC_NOISE_PLASMA 6
-#define MC_NOISE_RAINBOW 7
-#define MC_NOISE_RAINBOW_STRIP 8
-#define MC_NOISE_ZEBRA 9
-#define MC_NOISE_FOREST 10
-#define MC_NOISE_OCEAN 11
-#define MC_SNOW 12
-#define MC_SPARKLES 13
-#define MC_MATRIX 14
-#define MC_STARFALL 15
-#define MC_BALL 16
-#define MC_BALLS 17
-#define MC_RAINBOW 18
-#define MC_RAINBOW_DIAG 19
-#define MC_FIRE 20
-#define MC_IMAGE 21
+// ID типа эффектов (тип группы - текст, игры имеют один ID типа на все подтипы)
+#define MC_TEXT                  0
+#define MC_CLOCK                 1
+#define MC_GAME                  2
+#define MC_NOISE_MADNESS         3
+#define MC_NOISE_CLOUD           4
+#define MC_NOISE_LAVA            5
+#define MC_NOISE_PLASMA          6
+#define MC_NOISE_RAINBOW         7
+#define MC_NOISE_RAINBOW_STRIP   8
+#define MC_NOISE_ZEBRA           9
+#define MC_NOISE_FOREST         10
+#define MC_NOISE_OCEAN          11
+#define MC_SNOW                 12
+#define MC_SPARKLES             13
+#define MC_MATRIX               14
+#define MC_STARFALL             15
+#define MC_BALL                 16
+#define MC_BALLS                17
+#define MC_RAINBOW              18
+#define MC_RAINBOW_DIAG         19
+#define MC_FIRE                 20
+#define MC_IMAGE                21
 
-// эффекты, в которых могут отображаться часы в наложении
+// не забудьте указать количество режимов для корректного переключения с последнего на первый
+// количество кастомных режимов (которые переключаются сами или кнопкой)
+#if (USE_ANIMATION == 1)  // Анимация в bitmap.h - фреймы подготовлены только для матрицы 16x16
+#define MODES_AMOUNT 29   
+#else
+#define MODES_AMOUNT 28
+#endif
+
+// Порядок следования эффектов и игр в демо-режиме (см. customModes() в custom.ino) ID с 0 до MODES_AMOUNT-1
+// Если требуется изменить порядок следования эффектов в демо-режиме - (а также добавить/удалить режимы) - редактируйте
+// последовательность тут. Наличие - тут и в customModes() в custom.ino
+#define DEMO_TEXT_0              0
+#define DEMO_TEXT_1              1
+#define DEMO_TEXT_2              2
+#define DEMO_NOISE_MADNESS       3
+#define DEMO_NOISE_CLOUD         4
+#define DEMO_NOISE_LAVA          5
+#define DEMO_NOISE_PLASMA        6
+#define DEMO_NOISE_RAINBOW       7
+#define DEMO_NOISE_RAINBOW_STRIP 8
+#define DEMO_NOISE_ZEBRA         9
+#define DEMO_NOISE_FOREST       10
+#define DEMO_NOISE_OCEAN        11
+#define DEMO_SNOW               12
+#define DEMO_SPARKLES           13
+#define DEMO_MATRIX             14
+#define DEMO_STARFALL           15
+#define DEMO_BALL               16
+#define DEMO_BALLS              17
+#define DEMO_RAINBOW            18
+#define DEMO_RAINBOW_DIAG       19
+#define DEMO_FIRE               20
+#define DEMO_SNAKE              21
+#define DEMO_TETRIS             22
+#define DEMO_MAZE               23
+#define DEMO_RUNNER             24
+#define DEMO_FLAPPY             25
+#define DEMO_ARKANOID           26
+#define DEMO_ANIMATION          27
+#define DEMO_CLOCK              28
+
+// Типы эффектов (см. выше), в которых могут отображаться часы в наложении
 #if (USE_CLOCK == 1 && OVERLAY_CLOCK == 1)
 byte overlayList[] = {
   MC_NOISE_MADNESS,
@@ -156,46 +197,38 @@ byte overlayList[] = {
 };
 #endif
 
-// не забудьте указать количество режимов для корректного переключения с последнего на первый
-// количество кастомных режимов (которые переключаются сами или кнопкой)
-#if (USE_ANIMATION == 1 && WIDTH == 16 && HEIGHT == 16)  // Анимация в bitmap.h - фреймы подготовлены только для матрицы 16x16
-#define MODES_AMOUNT 29   
-#else
-#define MODES_AMOUNT 28
-#endif
+// Сквозная нумерация (ID) эффектов в группе эффектов
+#define EFFECT_BREATH               0
+#define EFFECT_COLOR                1
+#define EFFECT_SNOW                 2
+#define EFFECT_BALL                 3
+#define EFFECT_RAINBOW              4
+#define EFFECT_RAINBOW_PIX          5
+#define EFFECT_FIRE                 6
+#define EFFECT_MATRIX               7
+#define EFFECT_BALLS                8
+#define EFFECT_CLOCK                9
+#define EFFECT_STARFALL            10
+#define EFFECT_SPARKLES            11
+#define EFFECT_RAINBOW_DIAG        12
+#define EFFECT_NOISE_MADNESS       13
+#define EFFECT_NOISE_CLOUD         14
+#define EFFECT_NOISE_LAVA          15
+#define EFFECT_NOISE_PLASMA        16
+#define EFFECT_NOISE_RAINBOW       17
+#define EFFECT_NOISE_RAINBOW_STRIP 18
+#define EFFECT_NOISE_ZEBRA         19
+#define EFFECT_NOISE_FOREST        20
+#define EFFECT_NOISE_OCEAN         21
+#define EFFECT_ANIMATION           22
 
-// Порядок следования эффектов и игр в демо-режиме (см. customModes() в custom.ino) ID с 0 до MODES_AMOUNT-1
-// Если требуется изменить порядок следования эффектов в демо-режиме - (а также добавить/удалить режимы) - редактируйте
-// последовательность тут. Наличие - тут и в customModes() в custom.ino
-#define DEMO_TEXT_0 0
-#define DEMO_TEXT_1 1
-#define DEMO_TEXT_2 2
-#define DEMO_NOISE_MADNESS 3
-#define DEMO_NOISE_CLOUD 4
-#define DEMO_NOISE_LAVA 5
-#define DEMO_NOISE_PLASMA 6
-#define DEMO_NOISE_RAINBOW 7
-#define DEMO_NOISE_RAINBOW_STRIP 8
-#define DEMO_NOISE_ZEBRA 9
-#define DEMO_NOISE_FOREST 10
-#define DEMO_NOISE_OCEAN 11
-#define DEMO_SNOW 12
-#define DEMO_SPARKLES 13
-#define DEMO_MATRIX 14
-#define DEMO_STARFALL 15
-#define DEMO_BALL 16
-#define DEMO_BALLS 17
-#define DEMO_RAINBOW 18
-#define DEMO_RAINBOW_DIAG 19
-#define DEMO_FIRE 20
-#define DEMO_SNAKE 21
-#define DEMO_TETRIS 22
-#define DEMO_MAZE 23
-#define DEMO_RUNNER 24
-#define DEMO_FLAPPY 25
-#define DEMO_ARKANOID 26
-#define DEMO_CLOCK 27
-#define DEMO_ANIMATION 28
+// Сквозная нумерация (ID) игр в группе игр
+#define GAME_SNAKE                  0
+#define GAME_TETRIS                 1
+#define GAME_MAZE                   2
+#define GAME_RUNNER                 3
+#define GAME_FLAPPY                 4
+#define GAME_ARKANOID               5
 
 #if (SMOOTH_CHANGE == 1)
   byte fadeMode = 4;
@@ -262,14 +295,14 @@ uint32_t autoplayTime = ((long)AUTOPLAY_PERIOD * 1000); // секунды -> м�
 uint32_t autoplayTimer;
 
 #include "timerMinim.h"
-timerMinim effectTimer(D_EFFECT_SPEED);
-timerMinim gameTimer(DEMO_GAME_SPEED);
-timerMinim scrollTimer(D_TEXT_SPEED);
-timerMinim changeTimer(70);
-timerMinim halfsecTimer(500);
-timerMinim idleTimer(idleTime);
+timerMinim effectTimer(D_EFFECT_SPEED);  // Таймер скорости эффекта (шага выполнения эффекта)
+timerMinim gameTimer(DEMO_GAME_SPEED);   // Таймер скорости игры (шага выполнения игры)
+timerMinim scrollTimer(D_TEXT_SPEED);    // Таймерпрокрутки текста эффекта бегущей строки
+timerMinim changeTimer(70);              // Таймер шага плавной смены режима - Fade
+timerMinim halfsecTimer(500);            // Полусекундный таймер точек часов
+timerMinim idleTimer(idleTime);          // Таймер бездействия ручного управлениядля автоперехода а демо-режим 
 
-#include "bitmap2.h"          // файлы с картинками анимации
+#include "bitmap2.h"                     // файлы с картинками анимации
 
 // Раскомментируйте следующую строку, если параметры подключения к WiFi-серверу задаются
 // явным образом в блоке ниже. Если строка закомментирована - блок определения параметров подключения в
@@ -302,7 +335,7 @@ unsigned int localPort = 2390;  // local port to listen for UDP packets
   byte init_time = 0;
   bool useNtp = true;
   
-  timerMinim ntpTimer(1000 * 60 * SYNC_TIME_PERIOD);            // Сверяем время через SYNC_TIME_PERIOD минут
+  timerMinim ntpTimer(1000 * 60 * SYNC_TIME_PERIOD);            // Сверяем время с NTP-сервером через SYNC_TIME_PERIOD минут
 #endif
 
 void setup() {

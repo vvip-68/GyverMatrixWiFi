@@ -1,4 +1,7 @@
-#if (USE_ANIMATION == 1 && WIDTH == 16 && HEIGHT == 16)
+#if (USE_ANIMATION == 1)
+
+#define FRAME_WIDTH 16
+#define FRAME_HEIGHT 16
 
 const uint16_t frame00[] PROGMEM = {
   0x0000, 0x0000, 0x0000, 0x0000, 0x3000, 0xF000, 0xF800, 0xF800, 0xF800, 0xF000, 0x3000, 0x3000, 0x3000, 0x0000, 0x0000, 0x0000,
@@ -83,10 +86,13 @@ const uint16_t frame03[] PROGMEM = {
 timerMinim gifTimer(D_GIF_SPEED);
 
 void loadImage(const uint16_t (*frame)) {
-  uint16_t w; 
-  for (byte i = 0; i < WIDTH; i++) {
-    for (byte j = 0; j < HEIGHT; j++) {
-      drawPixelXY(i, j, gammaCorrection(expandColor((pgm_read_word(&(frame[(HEIGHT - j - 1) * WIDTH + i]))))));
+  int8_t offset_x = (WIDTH - FRAME_WIDTH) / 2;
+  int8_t offset_y = (HEIGHT - FRAME_HEIGHT) / 2;
+  for (byte i = 0; i < FRAME_WIDTH; i++) {
+    if (offset_x + i < 0 || offset_x + i > WIDTH - 1) continue;
+    for (byte j = 0; j < FRAME_HEIGHT; j++) {
+      if (offset_y + j < 0  || offset_y + j > HEIGHT - 1) continue;
+      drawPixelXY(offset_x + i, offset_y + j, gammaCorrection(expandColor((pgm_read_word(&(frame[(HEIGHT - j - 1) * WIDTH + i]))))));
     }
   }  
   // да, тут происходит лютенький п@здец, а именно:
