@@ -1,4 +1,4 @@
-![PROJECT_PHOTO](https://github.com/vvip-68/GyverMatrixWiFi/raw/master/schemes/scheme.png)
+![PROJECT_PHOTO](https://github.com/vvip-68/GyverMatrixWiFi/blob/master/proj_img.jpg)
 
 # Адресная матрица на NodeMCU с управлением по WiFi
 * [Описание проекта](#chapter-0)
