@@ -57,69 +57,69 @@
 
 void customModes() {
   switch (thisMode) {    
-    case 0: 
+    case DEMO_TEXT_0: 
       text = runningText == "" ? "Gyver Matrix" : runningText;
       fillString(text, CRGB::RoyalBlue);
       break;
-    case 1: 
+    case DEMO_TEXT_1: 
       text = runningText == "" ? "РАДУГА" : runningText;
       fillString(text, 1);
       break;
-    case 2: 
+    case DEMO_TEXT_2: 
       text = runningText == "" ? "RGB LED" : runningText;
       fillString(text, 2);
       break;
-    case 3: madnessNoise();
+    case DEMO_NOISE_MADNESS: madnessNoise();
       break;
-    case 4: cloudNoise();
+    case DEMO_NOISE_CLOUD: cloudNoise();
       break;
-    case 5: lavaNoise();
+    case DEMO_NOISE_LAVA: lavaNoise();
       break;
-    case 6: plasmaNoise();
+    case DEMO_NOISE_PLASMA: plasmaNoise();
       break;
-    case 7: rainbowNoise();
+    case DEMO_NOISE_RAINBOW: rainbowNoise();
       break;
-    case 8: rainbowStripeNoise();
+    case DEMO_NOISE_RAINBOW_STRIP: rainbowStripeNoise();
       break;
-    case 9: zebraNoise();
+    case DEMO_NOISE_ZEBRA: zebraNoise();
       break;
-    case 10: forestNoise();
+    case DEMO_NOISE_FOREST: forestNoise();
       break;
-    case 11: oceanNoise();
+    case DEMO_NOISE_OCEAN: oceanNoise();
       break;
-    case 12: snowRoutine();
+    case DEMO_SNOW: snowRoutine();
       break;
-    case 13: sparklesRoutine();
+    case DEMO_SPARKLES: sparklesRoutine();
       break;
-    case 14: matrixRoutine();
+    case DEMO_MATRIX: matrixRoutine();
       break;
-    case 15: starfallRoutine();
+    case DEMO_STARFALL: starfallRoutine();
       break;
-    case 16: ballRoutine();
+    case DEMO_BALL: ballRoutine();
       break;
-    case 17: ballsRoutine();
+    case DEMO_BALLS: ballsRoutine();
       break;
-    case 18: rainbowRoutine();
+    case DEMO_RAINBOW: rainbowRoutine();
       break;
-    case 19: rainbowDiagonalRoutine();
+    case DEMO_RAINBOW_DIAG: rainbowDiagonalRoutine();
       break;
-    case 20: fireRoutine();
+    case DEMO_FIRE: fireRoutine();
       break;
-    case 21: snakeRoutine();
+    case DEMO_SNAKE: snakeRoutine();
       break;
-    case 22: tetrisRoutine();
+    case DEMO_TETRIS: tetrisRoutine();
       break;
-    case 23: mazeRoutine();
+    case DEMO_MAZE: mazeRoutine();
       break;
-    case 24: runnerRoutine();
+    case DEMO_RUNNER: runnerRoutine();
       break;
-    case 25: flappyRoutine();
+    case DEMO_FLAPPY: flappyRoutine();
       break;
-    case 26: arkanoidRoutine();
+    case DEMO_ARKANOID: arkanoidRoutine();
       break;
-    case 27: clockRoutine();
+    case DEMO_CLOCK: clockRoutine();
       break;
-    case 28: animation();
+    case DEMO_ANIMATION: animation();
       break;
   }
 }
@@ -145,8 +145,25 @@ static void prevMode() {
 }
 
 void nextModeHandler() {
-  thisMode++;
-  if (thisMode >= MODES_AMOUNT) thisMode = 0;
+  byte aCnt = 0;
+  byte curMode = thisMode;
+  
+  while (aCnt < MODES_AMOUNT) {
+    // Берем следующий режим по циклу режимов
+    aCnt++; thisMode++;  
+    if (thisMode >= MODES_AMOUNT) thisMode = 0;
+
+    // Если новый режим отмечен флагом "использовать" - используем его, иначе берем следующий (и проверяем его)
+    if (getUsageForMode(thisMode)) break;
+    
+    // Если перебрали все и ни у адного нет флага "использовать" - не обращаем внимание на флаг, используем следующий
+    if (aCnt >= MODES_AMOUNT) {
+      thisMode = curMode++;
+      if (thisMode >= MODES_AMOUNT) thisMode = 0;
+      break;
+    }    
+  }
+  
   loadingFlag = true;
   gamemodeFlag = false;
   autoplayTimer = millis();
@@ -156,8 +173,24 @@ void nextModeHandler() {
 }
 
 void prevModeHandler() {
-  thisMode--;
-  if (thisMode < 0) thisMode = MODES_AMOUNT - 1;
+  byte aCnt = 0;
+  byte curMode = thisMode;
+  while (aCnt < MODES_AMOUNT) {
+    // Берем предыдущий режим по циклу режимов
+    aCnt++; thisMode--;  
+    if (thisMode < 0) thisMode = MODES_AMOUNT - 1;
+
+    // Если новый режим отмечен флагом "использовать" - используем его, иначе берем следующий (и проверяем его)
+    if (getUsageForMode(thisMode)) break;
+    
+    // Если перебрали все и ни у адного нет флага "использовать" - не обращаем внимание на флаг, используем следующий
+    if (aCnt >= MODES_AMOUNT) {
+      thisMode = curMode--;
+      if (thisMode < 0) thisMode = MODES_AMOUNT - 1;
+      break;
+    }    
+  }
+
   loadingFlag = true;
   gamemodeFlag = false;
   autoplayTimer = millis();
@@ -167,7 +200,7 @@ void prevModeHandler() {
 }
 
 void setTimersForMode(byte aMode) {
-  if (aMode >= 0 && aMode < 3) {
+  if (aMode == DEMO_TEXT_0 || aMode == DEMO_TEXT_1 || aMode == DEMO_TEXT_2) {
     // Это бегущий текст  
     scrollSpeed = getScrollSpeed();
     scrollTimer.setInterval(scrollSpeed);
@@ -183,6 +216,26 @@ void setTimersForMode(byte aMode) {
         gameTimer.setInterval(gameSpeed);
       }
     }
+  }
+}
+
+boolean getUsageForMode(byte aMode) {
+  if (aMode == DEMO_TEXT_0 || aMode == DEMO_TEXT_1 || aMode == DEMO_TEXT_2) {
+    // Это бегущий текст  
+    return getUseTextInDemo();
+  } else {
+    
+    byte tmp_effect = mapModeToEffect(aMode);
+    if (tmp_effect != 255) {
+      return getEffectUsage(tmp_effect);
+    }
+
+    byte tmp_game = mapModeToGame(aMode);
+    if (tmp_game != 255) {
+      return getGameUsage(tmp_game);
+    }
+
+    return true;
   }
 }
 
@@ -227,7 +280,7 @@ void customRoutine() {
   if (!gamemodeFlag) {
 
     // Беугщая строка - таймер внутри fillString (runningText.ino)
-    if (thisMode >=0 && thisMode < 3) { 
+    if (thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2) {
       customModes();
       FastLED.show();
     } 

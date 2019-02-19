@@ -75,7 +75,8 @@ void bluetoothRoutine() {
     }
 
     // Бегущая строка (0,1,2) или Часы в основном режиме и эффект Дыхание или Цвета, Радуга пикс
-    else if ((thisMode < 3 || thisMode == 27) && effectsFlag && isColorEffect(effect)) { 
+    else if ((thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2 || thisMode == DEMO_CLOCK) && effectsFlag && isColorEffect(effect)) { 
+
       // Подготовить изображение
       customModes();
       // Наложить эффект Дыхание / Цвета и вывести в матрицу
@@ -451,7 +452,7 @@ void parsing() {
                                     // И так и так не хорошо. Как починить? 
         } else {
           // Если при переключении в ручной режим был демонстрационный режим бегущей строки - включить ручной режим бегщей строки
-          if (intData[1] == 0 || (intData[1] == 1 && thisMode < 3)) {
+          if (intData[1] == 0 || (intData[1] == 1 && (thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2))) {
             loadingFlag = true;
             runningFlag = true;          
           }

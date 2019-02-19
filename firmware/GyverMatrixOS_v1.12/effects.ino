@@ -1,18 +1,14 @@
 // эффекты
 
 // **************** НАСТРОЙКИ ЭФФЕКТОВ ****************
-// эффект "синусоиды" - ОТКЛЮЧЕН
-#define WAVES_AMOUNT 2    // количество синусоид
-
 // эффект "шарики"
 #define BALLS_AMOUNT 3    // количество "шариков"
 #define CLEAR_PATH 1      // очищать путь
 #define BALL_TRACK 1      // (0 / 1) - вкл/выкл следы шариков
-#define DRAW_WALLS 0      // режим с рисованием препятствий для шаров (не работает на ESP и STM32)
 #define TRACK_STEP 70     // длина хвоста шарика (чем больше цифра, тем хвост короче)
 
 // эффект "квадратик"
-#define BALL_SIZE 3       // размер шара
+#define BALL_SIZE 3       // размер квадрата
 #define RANDOM_COLOR 1    // случайный цвет при отскоке
 
 // эффект "огонь"
@@ -356,26 +352,6 @@ void ballsRoutine() {
 
   // движение шариков
   for (byte j = 0; j < BALLS_AMOUNT; j++) {
-
-    // отскок от нарисованных препятствий
-    if (DRAW_WALLS) {
-      uint32_t thisColor = getPixColorXY(coord[j][0] / 10 + 1, coord[j][1] / 10);
-      if (thisColor == globalColor/* && vector[j][0] > 0*/) {
-        vector[j][0] = -vector[j][0];
-      }
-      thisColor = getPixColorXY(coord[j][0] / 10 - 1, coord[j][1] / 10);
-      if (thisColor == globalColor/* && vector[j][0] < 0*/) {
-        vector[j][0] = -vector[j][0];
-      }
-      thisColor = getPixColorXY(coord[j][0] / 10, coord[j][1] / 10 + 1);
-      if (thisColor == globalColor/* && vector[j][1] > 0*/) {
-        vector[j][1] = -vector[j][1];
-      }
-      thisColor = getPixColorXY(coord[j][0] / 10, coord[j][1] / 10 - 1);
-      if (thisColor == globalColor/* && vector[j][1] < 0*/) {
-        vector[j][1] = -vector[j][1];
-      }
-    }
 
     // движение шариков
     for (byte i = 0; i < 2; i++) {

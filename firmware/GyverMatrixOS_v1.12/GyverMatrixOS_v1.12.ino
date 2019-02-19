@@ -108,6 +108,7 @@ byte COLOR_MODE = 0;           // Режим цвета часов
 #define MAX_EFFECT 22         // количество эффектов, определенных в прошивке
 #define MAX_GAME 6            // количество игр, определенных в прошивке
 
+// ID эффектов (или групп - текст, игры)
 #define MC_TEXT 0
 #define MC_CLOCK 1
 #define MC_GAME 2
@@ -154,6 +155,47 @@ byte overlayList[] = {
   MC_FIRE
 };
 #endif
+
+// не забудьте указать количество режимов для корректного переключения с последнего на первый
+// количество кастомных режимов (которые переключаются сами или кнопкой)
+#if (USE_ANIMATION == 1 && WIDTH == 16 && HEIGHT == 16)  // Анимация в bitmap.h - фреймы подготовлены только для матрицы 16x16
+#define MODES_AMOUNT 29   
+#else
+#define MODES_AMOUNT 28
+#endif
+
+// Порядок следования эффектов и игр в демо-режиме (см. customModes() в custom.ino) ID с 0 до MODES_AMOUNT-1
+// Если требуется изменить порядок следования эффектов в демо-режиме - (а также добавить/удалить режимы) - редактируйте
+// последовательность тут. Наличие - тут и в customModes() в custom.ino
+#define DEMO_TEXT_0 0
+#define DEMO_TEXT_1 1
+#define DEMO_TEXT_2 2
+#define DEMO_NOISE_MADNESS 3
+#define DEMO_NOISE_CLOUD 4
+#define DEMO_NOISE_LAVA 5
+#define DEMO_NOISE_PLASMA 6
+#define DEMO_NOISE_RAINBOW 7
+#define DEMO_NOISE_RAINBOW_STRIP 8
+#define DEMO_NOISE_ZEBRA 9
+#define DEMO_NOISE_FOREST 10
+#define DEMO_NOISE_OCEAN 11
+#define DEMO_SNOW 12
+#define DEMO_SPARKLES 13
+#define DEMO_MATRIX 14
+#define DEMO_STARFALL 15
+#define DEMO_BALL 16
+#define DEMO_BALLS 17
+#define DEMO_RAINBOW 18
+#define DEMO_RAINBOW_DIAG 19
+#define DEMO_FIRE 20
+#define DEMO_SNAKE 21
+#define DEMO_TETRIS 22
+#define DEMO_MAZE 23
+#define DEMO_RUNNER 24
+#define DEMO_FLAPPY 25
+#define DEMO_ARKANOID 26
+#define DEMO_CLOCK 27
+#define DEMO_ANIMATION 28
 
 #if (SMOOTH_CHANGE == 1)
   byte fadeMode = 4;
@@ -228,15 +270,6 @@ timerMinim halfsecTimer(500);
 timerMinim idleTimer(idleTime);
 
 #include "bitmap2.h"          // файлы с картинками анимации
-
-// не забудьте указать количество режимов для корректного переключения с последнего на первый
-// количество кастомных режимов (которые переключаются сами или кнопкой)
-#if (USE_ANIMATION == 1 && WIDTH == 16 && HEIGHT == 16)  // Анимация в bitmap.h - фреймы подготовлены только для матрицы 16x16
-#define MODES_AMOUNT 29   
-#else
-#define MODES_AMOUNT 28
-#endif
-
 
 // Раскомментируйте следующую строку, если параметры подключения к WiFi-серверу задаются
 // явным образом в блоке ниже. Если строка закомментирована - блок определения параметров подключения в
