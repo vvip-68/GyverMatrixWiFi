@@ -768,8 +768,10 @@ void sendPageParams(int page) {
 #else
       str+="|EC:X";  // X - параметр не используется (неприменим)
 #endif      
-      str+="|UE:";
-      if (getEffectUsage(effect)) str+="1;"; else str+="0;";
+      if (isColorEffect(effect)) 
+          str+="|UE:X";  // X - параметр не используется (неприменим)
+      else    
+          str+="|UE:" + (getEffectUsage(effect) ? str+="1;" : str+="0;");
       break;
     case 6:  // Игры. Вернуть: Номер игры; Вкл.выкл; Яркость; Скорость игры; Использовать в демо
       str="$18 GM:"+String(game+1) + "|GS:";

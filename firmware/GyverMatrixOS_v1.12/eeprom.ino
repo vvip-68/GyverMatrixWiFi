@@ -349,8 +349,8 @@ bool getUseTextInDemo() {
 }
 
 void setUseTextInDemo(boolean use) {  
-  if (value != getUseTextInDemo()) {
-    EEPROMwrite(15, value);
+  if (use != getUseTextInDemo()) {
+    EEPROMwrite(15, use);
     eepromModified = true;
   }
 }
