@@ -143,16 +143,20 @@ void parsing() {
     4 - яркость - $4 value;
     5 - картинка построчно $5 Y colorHEX X|colorHEX X|...|colorHEX X;
     6 - текст $6 some text
-    7 - управление текстом: $7 1; пуск, $7 0; стоп
+    7 - управление текстом: $7 1 пуск; $7 0 стоп; $7 2 использовать в демо-режиме; $7 3 НЕ использовать в демо-режиме; 
     8 - эффект
-      - $8 0 номерЭффекта;
+      - $8 0 номер эффекта;
       - $8 1 N X старт/стоп; N - номер эффекта, X=0 - стоп X=1 - старт 
+      - $8 2 N X вкл/выкл использовать в демо-режиме; N - номер эффекта, X=0 - не использовать X=1 - использовать 
     9 - игра
+      - $9 0 номер игры; 
+      - $9 1 N X старт/стоп; N - номер игры, X=0 - стоп X=1 - старт 
+      - $9 2 N X вкл/выкл использовать в демо-режиме; N - номер игры, X=0 - не использовать X=1 - использовать 
     10 - кнопка вверх
     11 - кнопка вправо
     12 - кнопка вниз
     13 - кнопка влево
-    14 - пауза в игре
+    14 - не используется
     15 - скорость $15 скорость таймер; 0 - таймер эффектов, 1 - таймер скроллинга текста 2 - таймер игр
     16 - Режим смены эффектов: $16 value; N:  0 - Autoplay on; 1 - Autoplay off; 2 - PrevMode; 3 - NextMode
     17 - Время автосмены эффектов и бездействия: $17 сек сек;
@@ -288,77 +292,104 @@ void parsing() {
         break;
       case 7:
         BTcontrol = true;
-        if (intData[1] == 1) runningFlag = true;
-        if (intData[1] == 0) runningFlag = false;
-        if (runningFlag) {
-          gamemodeFlag = false;
-          drawingFlag = false;
-          if (!isColorEffect(effect)) {
-            effectsFlag = false;
+        if (intData[1] == 0 || intData[1] == 1) {
+          if (intData[1] == 1) runningFlag = true;
+          if (intData[1] == 0) runningFlag = false;
+          if (runningFlag) {
+            gamemodeFlag = false;
+            drawingFlag = false;
+            if (!isColorEffect(effect)) {
+              effectsFlag = false;
+            }
           }
+        }
+        else if (intData[1] == 2 || intData[1] == 3) {
+          // Вкл/Выкл "Использовать в демо-режиме": 2 - вкл; 3 - выкл;
+          setUseTextInDemo(intData[1] == 2);
         }
         sendAcknowledge();
         break;
       case 8:
         effect = intData[2];
-        gamemodeFlag = false;
-        loadingFlag = !isColorEffect(effect);
-        effectsFlag = true;
-        if (!BTcontrol) BTcontrol = !isColorEffect(effect);     // При установке эффекта дыхание / цвета / радуга пикс - переключаться в управление по BT не нужно
-        if (!isColorEffect(effect)) {
-          drawingFlag = false;
-          runningFlag = false;
-        }
-        
-        effectSpeed = getEffectSpeed(effect);
-        effectTimer.setInterval(effectSpeed);
-                
-        // intData[1] : дейстие -> 0 - выбор эффекта  = 1 - старт/стоп
+        // intData[1] : дейстие -> 0 - выбор эффекта;  1 - старт/стоп; 2 - вкл/выкл "использовать в демо-режиме"
         // intData[2] : номер эффекта
-        // intData[3] : 0 - стоп 1 - старт
-        effectsFlag = intData[1] == 0 || (intData[1] == 1 && intData[3] == 1); // выбор эффекта - сразу запускать
-        
-        // Найти соответствие thisMode указанному эффекту. 
-        // Дльнейшее отображение изображения эффекта будет выполняться стандартной процедурой customRoutin()
-        if (!isColorEffect(effect)) {            
-           b_tmp = mapEffectToMode(effect);
-           if (b_tmp != 255) thisMode = b_tmp;
-        }
+        // intData[3] : действие = 1: 0 - стоп 1 - старт; действие = 2: 0 - выкл; 1 - вкл;
+        if (intData[1] == 0 || intData[1] == 1) {
+          gamemodeFlag = false;
+          loadingFlag = !isColorEffect(effect);
+          effectsFlag = true;
+          if (!BTcontrol) BTcontrol = !isColorEffect(effect);     // При установке эффекта дыхание / цвета / радуга пикс - переключаться в управление по BT не нужно
+          if (!isColorEffect(effect)) {
+            drawingFlag = false;
+            runningFlag = false;
+          }
+          
+          effectSpeed = getEffectSpeed(effect);
+          effectTimer.setInterval(effectSpeed);
 
-        breathBrightness = globalBrightness;
-        FastLED.setBrightness(globalBrightness);    
-        
-        // Для "0" - отправляются параметры, подтверждение отправлять не нужно. Для остальных - нужно
-        if (intData[1] == 0) {
+          effectsFlag = intData[1] == 0 || (intData[1] == 1 && intData[3] == 1); // выбор эффекта - сразу запускать
+  
+          // Найти соответствие thisMode указанному эффекту. 
+          // Дльнейшее отображение изображения эффекта будет выполняться стандартной процедурой customRoutin()
+          if (!isColorEffect(effect)) {            
+             b_tmp = mapEffectToMode(effect);           
+            if (b_tmp != 255) thisMode = b_tmp;
+          }
+
+          breathBrightness = globalBrightness;
+          FastLED.setBrightness(globalBrightness);    
+          
+        } else if (intData[1] == 2) {
+          // Вкл/выкл использование эффекта в демо-режиме
+          saveEffectUsage(effect, intData[3] == 1); 
+        }
+                
+        // Для "0" и "2" - отправляются параметры, подтверждение отправлять не нужно. Для остальных - нужно
+        if (intData[1] == 0 || intData[1] == 2) {
           sendPageParams(5);
         } else { 
           sendAcknowledge();
         }
         break;
       case 9:        
-        BTcontrol = true;        
-        if (!drawingFlag || runningFlag) {        // начать новую игру при переходе со всех режимов кроме рисования
-          loadingFlag = true;    
-          FastLED.clear(); 
-          FastLED.show(); 
-        }
-        effectsFlag = false;
-        runningFlag = false;
-        controlFlag = false;                      // Посе начала игры пока не трогаем кнопки - игра автоматическая 
-        drawingFlag = false;
-        gamemodeFlag = true;
-        gamePaused = true;
-        game = intData[1];
+        game = intData[2];
+        // intData[1] : дейстие -> 0 - выбор игры;  1 - старт/стоп; 2 - вкл/выкл "использовать в демо-режиме"
+        // intData[2] : номер игры
+        // intData[3] : действие = 1: 0 - стоп 1 - старт; действие = 2: 0 - выкл; 1 - вкл;
+        if (intData[1] == 0 || intData[1] == 1) {
+          BTcontrol = true;        
+          if (!drawingFlag || (drawingFlag && game != 0) || runningFlag) {        // начать новую игру при переходе со всех режимов кроме рисования
+            loadingFlag = true;                                                   // если игра в паузе змейка (game==0) - продолжить, иначе начать  новую игру 
+            FastLED.clear(); 
+            FastLED.show(); 
+          }
+          effectsFlag = false;
+          drawingFlag = false;
+          runningFlag = false;
+          controlFlag = false;                                                    // После начала игры пока не трогаем кнопки - игра автоматическая 
+          gamemodeFlag = true;
+  
+          gameSpeed = getGameSpeed(game);
+          gameTimer.setInterval(gameSpeed);        
+          
+          // Найти соответствие thisMode указанной игре. 
+          // Дльнейшее отображение изображения эффекта будет выполняться стандартной процедурой customRoutin()
+          b_tmp = mapGameToMode(game);
+          if (b_tmp != 255) thisMode = b_tmp;
+          
+          gamePaused = intData[1] == 0 || (intData[1] == 1 && intData[3] == 0);  
         
-        // Найти соответствие thisMode указанной игре. 
-        // Дльнейшее отображение изображения эффекта будет выполняться стандартной процедурой customRoutin()
-        b_tmp = mapGameToMode(game);
-        if (b_tmp != 255) thisMode = b_tmp;
-
-        gameSpeed = getGameSpeed(game);
-        gameTimer.setInterval(gameSpeed);        
-        // Отправить программе актуальное состояние параметров эффектов (6 - страница "Игры")
-        sendPageParams(6);
+        } else if (intData[1] == 2) {
+          // Вкл/выкл использование игры в демо-режиме
+          saveGameUsage(game, intData[3] == 1); 
+        }
+                
+        // Для "0" и "2" - отправляются параметры, подтверждение отправлять не нужно. Для остальных - нужно
+        if (intData[1] == 0 || intData[1] == 2) {
+          sendPageParams(6);
+        } else { 
+          sendAcknowledge();
+        }
         break;        
       case 10:
         BTcontrol = true;        
@@ -393,24 +424,7 @@ void parsing() {
         sendAcknowledge();
         break;
       case 14:
-        BTcontrol = true;
-        b_tmp = mapGameToMode(game);
-        if (b_tmp != 255) {
-          thisMode = b_tmp;
-          if (!drawingFlag || (drawingFlag && game != 0) || runningFlag) {        // начать новую игру при переходе со всех режимов кроме рисования
-            loadingFlag = true;                                                   // если игра в паузе змейка - продолжить, иначе начать  новую игру 
-            FastLED.clear(); 
-            FastLED.show(); 
-          }
-          effectsFlag = false;
-          drawingFlag = false;
-          runningFlag = false;
-          gamemodeFlag = true;
-          gamePaused = intData[1] == 0;  
-          gameSpeed = getGameSpeed(game);
-          gameTimer.setInterval(gameSpeed);        
-        }
-        sendAcknowledge();
+        // не используется
         break;
       case 15: 
         if (intData[2] == 0) {
