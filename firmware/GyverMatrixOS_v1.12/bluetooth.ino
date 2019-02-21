@@ -791,6 +791,7 @@ void sendPageParams(int page) {
   }
   
   if (str.length() > 0) {
+    Serial.println(str);
     // Отправить клиенту запрошенные параметры страницы / режимов
     str.toCharArray(incomeBuffer, str.length()+1);    
     udp.beginPacket(udp.remoteIP(), udp.remotePort());
