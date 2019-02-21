@@ -358,8 +358,8 @@ void parsing() {
         // intData[3] : действие = 1: 0 - стоп 1 - старт; действие = 2: 0 - выкл; 1 - вкл;
         if (intData[1] == 0 || intData[1] == 1) {
           BTcontrol = true;        
-          if (!drawingFlag || (drawingFlag && game != 0) || runningFlag) {        // начать новую игру при переходе со всех режимов кроме рисования
-            loadingFlag = true;                                                   // если игра в паузе змейка (game==0) - продолжить, иначе начать  новую игру 
+          if (intData[1] == 0 && (!drawingFlag || (drawingFlag && game != 0) || runningFlag)) {  // начать новую игру при переходе со всех режимов кроме рисования
+            loadingFlag = true;                                                                  // если игра в паузе змейка (game==0) - продолжить, иначе начать  новую игру 
             FastLED.clear(); 
             FastLED.show(); 
           }
@@ -770,15 +770,19 @@ void sendPageParams(int page) {
 #endif      
       if (isColorEffect(effect)) 
           str+="|UE:X";  // X - параметр не используется (неприменим)
+      else if (getEffectUsage(effect))
+          str+="|UE:1";
       else    
-          str+="|UE:" + (getEffectUsage(effect) ? str+="1;" : str+="0;");
+          str+="|UE:0";
+      str+=";";
       break;
     case 6:  // Игры. Вернуть: Номер игры; Вкл.выкл; Яркость; Скорость игры; Использовать в демо
       str="$18 GM:"+String(game+1) + "|GS:";
       if (gamemodeFlag && !gamePaused)  str+="1|BR:"; else str+="0|BR:";
       str+=String(globalBrightness) + "|SG:" + String(constrain(map(gameSpeed, D_GAME_SPEED_MIN,D_GAME_SPEED_MAX, 0, 255), 0,255)); 
       str+="|UG:";
-      if (getGameUsage(game)) str+="1;"; else str+="0;";
+      if (getGameUsage(game)) str+="1"; else str+="0";
+      str+=";";
       break;
     case 7:  // Настройки часов. Вернуть: Оверлей вкл/выкл
 #if (USE_CLOCK == 1)      

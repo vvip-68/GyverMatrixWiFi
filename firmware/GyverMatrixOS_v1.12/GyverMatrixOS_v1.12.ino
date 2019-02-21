@@ -170,8 +170,8 @@ byte COLOR_MODE = 0;          // Режим цвета часов
 #define DEMO_RUNNER             24
 #define DEMO_FLAPPY             25
 #define DEMO_ARKANOID           26
-#define DEMO_ANIMATION          27
-#define DEMO_CLOCK              28
+#define DEMO_CLOCK              27
+#define DEMO_ANIMATION          28
 
 // Типы эффектов (см. выше), в которых могут отображаться часы в наложении
 #if (USE_CLOCK == 1 && OVERLAY_CLOCK == 1)
