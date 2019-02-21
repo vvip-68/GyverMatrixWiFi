@@ -354,3 +354,139 @@ void checkIdleState() {
     }
   }  
 }
+
+bool isColorEffect(byte effect) {
+  // Цветовые эффекты - Дыхание, Цвет или Радуга пикс.
+  // Они могут работать с custom демо режимами
+  return effect == EFFECT_BREATH || effect == EFFECT_COLOR || effect == EFFECT_RAINBOW_PIX;
+}
+
+byte mapEffectToMode(byte effect) {
+  byte tmp_mode = 255;
+  
+  switch (effect) {
+    case EFFECT_SNOW:                tmp_mode = DEMO_SNOW; break;                 // snowRoutine();
+    case EFFECT_BALL:                tmp_mode = DEMO_BALL; break;                 // ballRoutine();
+    case EFFECT_RAINBOW:             tmp_mode = DEMO_RAINBOW; break;              // rainbowRoutine();
+    case EFFECT_FIRE:                tmp_mode = DEMO_FIRE; break;                 // fireRoutine()
+    case EFFECT_MATRIX:              tmp_mode = DEMO_MATRIX; break;               // matrixRoutine();
+    case EFFECT_BALLS:               tmp_mode = DEMO_BALLS; break;                // ballsRoutine();
+    case EFFECT_CLOCK:               tmp_mode = DEMO_CLOCK; break;                // clockRoutine();
+    case EFFECT_STARFALL:            tmp_mode = DEMO_STARFALL; break;             // starfallRoutine()
+    case EFFECT_SPARKLES:            tmp_mode = DEMO_SPARKLES; break;             // sparklesRoutine()
+    case EFFECT_RAINBOW_DIAG:        tmp_mode = DEMO_RAINBOW_DIAG; break;         // rainbowDiagonalRoutine();
+    case EFFECT_NOISE_MADNESS:       tmp_mode = DEMO_NOISE_MADNESS;  break;       // madnessNoise();
+    case EFFECT_NOISE_CLOUD:         tmp_mode = DEMO_NOISE_CLOUD;  break;         // cloudNoise();
+    case EFFECT_NOISE_LAVA:          tmp_mode = DEMO_NOISE_LAVA;  break;          // lavaNoise();
+    case EFFECT_NOISE_PLASMA:        tmp_mode = DEMO_NOISE_PLASMA;  break;        // plasmaNoise();
+    case EFFECT_NOISE_RAINBOW:       tmp_mode = DEMO_NOISE_RAINBOW;  break;       // rainbowNoise();
+    case EFFECT_NOISE_RAINBOW_STRIP: tmp_mode = DEMO_NOISE_RAINBOW_STRIP;  break; // rainbowStripeNoise();
+    case EFFECT_NOISE_ZEBRA:         tmp_mode = DEMO_NOISE_ZEBRA;  break;         // zebraNoise();
+    case EFFECT_NOISE_FOREST:        tmp_mode = DEMO_NOISE_FOREST; break;         // forestNoise();
+    case EFFECT_NOISE_OCEAN:         tmp_mode = DEMO_NOISE_OCEAN; break;          // oceanNoise();
+    case EFFECT_ANIMATION:           tmp_mode = DEMO_ANIMATION; break;            // animation();
+
+    // Нет соответствия - выполняются для текущего режима thisMode
+    case EFFECT_BREATH:              // Дыхание
+    case EFFECT_COLOR:               // Цвет
+    case EFFECT_RAINBOW_PIX:         // Радуга пикс
+      break;
+  }
+
+  return tmp_mode;
+}
+
+byte mapGameToMode(byte game) {
+  byte tmp_mode = 255;
+  
+  switch (game) {
+    case GAME_SNAKE:    tmp_mode = DEMO_SNAKE;    break;  // snakeRoutine(); 
+    case GAME_TETRIS:   tmp_mode = DEMO_TETRIS;   break;  // tetrisRoutine();
+    case GAME_MAZE:     tmp_mode = DEMO_MAZE;     break;  // mazeRoutine();
+    case GAME_RUNNER:   tmp_mode = DEMO_RUNNER;   break;  // runnerRoutine();
+    case GAME_FLAPPY:   tmp_mode = DEMO_FLAPPY;   break;  // flappyRoutine();
+    case GAME_ARKANOID: tmp_mode = DEMO_ARKANOID; break;  // arkanoidRoutine();
+  }
+
+  return tmp_mode;
+}
+
+byte mapModeToEffect(byte aMode) {
+  byte tmp_effect = 255;
+  // Если режима нет в списке - ему нет соответствия среди эффектов - значит это игра или бегущий текст
+  switch (aMode) {
+    case DEMO_NOISE_MADNESS:        tmp_effect = EFFECT_NOISE_MADNESS; break;       // madnessNoise();
+    case DEMO_NOISE_CLOUD:          tmp_effect = EFFECT_NOISE_CLOUD; break;         // cloudNoise();
+    case DEMO_NOISE_LAVA:           tmp_effect = EFFECT_NOISE_LAVA; break;          // lavaNoise();
+    case DEMO_NOISE_PLASMA:         tmp_effect = EFFECT_NOISE_PLASMA; break;        // plasmaNoise();
+    case DEMO_NOISE_RAINBOW:        tmp_effect = EFFECT_NOISE_RAINBOW; break;       // rainbowNoise();
+    case DEMO_NOISE_RAINBOW_STRIP:  tmp_effect = EFFECT_NOISE_RAINBOW_STRIP; break; // rainbowStripeNoise();
+    case DEMO_NOISE_ZEBRA:          tmp_effect = EFFECT_NOISE_ZEBRA; break;         // zebraNoise();
+    case DEMO_NOISE_FOREST:         tmp_effect = EFFECT_NOISE_FOREST; break;        // forestNoise();
+    case DEMO_NOISE_OCEAN:          tmp_effect = EFFECT_NOISE_OCEAN; break;         // oceanNoise();
+    case DEMO_SNOW:                 tmp_effect = EFFECT_SNOW;  break;               // snowRoutine();
+    case DEMO_SPARKLES:             tmp_effect = EFFECT_SPARKLES; break;            // sparklesRoutine()
+    case DEMO_MATRIX:               tmp_effect = EFFECT_MATRIX;  break;             // matrixRoutine();
+    case DEMO_STARFALL:             tmp_effect = EFFECT_STARFALL; break;            // starfallRoutine()
+    case DEMO_BALL:                 tmp_effect = EFFECT_BALL;  break;               // ballRoutine();
+    case DEMO_BALLS:                tmp_effect = EFFECT_BALLS;  break;              // ballsRoutine();
+    case DEMO_RAINBOW:              tmp_effect = EFFECT_RAINBOW;  break;            // rainbowRoutine();
+    case DEMO_RAINBOW_DIAG:         tmp_effect = EFFECT_RAINBOW_DIAG; break;        // rainbowDiagonalRoutine();
+    case DEMO_FIRE:                 tmp_effect = EFFECT_FIRE;  break;               // fireRoutine()
+    case DEMO_ANIMATION:            tmp_effect = EFFECT_ANIMATION; break;           // animation();
+
+    case DEMO_TEXT_0 :  break;      // Бегущий текст
+    case DEMO_TEXT_1 :  break;      // Бегущий текст
+    case DEMO_TEXT_2 :  break;      // Бегущий текст
+
+    case DEMO_SNAKE: break;         // snakeRoutine(); 
+    case DEMO_TETRIS: break;        // tetrisRoutine();
+    case DEMO_MAZE: break;          // mazeRoutine();
+    case DEMO_RUNNER: break;        // runnerRoutine();
+    case DEMO_FLAPPY: break;        // flappyRoutine();
+    case DEMO_ARKANOID: break;      // arkanoidRoutine();
+    
+    case DEMO_CLOCK: break;         // clockRoutine();     
+  }
+  return tmp_effect;
+}
+
+byte mapModeToGame(byte aMode) {
+  byte tmp_game = 255;
+  // Если режима нет в списке - ему нет соответствия среди тгр - значит это эффект или бегущий текст
+  switch (aMode) {
+    case DEMO_NOISE_MADNESS:        break;       // madnessNoise();
+    case DEMO_NOISE_CLOUD:          break;       // cloudNoise();
+    case DEMO_NOISE_LAVA:           break;       // lavaNoise();
+    case DEMO_NOISE_PLASMA:         break;       // plasmaNoise();
+    case DEMO_NOISE_RAINBOW:        break;       // rainbowNoise();
+    case DEMO_NOISE_RAINBOW_STRIP:  break;       // rainbowStripeNoise();
+    case DEMO_NOISE_ZEBRA:          break;       // zebraNoise();
+    case DEMO_NOISE_FOREST:         break;       // forestNoise();
+    case DEMO_NOISE_OCEAN:          break;       // oceanNoise();
+    case DEMO_SNOW:                 break;       // snowRoutine();
+    case DEMO_SPARKLES:             break;       // sparklesRoutine()
+    case DEMO_MATRIX:               break;       // matrixRoutine();
+    case DEMO_STARFALL:             break;       // starfallRoutine()
+    case DEMO_BALL:                 break;       // ballRoutine();
+    case DEMO_BALLS:                break;       // ballsRoutine();
+    case DEMO_RAINBOW:              break;       // rainbowRoutine();
+    case DEMO_RAINBOW_DIAG:         break;       // rainbowDiagonalRoutine();
+    case DEMO_FIRE:                 break;       // fireRoutine()
+    case DEMO_ANIMATION:            break;       // animation();
+
+    case DEMO_TEXT_0:               break;       // Бегущий текст
+    case DEMO_TEXT_1:               break;       // Бегущий текст
+    case DEMO_TEXT_2:               break;       // Бегущий текст
+
+    case DEMO_SNAKE:    tmp_game = GAME_SNAKE;    break;     // snakeRoutine(); 
+    case DEMO_TETRIS:   tmp_game = GAME_TETRIS;   break;     // tetrisRoutine();
+    case DEMO_MAZE:     tmp_game = GAME_MAZE;     break;     // mazeRoutine();
+    case DEMO_RUNNER:   tmp_game = GAME_RUNNER;   break;     // runnerRoutine();
+    case DEMO_FLAPPY:   tmp_game = GAME_FLAPPY;   break;     // flappyRoutine();
+    case DEMO_ARKANOID: tmp_game = GAME_ARKANOID; break;     // arkanoidRoutine();
+
+    case DEMO_CLOCK:                break;  // clockRoutine();     
+  }
+  return tmp_game;
+}

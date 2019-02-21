@@ -348,6 +348,13 @@ bool getUseTextInDemo() {
   return EEPROMread(15) == 1;
 }
 
+void setUseTextInDemo(boolean use) {  
+  if (value != getUseTextInDemo()) {
+    EEPROMwrite(15, value);
+    eepromModified = true;
+  }
+}
+
 // ----------------------------------------------------------
 byte EEPROMread(byte addr) {    
   return EEPROM.read(addr);
@@ -415,5 +422,6 @@ byte getClockColorMode() { return COLOR_MODE; }
 void saveClockColorMode(byte ColorMode) { }
 #endif
 bool getUseTextInDemo() { return true; }
+void setUseTextInDemo(boolean use) {  }
 
 #endif
