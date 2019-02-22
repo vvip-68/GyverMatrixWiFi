@@ -97,6 +97,12 @@ byte CLOCK_ORIENT = 0;         // 0 горизонтальные, 1 вертик
 #define CLOCK_X_V (byte(float(WIDTH - (2*3 + 1)) / 2 + 0.51))   // 2 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
 #define CLOCK_Y_V (byte(float(HEIGHT - (2*5 + 1)) / 2 + 0.51))  // Две строки цифр 5 пикс высотой + 1 пробел между строкми / 2 - в центр
 
+#define CAL_X (byte(float(WIDTH - (4*3 + 1)) / 2 + 0.51))       // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
+#define CAL_Y (byte(float(HEIGHT - (2*5 + 1)) / 2 + 0.51))      // Две строки цифр 5 пикс высотой + 1 пробел между строкми / 2 - в центр
+
+byte CALENDAR_X = CAL_X;
+byte CALENDAR_Y = CAL_Y;
+
 byte CLOCK_X = CLOCK_X_H;     // Для вертикальных часов CLOCK_X_V и CLOCK_Y_V
 byte CLOCK_Y = CLOCK_Y_H;
 byte COLOR_MODE = 0;          // Режим цвета часов
@@ -242,6 +248,9 @@ byte overlayList[] = {
 
 #if (USE_CLOCK == 1)
   #include <OldTime.h>
+  boolean showDateInClock = true;  // Показывать дату при отображении часов
+  byte showDateDuration = 4;       // на 4 секунды
+  byte showDateInterval = 16;      // через каждые 16 секунд
 #endif
 
 String runningText = "";
@@ -278,7 +287,6 @@ int16_t ayear = 1970;
 boolean dotFlag;
 byte modeCode;                     // 0 бегущая, 1 часы, 2 игры, 3 нойс маднесс и далее, 21 гифка или картинка,
 boolean fullTextFlag = false;
-boolean clockSet = false;
 bool eepromModified = false;
 String text;
 

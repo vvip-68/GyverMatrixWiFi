@@ -93,7 +93,7 @@ void customModes() {
     case DEMO_RUNNER:              runnerRoutine(); break;
     case DEMO_FLAPPY:              flappyRoutine(); break;
     case DEMO_ARKANOID:            arkanoidRoutine(); break;
-    case DEMO_CLOCK:               clockRoutine(); break;
+    case DEMO_CLOCK:               clockRoutine(); break;      // calendarRoutine();
     case DEMO_ANIMATION:           animation(); break;
   }
 }

@@ -15,8 +15,13 @@
 CRGB contrastColor = CONTRAST_COLOR;
 byte clockHue;
 
+byte showDateState = false;           // false - отображаются часы; true - отображается дата
+long showDateStateLastChange = 0;     // Точка времени, когда отображение часов сменилось на отображение календаря и наоборот
+
 #if (OVERLAY_CLOCK == 1)
-CRGB overlayLEDs[75];
+CRGB overlayLEDs[165];                // По максимому календарь - шрифт 3x5 - 4 цифры в два ряда, по одному пробелу между цифрами и рядами - 15x11
+                                      // По максимуму часы шрифт 3x5 гориз - 4 цифры по одному пробелу между цифрами - 15x5, 
+                                      //                             верт - два ряда по две цифры по одному пробелу между цифрами и рядами - 7x11, 
 byte listSize = sizeof(overlayList);
 #endif
 
@@ -160,12 +165,12 @@ String dateCurrentTextLong() {
 }
 
 void clockColor() {
-  if (COLOR_MODE == 0) {
-    clockLED[0] = MIN_COLOR;
-    clockLED[1] = MIN_COLOR;
-    clockLED[2] = DOT_COLOR;
-    clockLED[3] = HOUR_COLOR;
-    clockLED[4] = HOUR_COLOR;
+  if (COLOR_MODE == 0) {       // для календаря -  
+    clockLED[0] = MIN_COLOR;   // число
+    clockLED[1] = MIN_COLOR;   // месяц
+    clockLED[2] = DOT_COLOR;   // разделитель числа/месяца
+    clockLED[3] = HOUR_COLOR;  // год 1-е две цифры
+    clockLED[4] = HOUR_COLOR;  // год 2-е две цифры
   } else if (COLOR_MODE == 1) {
     for (byte i = 0; i < 5; i++) clockLED[i] = CHSV(clockHue + HUE_GAP * i, 255, 255);
     clockLED[2] = CHSV(clockHue + 128 + HUE_GAP * 1, 255, 255); // точки делаем другой цвет
@@ -181,9 +186,6 @@ void clockColor() {
 // нарисовать часы
 void drawClock(byte hrs, byte mins, boolean dots, byte X, byte Y) {
 
-  hrs = hour();
-  mins = minute();
-  
   if (CLOCK_ORIENT == 0) {
     if (hrs > 9) drawDigit3x5(hrs / 10, X + (hrs / 10 == 1 ? 1 : 0), Y, clockLED[0]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
     drawDigit3x5(hrs % 10, X + 4, Y, clockLED[1]);
@@ -216,6 +218,27 @@ void drawClock(byte hrs, byte mins, boolean dots, byte X, byte Y) {
   }
 }
 
+// нарисовать часы
+void drawCalendar(byte aday, byte amnth, int16_t ayear, byte X, byte Y) {
+
+  // Число месяца
+  if (aday > 9) drawDigit3x5(aday / 10, X, Y + 6, clockLED[0]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
+  drawDigit3x5(aday % 10, X + 4, Y + 6, clockLED[0]);
+
+  // разделитель числа/месяца
+  drawPixelXY(X + 7, Y + 5, clockLED[2]);
+
+  // Месяц
+  if (amnth > 9) drawDigit3x5(amnth / 10, X + 8, Y + 6, clockLED[1]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
+  drawDigit3x5(amnth % 10, X + 12, Y + 6, clockLED[1]);
+
+  // Год  
+  drawDigit3x5(ayear / 1000, X, Y, clockLED[3]);
+  drawDigit3x5((ayear / 100) % 10, X + 4, Y, clockLED[3]);
+  drawDigit3x5((ayear / 10) % 10, X + 8, Y, clockLED[4]);
+  drawDigit3x5(ayear % 10, X + 12, Y, clockLED[4]);
+}
+
 void clockRoutine() {
   if (loadingFlag) {
     loadingFlag = false;
@@ -223,22 +246,45 @@ void clockRoutine() {
   }
 
   FastLED.clear();
-  if (!clockSet) {
-    clockTicker();
+  clockTicker();
+
+  if (!showDateInClock) {
+    // Отображать только часы
     drawClock(hrs, mins, dotFlag, CLOCK_X, CLOCK_Y);
   } else {
-    if (halfsecTimer.isReady()) {
-      dotFlag = !dotFlag;
-      if (dotFlag) clockColor();
-      else for (byte i = 0; i < 5; i++) clockLED[i].fadeToBlackBy(190);
+    // Отображать попеременно часы и календарь
+    if (showDateState)
+      drawCalendar(aday, amnth, ayear, CALENDAR_X, CALENDAR_Y);
+    else  
+      drawClock(hrs, mins, dotFlag, CLOCK_X, CLOCK_Y);
+    
+    if (millis() - showDateStateLastChange > (showDateState ? showDateDuration : showDateInterval) * 1000) {
+      showDateStateLastChange = millis();
+      showDateState = !showDateState;
     }
-    drawClock(hrs, mins, 1, CLOCK_X, CLOCK_Y);
   }
 }
 
-void clockTicker() {
-  if (halfsecTimer.isReady()) {
+void calendarRoutine() {
+  if (loadingFlag) {
+    loadingFlag = false;
+    modeCode = MC_CLOCK;
+  }
 
+  FastLED.clear();
+  clockTicker();
+  drawCalendar(aday, amnth, ayear, CALENDAR_X, CALENDAR_Y);
+}
+
+void clockTicker() {
+  hrs = hour();
+  mins = minute();
+  aday = day();
+  amnth = month();
+  ayear = year();
+  
+  if (halfsecTimer.isReady()) {
+    
     clockHue += HUE_STEP;
 
     #if (OVERLAY_CLOCK == 1)
