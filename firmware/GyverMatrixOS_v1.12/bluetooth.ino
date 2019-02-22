@@ -553,6 +553,16 @@ void parsing() {
              if (COLOR_MODE > 3) COLOR_MODE = 0;
              saveClockColorMode(COLOR_MODE);
              break;
+           case 6:               // $19 6 X; - Показывать дату в режиме часов  X: 0 - нет, 1 - да
+             showDateInClock = intData[2] == 1;
+             setShowDateInClock(showDateInClock);
+             break;
+           case 7:               // $19 7 D I; - Продолжительность отображения даты / часов (в секундах)
+             showDateDuration = intData[2];
+             showDateInterval = intData[3];
+             setShowDateDuration(showDateDuration);
+             setShowDateInterval(showDateInterval);
+             break;
         }
         sendAcknowledge();
 #endif        
@@ -720,6 +730,9 @@ void sendPageParams(int page) {
   // UT:X       использовать бегущую строку в демо-режиме 0-нет, 1-да
   // UE:X       использовать эффект в демо-режиме 0-нет, 1-да
   // UG:X       использовать игру в демо-режиме 0-нет, 1-да
+  // DC:X       показывать дату вместе с часами 0-нет, 1-да
+  // DD:число   время показа даты при отображении часов (в секундах)
+  // DI:число   интервал показа даты при отображении часов (в секундах)
   String str = "", color, text;
   boolean allowed;
   byte b_tmp;
@@ -788,8 +801,10 @@ void sendPageParams(int page) {
 #if (USE_CLOCK == 1)      
       str="$18 CE:"+String(getClockOverlayEnabled()) + "|CC:" + String(COLOR_MODE) + "|NP:"; 
       if (useNtp)  str+="1|NT:"; else str+="0|NT:";
-      str+=String(SYNC_TIME_PERIOD) + "|NZ:" + String(timeZoneOffset)  
-      + ";";
+      str+=String(SYNC_TIME_PERIOD) + "|NZ:" + String(timeZoneOffset) + "|DC:"; 
+      if (showDateInClock)  str+="1|DD:"; else str+="0|DD:";
+      str+=String(showDateDuration) + "|DI:" + String(showDateInterval); 
+      str+=";";
 #endif      
       break;
   }

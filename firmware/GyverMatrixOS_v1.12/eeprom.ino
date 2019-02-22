@@ -21,7 +21,10 @@ void loadSettings() {
   //   13 - ориентация часов: 0 - горизонтально; 1 - вертикально
   //   14 - цвет часов
   //   15 - использовать эффекты бегущего текста в демо режиме
-  //   16 - зарезервировано
+  //   16 - Отображать с часами текущую дату 
+  //   17 - Кол-во секунд отображения даты
+  //   18 - Кол-во секунд отображения часов
+  //   19 - зарезервировано
   //  ... - зарезервировано
   //   29 - зарезервировано
   //   30 - 30+(Nэфф*3)   - скорость эффекта
@@ -49,6 +52,9 @@ void loadSettings() {
     timeZoneOffset = (uint8_t)EEPROMread(12);
     CLOCK_ORIENT = EEPROMread(13) == 1 ? 1 : 0;
     COLOR_MODE = EEPROMread(14);
+    showDateInClock = EEPROMread(16) == 1;  
+    showDateDuration = EEPROMread(17);
+    showDateInterval = EEPROMread(18);
 #endif    
   } else {
     globalBrightness = BRIGHTNESS;
@@ -65,6 +71,9 @@ void loadSettings() {
     timeZoneOffset = 7;
     CLOCK_ORIENT = 0;
     COLOR_MODE = 0;
+    showDateInClock = true;  
+    showDateDuration = 5;
+    showDateInterval = 20;
 #endif    
   }
 
@@ -103,6 +112,9 @@ void saveDefaults() {
   EEPROMwrite(12, (byte)timeZoneOffset);
   EEPROMwrite(13, CLOCK_ORIENT == 1 ? 1 : 0);
   EEPROMwrite(14, COLOR_MODE);
+  EEPROMwrite(16, showDateInClock ? 1 : 0);
+  EEPROMwrite(17, showDateDuration);
+  EEPROMwrite(18, showDateInterval);
 #endif
 
   EEPROMwrite(15, 1);    // Использовать бегущий текст в демо-режиме: 0 - нет; 1 - да
@@ -320,7 +332,6 @@ void saveTimeZone(int8_t value) {
 int8_t getTimeZone() {
   return (int8_t)EEPROMread(12);
 }
-#endif
 
 byte getClockOrientation() {
   return EEPROMread(13) == 1 ? 1 : 0;
@@ -344,13 +355,48 @@ void saveClockColorMode(byte ColorMode) {
   }
 }
 
+bool getShowDateInClock() {
+  return EEPROMread(16) == 1;
+}
+
+void setShowDateInClock(boolean use) {  
+  if (use != getShowDateInClock()) {
+    EEPROMwrite(16, use ? 1 : 0);
+    eepromModified = true;
+  }
+}
+
+byte getShowDateDuration() {
+  return EEPROMread(17);
+}
+
+void setShowDateDuration(byte Duration) {
+  if (Duration != getShowDateDuration()) {
+    EEPROMwrite(17, Duration);
+    eepromModified = true;
+  }
+}
+
+byte getShowDateInterval() {
+  return EEPROMread(18);
+}
+
+void setShowDateInterval(byte Interval) {
+  if (Interval != getShowDateInterval()) {
+    EEPROMwrite(18, Interval);
+    eepromModified = true;
+  }
+}
+
+#endif
+
 bool getUseTextInDemo() {
   return EEPROMread(15) == 1;
 }
 
 void setUseTextInDemo(boolean use) {  
   if (use != getUseTextInDemo()) {
-    EEPROMwrite(15, use);
+    EEPROMwrite(15, use ? 1 : 0);
     eepromModified = true;
   }
 }
@@ -420,6 +466,12 @@ byte getClockOrientation() { return CLOCK_ORIENT; }
 void saveClockOrientation(byte orientation) { }
 byte getClockColorMode() { return COLOR_MODE; }
 void saveClockColorMode(byte ColorMode) { }
+bool getShowDateInClock() { return true; }
+void setShowDateInClock(boolean use) {  }
+byte getShowDateDuration() { return 5; }
+void setShowDateDuration(byte Duration) { }
+byte getShowDateInterval() { return 20; }
+void setShowDateInterval(byte Interval) { }
 #endif
 bool getUseTextInDemo() { return true; }
 void setUseTextInDemo(boolean use) {  }
