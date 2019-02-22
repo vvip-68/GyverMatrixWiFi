@@ -15,9 +15,6 @@
 CRGB contrastColor = CONTRAST_COLOR;
 byte clockHue;
 
-byte showDateState = false;           // false - отображаются часы; true - отображается дата
-long showDateStateLastChange = 0;     // Точка времени, когда отображение часов сменилось на отображение календаря и наоборот
-
 #if (OVERLAY_CLOCK == 1)
 CRGB overlayLEDs[165];                // По максимому календарь - шрифт 3x5 - 4 цифры в два ряда, по одному пробелу между цифрами и рядами - 15x11
                                       // По максимуму часы шрифт 3x5 гориз - 4 цифры по одному пробелу между цифрами - 15x5, 
@@ -219,17 +216,23 @@ void drawClock(byte hrs, byte mins, boolean dots, byte X, byte Y) {
 }
 
 // нарисовать часы
-void drawCalendar(byte aday, byte amnth, int16_t ayear, byte X, byte Y) {
+void drawCalendar(byte aday, byte amnth, int16_t ayear, boolean dots, byte X, byte Y) {
 
   // Число месяца
-  if (aday > 9) drawDigit3x5(aday / 10, X, Y + 6, clockLED[0]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
+  drawDigit3x5(aday / 10, X, Y + 6, clockLED[0]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
   drawDigit3x5(aday % 10, X + 4, Y + 6, clockLED[0]);
 
   // разделитель числа/месяца
-  drawPixelXY(X + 7, Y + 5, clockLED[2]);
-
+  if (dots) {
+    drawPixelXY(X + 7, Y + 5, clockLED[2]);
+  } else {
+    if (modeCode == MC_CLOCK) {
+      drawPixelXY(X + 7, Y + 5, 0);
+    }
+  }
+  
   // Месяц
-  if (amnth > 9) drawDigit3x5(amnth / 10, X + 8, Y + 6, clockLED[1]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
+  drawDigit3x5(amnth / 10, X + 8, Y + 6, clockLED[1]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
   drawDigit3x5(amnth % 10, X + 12, Y + 6, clockLED[1]);
 
   // Год  
@@ -254,7 +257,7 @@ void clockRoutine() {
   } else {
     // Отображать попеременно часы и календарь
     if (showDateState)
-      drawCalendar(aday, amnth, ayear, CALENDAR_X, CALENDAR_Y);
+      drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_X, CALENDAR_Y);
     else  
       drawClock(hrs, mins, dotFlag, CLOCK_X, CLOCK_Y);
     
@@ -273,7 +276,7 @@ void calendarRoutine() {
 
   FastLED.clear();
   clockTicker();
-  drawCalendar(aday, amnth, ayear, CALENDAR_X, CALENDAR_Y);
+  drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_X, CALENDAR_Y);
 }
 
 void clockTicker() {
@@ -333,6 +336,28 @@ void clockOverlayWrapV(byte posX, byte posY) {
 void clockOverlayUnwrapV(byte posX, byte posY) {
   byte thisLED = 0;
   for (byte i = posX; i < posX + 7; i++) {
+    for (byte j = posY; j < posY + 10; j++) {
+      leds[getPixelNumber(i, j)] = overlayLEDs[thisLED];
+      thisLED++;
+    }
+  }
+}
+
+void calendarOverlayWrap(byte posX, byte posY) {
+  byte thisLED = 0;
+  for (byte i = posX; i < posX + 15; i++) {
+    for (byte j = posY; j < posY + 10; j++) {
+      overlayLEDs[thisLED] = leds[getPixelNumber(i, j)];
+      thisLED++;
+    }
+  }
+  clockTicker();
+  drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_X, CALENDAR_Y);
+}
+
+void calendarOverlayUnwrap(byte posX, byte posY) {
+  byte thisLED = 0;
+  for (byte i = posX; i < posX + 15; i++) {
     for (byte j = posY; j < posY + 10; j++) {
       leds[getPixelNumber(i, j)] = overlayLEDs[thisLED];
       thisLED++;

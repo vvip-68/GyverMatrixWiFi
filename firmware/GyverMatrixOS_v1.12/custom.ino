@@ -270,10 +270,14 @@ void customRoutine() {
         boolean needOverlay = modeCode != MC_TEXT && overlayAllowed();
         if (needOverlay) {
           if (!loadingFlag && needUnwrap()) {
-            if (CLOCK_ORIENT == 0)
-              clockOverlayUnwrapH(CLOCK_X, CLOCK_Y);
-            else
-              clockOverlayUnwrapV(CLOCK_X, CLOCK_Y);
+            if (showDateInClock && showDateState) {
+                calendarOverlayUnwrap(CALENDAR_X, CALENDAR_Y);
+            } else {
+              if (CLOCK_ORIENT == 0)
+                clockOverlayUnwrapH(CLOCK_X, CLOCK_Y);
+              else
+                clockOverlayUnwrapV(CLOCK_X, CLOCK_Y);
+            }
           }
           if (loadingFlag) loadFlag2 = true;
         }
@@ -281,16 +285,27 @@ void customRoutine() {
 
         customModes();                // режимы крутятся, пиксели мутятся
 
+#if (USE_CLOCK == 1)
+    if (millis() - showDateStateLastChange > (showDateState ? showDateDuration : showDateInterval) * 1000) {
+      showDateStateLastChange = millis();
+      showDateState = !showDateState;
+    }
+#endif
+        
 #if (OVERLAY_CLOCK == 1 && USE_CLOCK == 1)
         if (needOverlay) {
-          if (CLOCK_ORIENT == 0)
-            clockOverlayWrapH(CLOCK_X, CLOCK_Y);
-          else  
-            clockOverlayWrapV(CLOCK_X, CLOCK_Y);
+          if (showDateInClock && showDateState) {
+            calendarOverlayWrap(CALENDAR_X, CALENDAR_Y);
+          } else {
+            if (CLOCK_ORIENT == 0)
+              clockOverlayWrapH(CLOCK_X, CLOCK_Y);
+            else  
+              clockOverlayWrapV(CLOCK_X, CLOCK_Y);
+          }
           if (loadFlag2) {
             setOverlayColors();
             loadFlag2 = false;
-          }
+          }          
         }
         loadingFlag = false;
 #endif

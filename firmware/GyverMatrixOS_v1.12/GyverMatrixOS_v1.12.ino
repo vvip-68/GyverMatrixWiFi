@@ -97,8 +97,8 @@ byte CLOCK_ORIENT = 0;         // 0 горизонтальные, 1 вертик
 #define CLOCK_X_V (byte(float(WIDTH - (2*3 + 1)) / 2 + 0.51))   // 2 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
 #define CLOCK_Y_V (byte(float(HEIGHT - (2*5 + 1)) / 2 + 0.51))  // Две строки цифр 5 пикс высотой + 1 пробел между строкми / 2 - в центр
 
-#define CAL_X (byte(float(WIDTH - (4*3 + 1)) / 2 + 0.51))       // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
-#define CAL_Y (byte(float(HEIGHT - (2*5 + 1)) / 2 + 0.51))      // Две строки цифр 5 пикс высотой + 1 пробел между строкми / 2 - в центр
+#define CAL_X (byte(float(WIDTH - (4*3 + 1)) / 2 ))             // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
+#define CAL_Y (byte(float(HEIGHT - (2*5 + 1)) / 2))             // Две строки цифр 5 пикс высотой + 1 пробел между строкми / 2 - в центр
 
 byte CALENDAR_X = CAL_X;
 byte CALENDAR_Y = CAL_Y;
@@ -248,9 +248,11 @@ byte overlayList[] = {
 
 #if (USE_CLOCK == 1)
   #include <OldTime.h>
-  boolean showDateInClock = true;  // Показывать дату при отображении часов
-  byte showDateDuration = 4;       // на 4 секунды
-  byte showDateInterval = 16;      // через каждые 16 секунд
+  boolean showDateInClock = true;    // Показывать дату при отображении часов
+  byte showDateDuration = 5;         // на 5 секунд
+  byte showDateInterval = 20;        // через каждые 20 секунд
+  byte showDateState = false;        // false - отображаются часы; true - отображается дата
+  long showDateStateLastChange = 0;  // Время, когда отображение часов сменилось на отображение календаря и наоборот
 #endif
 
 String runningText = "";
