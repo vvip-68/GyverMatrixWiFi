@@ -317,7 +317,7 @@ void parsing() {
         // intData[3] : действие = 1: 0 - стоп 1 - старт; действие = 2: 0 - выкл; 1 - вкл;
         if (intData[1] == 0 || intData[1] == 1) {
           gamemodeFlag = false;
-          loadingFlag = !isColorEffect(effect);
+          loadingFlag = intData[1] == 0 && !isColorEffect(effect);
           effectsFlag = true;
           if (!BTcontrol) BTcontrol = !isColorEffect(effect);     // При установке эффекта дыхание / цвета / радуга пикс - переключаться в управление по BT не нужно
           if (!isColorEffect(effect)) {
