@@ -6,13 +6,16 @@
 #define MIN_COLOR CRGB::White          // цвет минут
 #define HOUR_COLOR CRGB::White         // цвет часов
 #define DOT_COLOR CRGB::White          // цвет точек
-#define CONTRAST_COLOR CRGB::Orange    // контрастный цвет часов
+
+#define NORMAL_CLOCK_COLOR CRGB::White // Нормальный цвет монохромных цветов
+#define CONTRAST_COLOR_1 CRGB::Orange  // контрастный цвет часов
+#define CONTRAST_COLOR_2 CRGB::Green   // контрастный цвет часов
+#define CONTRAST_COLOR_3 CRGB::Black   // контрастный цвет часов
 
 #define HUE_STEP 5          // шаг цвета часов в режиме радужной смены
 #define HUE_GAP 30          // шаг цвета между цифрами в режиме радужной смены
 
 // ****************** ДЛЯ РАЗРАБОТЧИКОВ ****************
-CRGB contrastColor = CONTRAST_COLOR;
 byte clockHue;
 
 #if (OVERLAY_CLOCK == 1)
@@ -27,7 +30,7 @@ CRGB clockLED[5] = {HOUR_COLOR, HOUR_COLOR, DOT_COLOR, MIN_COLOR, MIN_COLOR};
 
 // send an NTP request to the time server at the given address
  unsigned long sendNTPpacket(IPAddress& address) {
-  Serial.println("sending NTP packet...");
+  Serial.println(F("Отправка NTP пакета..."));
   // set all bytes in the buffer to 0
   memset(packetBuffer, 0, NTP_PACKET_SIZE);
   // Initialize values needed to form NTP request
@@ -50,7 +53,7 @@ CRGB clockLED[5] = {HOUR_COLOR, HOUR_COLOR, DOT_COLOR, MIN_COLOR, MIN_COLOR};
 }
 
 void parseNTP() {
-    Serial.println("Parsing NTP data");
+    Serial.println(F("Разбор пакета NTP"));
     ntp_t = 0;
     init_time = 1;
     //udp.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
@@ -62,7 +65,7 @@ void parseNTP() {
     // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
     unsigned long seventyYears = 2208988800UL ;
     time_t t = secsSince1900 - seventyYears + (timeZoneOffset) * 3600;
-    Serial.print("Seconds since 1970: ");
+    Serial.print(F("Секунд с 1970: "));
     Serial.println(t);
     setTime(t);
 }
@@ -89,7 +92,6 @@ boolean overlayAllowed() {
     }
   }
 
-  // Эффекты Дыхание, Цвета, Радуга пикс. и Часы, a также функция isColorEffect() есть только при включенных опциях BT_MODE или USE_WIFI
   // Оверлей разрешен настройками параметров эффекта? (в эффектах Дыхание, Цвета, Радуга пикс. и Часы оверлей часов не разрешен)
   if (allowed && BTcontrol && effectsFlag && !(isColorEffect(effect) || effect == MC_CLOCK)) {
     allowed = getEffectClock(effect);   
@@ -144,30 +146,26 @@ String dateCurrentTextLong() {
   String sMnth = "";
   String sYear = String(ayear);
   switch (amnth) {
-    case  1: sMnth = " января "; break;
-    case  2: sMnth = " февраля "; break;
-    case  3: sMnth = " марта "; break;
-    case  4: sMnth = " апреля "; break;
-    case  5: sMnth = " мая "; break;
-    case  6: sMnth = " июня "; break;
-    case  7: sMnth = " июля "; break;
-    case  8: sMnth = " августа "; break;
-    case  9: sMnth = " сентября "; break;
-    case 10: sMnth = " октября "; break;
-    case 11: sMnth = " ноября "; break;
-    case 12: sMnth = " декабря "; break;
+    case  1: sMnth = F(" января ");   break;
+    case  2: sMnth = F(" февраля ");  break;
+    case  3: sMnth = F(" марта ");    break;
+    case  4: sMnth = F(" апреля ");   break;
+    case  5: sMnth = F(" мая ");      break;
+    case  6: sMnth = F(" июня ");     break;
+    case  7: sMnth = F(" июля ");     break;
+    case  8: sMnth = F(" августа ");  break;
+    case  9: sMnth = F(" сентября "); break;
+    case 10: sMnth = F(" октября ");  break;
+    case 11: sMnth = F(" ноября ");   break;
+    case 12: sMnth = F(" декабря ");  break;
   }  
   if (sDay.length() > 2) sDay = sDay.substring(1);
   return sDay + sMnth + sYear + " года";
 }
 
 void clockColor() {
-  if (COLOR_MODE == 0) {       // для календаря -  
-    clockLED[0] = MIN_COLOR;   // число
-    clockLED[1] = MIN_COLOR;   // месяц
-    clockLED[2] = DOT_COLOR;   // разделитель числа/месяца
-    clockLED[3] = HOUR_COLOR;  // год 1-е две цифры
-    clockLED[4] = HOUR_COLOR;  // год 2-е две цифры
+  if (COLOR_MODE == 0) {       
+    for (byte i = 0; i < 5; i++) clockLED[i] = NORMAL_CLOCK_COLOR;
   } else if (COLOR_MODE == 1) {
     for (byte i = 0; i < 5; i++) clockLED[i] = CHSV(clockHue + HUE_GAP * i, 255, 255);
     clockLED[2] = CHSV(clockHue + 128 + HUE_GAP * 1, 255, 255); // точки делаем другой цвет
@@ -177,15 +175,26 @@ void clockColor() {
     clockLED[2] = CHSV(clockHue + 128 + HUE_GAP * 1, 255, 255); // точки делаем другой цвет
     clockLED[3] = CHSV(clockHue + HUE_GAP * 2, 255, 255);
     clockLED[4] = CHSV(clockHue + HUE_GAP * 2, 255, 255);
+  } else if (COLOR_MODE == 3) {// для календаря -  
+    clockLED[0] = HOUR_COLOR;  // число
+    clockLED[1] = HOUR_COLOR;  // месяц
+    clockLED[2] = DOT_COLOR;   // разделитель числа/месяца
+    clockLED[3] = MIN_COLOR;   // год 1-е две цифры
+    clockLED[4] = MIN_COLOR;   // год 2-е две цифры
   }
 }
 
 // нарисовать часы
 void drawClock(byte hrs, byte mins, boolean dots, byte X, byte Y) {
-
+  byte h10 = hrs / 10;
+  byte h01 = hrs % 10;
+  byte m10 = mins / 10;
+  byte m01 = mins % 10;
+  
   if (CLOCK_ORIENT == 0) {
-    if (hrs > 9) drawDigit3x5(hrs / 10, X + (hrs / 10 == 1 ? 1 : 0), Y, clockLED[0]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
-    drawDigit3x5(hrs % 10, X + 4, Y, clockLED[1]);
+    //if (hrs > 9) 
+    drawDigit3x5(h10, X + (h10 == 1 ? 1 : 0), Y, clockLED[0]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
+    drawDigit3x5(h01, X + 4, Y, clockLED[1]);
     if (dots) {
       drawPixelXY(X + 7, Y + 1, clockLED[2]);
       drawPixelXY(X + 7, Y + 3, clockLED[2]);
@@ -195,12 +204,12 @@ void drawClock(byte hrs, byte mins, boolean dots, byte X, byte Y) {
         drawPixelXY(X + 7, Y + 3, 0);
       }
     }
-    drawDigit3x5(mins / 10, X + 8, Y, clockLED[3]);
-    drawDigit3x5(mins % 10, X + 12 + (mins % 10 == 1 ? -1 : 0), Y, clockLED[4]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать влево на 1 колонку
+    drawDigit3x5(m10, X + 8, Y, clockLED[3]);
+    drawDigit3x5(m01, X + 12 + (m01 == 1 ? -1 : 0) + (m10 == 1 && m01 != 1 ? -1 : 0) , Y, clockLED[4]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать влево на 1 колонку
   } else { // Вертикальные часы
     //if (hrs > 9) // Так реально красивей
-    drawDigit3x5(hrs / 10, X, Y + 6, clockLED[0]);
-    drawDigit3x5(hrs % 10, X + 4, Y + 6, clockLED[1]);
+    drawDigit3x5(h10, X, Y + 6, clockLED[0]);
+    drawDigit3x5(h01, X + 4, Y + 6, clockLED[1]);
     if (dots) { // Мигающие точки легко ассоциируются с часами
       drawPixelXY(X + 1, Y + 5, clockLED[2]);
       drawPixelXY(X + 5, Y + 5, clockLED[2]);
@@ -210,8 +219,8 @@ void drawClock(byte hrs, byte mins, boolean dots, byte X, byte Y) {
         drawPixelXY(X + 5, Y + 5, 0);
       }
     }
-    drawDigit3x5(mins / 10, X, Y, clockLED[3]);
-    drawDigit3x5(mins % 10, X + 4, Y, clockLED[4]);
+    drawDigit3x5(m10, X, Y, clockLED[3]);
+    drawDigit3x5(m01, X + 4, Y, clockLED[4]);
   }
 }
 
@@ -375,37 +384,58 @@ boolean needUnwrap() {
   else return false;
 }
 
-void contrastClock() {
-  for (byte i = 0; i < 5; i++) clockLED[i] = contrastColor;
+void contrastClock() {  
+  for (byte i = 0; i < 5; i++) clockLED[i] = NORMAL_CLOCK_COLOR;
+}
+
+void contrastClockA() {  
+  for (byte i = 0; i < 5; i++) clockLED[i] = CONTRAST_COLOR_1;
+}
+
+void contrastClockB() {
+  for (byte i = 0; i < 5; i++) clockLED[i] = CONTRAST_COLOR_2;
+}
+
+void contrastClockC(){
+  for (byte i = 0; i < 5; i++) clockLED[i] = CONTRAST_COLOR_3;  
 }
 
 void setOverlayColors() {
-  switch (modeCode) {
-    case MC_CLOCK: 
-    case MC_GAME: 
-    case MC_SPARKLES:
-    case MC_MATRIX:
-    case MC_STARFALL:
-    case MC_BALL:
-    case MC_BALLS: 
-    case MC_FIRE: 
-    case MC_NOISE_RAINBOW:
-    case MC_NOISE_RAINBOW_STRIP: 
-    case MC_RAINBOW:
-    case MC_RAINBOW_DIAG: 
-      clockColor();
-      break;
-    case MC_SNOW:
-    case MC_NOISE_ZEBRA: 
-    case MC_NOISE_MADNESS:
-    case MC_NOISE_CLOUD:
-    case MC_NOISE_LAVA:
-    case MC_NOISE_PLASMA:
-    case MC_NOISE_FOREST:
-    case MC_NOISE_OCEAN: 
-      contrastClock();
-      break;
+  if (COLOR_MODE == 0) {
+    switch (modeCode) {
+      case MC_CLOCK: 
+      case MC_GAME: 
+      case MC_SPARKLES:
+      case MC_MATRIX:
+      case MC_STARFALL:
+      case MC_FIRE: 
+      case MC_BALL:
+      case MC_BALLS: 
+      case MC_NOISE_RAINBOW:
+      case MC_NOISE_RAINBOW_STRIP: 
+      case MC_RAINBOW:
+      case MC_RAINBOW_DIAG: 
+        contrastClock();
+        break;
+      case MC_SNOW:
+      case MC_NOISE_ZEBRA: 
+      case MC_NOISE_MADNESS:
+      case MC_NOISE_CLOUD:
+      case MC_NOISE_FOREST:
+      case MC_NOISE_OCEAN: 
+        contrastClockA();
+        break;
+      case MC_NOISE_PLASMA:
+      case MC_NOISE_LAVA:
+        contrastClockB();
+        break;
+      case MC_DAWN_ALARM:
+        contrastClockC();
+        break;
+    }
   }
+  else
+    clockColor();
 }
 
 #else

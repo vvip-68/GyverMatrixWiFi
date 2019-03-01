@@ -297,7 +297,6 @@ void SolveMaze(char *maze, int width, int height) {
   unsigned int attempts;
   while (x != width - 2 || y != height - 2) {
     if (attempts++ > maxSolves) {   // если решатель не может найти решение (maxSolves в 5 раз больше числа клеток лабиринта)
-      //Serial.println("pizdetc");    // ну пиздец, что сказать
       break;                        // прервать решение
     }
     dx = 0; dy = 0;

@@ -26,7 +26,7 @@ void bluetoothRoutine() {
       if (WifiTimer.isReady() && wifi_connected) {  
         if (useNtp) {
           if (ntp_t > 0 && millis() - ntp_t > 3000) {
-            Serial.println("NTP request timeout!");
+            Serial.println(F("Таймаут NTP запроса!"));
             init_time = 0;
             ntp_t = 0;
           }
@@ -78,7 +78,7 @@ void bluetoothRoutine() {
     else if ((thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2 || thisMode == DEMO_CLOCK) && effectsFlag && isColorEffect(effect)) { 
 
       // Подготовить изображение
-      customModes();
+      customModes(thisMode);
       // Наложить эффект Дыхание / Цвета и вывести в матрицу
       effects();
     } else {
@@ -301,6 +301,7 @@ void parsing() {
             if (!isColorEffect(effect)) {
               effectsFlag = false;
             }
+            FastLED.setBrightness(globalBrightness);    
           }
         }
         else if (intData[1] == 2 || intData[1] == 3) {
@@ -378,7 +379,8 @@ void parsing() {
           if (b_tmp != 255) thisMode = b_tmp;
           
           gamePaused = intData[1] == 0 || (intData[1] == 1 && intData[3] == 0);  
-        
+          FastLED.setBrightness(globalBrightness);    
+
         } else if (intData[1] == 2) {
           // Вкл/выкл использование игры в демо-режиме
           saveGameUsage(game, intData[3] == 1); 
@@ -592,20 +594,20 @@ void parsing() {
         
         delay(0);            // ESP8266 при вызове delay отпрабатывает стек IP протокола, дадим ему поработать        
 
-        Serial.print("UDP пакeт размером ");
+        Serial.print(F("UDP пакeт размером "));
         Serial.print(packetSize);
-        Serial.print(" от ");
+        Serial.print(F(" от "));
         IPAddress remote = udp.remoteIP();
         for (int i = 0; i < 4; i++) {
           Serial.print(remote[i], DEC);
           if (i < 3) {
-            Serial.print(".");
+            Serial.print(F("."));
           }
         }
-        Serial.print(", port ");
+        Serial.print(F(", порт "));
         Serial.println(udp.remotePort());
         if (udp.remotePort() == localPort) {
-          Serial.print("Содержимое: ");
+          Serial.print(F("Содержимое: "));
           Serial.println(incomeBuffer);
         }
       }
@@ -762,7 +764,7 @@ void sendPageParams(int page) {
     case 5:  // Эффекты. Вернуть: Номер эффекта, Остановлен или играет; Яркость; Скорость эффекта; Оверлей часов; Использовать в демо 
       allowed = false;
 #if (USE_CLOCK == 1 && OVERLAY_CLOCK == 1)      
-      b_tmp = mapEffectToMode(effect);
+      b_tmp = mapEffectToModeCode(effect); 
       if (b_tmp != 255) {
         for (byte i = 0; i < sizeof(overlayList); i++) {
           allowed = (b_tmp == overlayList[i]);
@@ -774,7 +776,7 @@ void sendPageParams(int page) {
       if (effectsFlag)  str+="1|BR:"; else str+="0|BR:";
       str+=String(globalBrightness) + "|SE:" + String(constrain(map(effectSpeed, D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0, 255), 0,255));
 #if (USE_CLOCK == 1)      
-      if (isColorEffect(effect) || !allowed || effect == 9) 
+      if (isColorEffect(effect) || !allowed || effect == EFFECT_CLOCK) 
           str+="|EC:X";  // X - параметр не используется (неприменим)
       else    
           str+="|EC:" + String(getEffectClock(effect));

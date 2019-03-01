@@ -55,8 +55,82 @@
 // case <номер>: <эффект>;
 //  break;
 
-void customModes() {
-  switch (thisMode) {    
+void customRoutine() {
+   
+  if (!gamemodeFlag) {
+
+    // Беугщая строка - таймер внутри fillString (runningText.ino)
+    if (thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2) {
+      customModes(thisMode);
+      FastLED.show();
+    } 
+
+    // Эффекты - возможно наложение часов
+    else {
+      doEffectWithOverlay(thisMode); 
+    }
+  } 
+
+  // Игры - таймер внутри игр
+  else {
+    customModes(thisMode);
+  }  
+}
+
+void doEffectWithOverlay(byte aMode) {
+  if (effectTimer.isReady()) {
+
+#if (OVERLAY_CLOCK == 1 && USE_CLOCK == 1)
+    boolean loadFlag2;
+    boolean needOverlay = modeCode != MC_TEXT && overlayAllowed();
+    if (needOverlay) {
+      if (!loadingFlag && needUnwrap()) {
+        if (showDateInClock && showDateState) {
+            calendarOverlayUnwrap(CALENDAR_X, CALENDAR_Y);
+        } else {
+          if (CLOCK_ORIENT == 0)
+            clockOverlayUnwrapH(CLOCK_X, CLOCK_Y);
+          else
+            clockOverlayUnwrapV(CLOCK_X, CLOCK_Y);
+        }
+      }
+      if (loadingFlag) loadFlag2 = true;
+    }
+#endif
+
+    customModes(aMode);                // режимы крутятся, пиксели мутятся
+
+#if (USE_CLOCK == 1)
+    if (millis() - showDateStateLastChange > (showDateState ? showDateDuration : showDateInterval) * 1000) {
+      showDateStateLastChange = millis();
+      showDateState = !showDateState;
+    }
+#endif
+        
+#if (OVERLAY_CLOCK == 1 && USE_CLOCK == 1)
+    if (needOverlay) {
+      if (showDateInClock && showDateState) {
+        calendarOverlayWrap(CALENDAR_X, CALENDAR_Y);
+      } else {
+        if (CLOCK_ORIENT == 0)
+          clockOverlayWrapH(CLOCK_X, CLOCK_Y);
+        else  
+          clockOverlayWrapV(CLOCK_X, CLOCK_Y);
+      }
+      if (loadFlag2) {
+        setOverlayColors();
+        loadFlag2 = false;
+      }          
+    }
+    loadingFlag = false;
+#endif
+        FastLED.show();
+      }
+}
+
+void customModes(byte aMode) {
+  
+  switch (aMode) {    
     case DEMO_TEXT_0: 
       text = runningText == "" ? "Gyver Matrix" : runningText;
       fillString(text, CRGB::RoyalBlue);
@@ -93,8 +167,13 @@ void customModes() {
     case DEMO_RUNNER:              runnerRoutine(); break;
     case DEMO_FLAPPY:              flappyRoutine(); break;
     case DEMO_ARKANOID:            arkanoidRoutine(); break;
-    case DEMO_CLOCK:               clockRoutine(); break;      // calendarRoutine();
+    case DEMO_CLOCK:               clockRoutine(); break;
     case DEMO_ANIMATION:           animation(); break;
+    case DEMO_DAWN_ALARM:          dawnProcedure(); break;
+
+    // Специальные режимы - доступные только для вызова из эффекта рассвета - dawnProcedure()
+    case DEMO_DAWN_ALARM_SPIRAL:   dawnLampSpiral(); break;
+    case DEMO_DAWN_ALARM_SQUARE:   dawnLampSquare(); break;
   }
 }
 
@@ -144,6 +223,7 @@ void nextModeHandler() {
   setTimersForMode(thisMode);
   FastLED.clear();
   FastLED.show();
+  FastLED.setBrightness(globalBrightness);
 }
 
 void prevModeHandler() {
@@ -172,6 +252,7 @@ void prevModeHandler() {
   setTimersForMode(thisMode);
   FastLED.clear();
   FastLED.show();
+  FastLED.setBrightness(globalBrightness);
 }
 
 void setTimersForMode(byte aMode) {
@@ -249,76 +330,6 @@ void modeFader() {
   }
 }
 #endif
-
-void customRoutine() {
-   
-  if (!gamemodeFlag) {
-
-    // Беугщая строка - таймер внутри fillString (runningText.ino)
-    if (thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2) {
-      customModes();
-      FastLED.show();
-    } 
-
-    // Эффекты - возможно наложение часов
-    else {
-      
-      if (effectTimer.isReady()) {
-        
-#if (OVERLAY_CLOCK == 1 && USE_CLOCK == 1)
-        boolean loadFlag2;
-        boolean needOverlay = modeCode != MC_TEXT && overlayAllowed();
-        if (needOverlay) {
-          if (!loadingFlag && needUnwrap()) {
-            if (showDateInClock && showDateState) {
-                calendarOverlayUnwrap(CALENDAR_X, CALENDAR_Y);
-            } else {
-              if (CLOCK_ORIENT == 0)
-                clockOverlayUnwrapH(CLOCK_X, CLOCK_Y);
-              else
-                clockOverlayUnwrapV(CLOCK_X, CLOCK_Y);
-            }
-          }
-          if (loadingFlag) loadFlag2 = true;
-        }
-#endif
-
-        customModes();                // режимы крутятся, пиксели мутятся
-
-#if (USE_CLOCK == 1)
-    if (millis() - showDateStateLastChange > (showDateState ? showDateDuration : showDateInterval) * 1000) {
-      showDateStateLastChange = millis();
-      showDateState = !showDateState;
-    }
-#endif
-        
-#if (OVERLAY_CLOCK == 1 && USE_CLOCK == 1)
-        if (needOverlay) {
-          if (showDateInClock && showDateState) {
-            calendarOverlayWrap(CALENDAR_X, CALENDAR_Y);
-          } else {
-            if (CLOCK_ORIENT == 0)
-              clockOverlayWrapH(CLOCK_X, CLOCK_Y);
-            else  
-              clockOverlayWrapV(CLOCK_X, CLOCK_Y);
-          }
-          if (loadFlag2) {
-            setOverlayColors();
-            loadFlag2 = false;
-          }          
-        }
-        loadingFlag = false;
-#endif
-        FastLED.show();
-      }
-    }
-  } 
-
-  // Игры - таймер внутри игр
-  else {
-    customModes();
-  }  
-}
 
 void checkIdleState() {
 
@@ -400,6 +411,45 @@ byte mapEffectToMode(byte effect) {
     case EFFECT_NOISE_FOREST:        tmp_mode = DEMO_NOISE_FOREST; break;         // forestNoise();
     case EFFECT_NOISE_OCEAN:         tmp_mode = DEMO_NOISE_OCEAN; break;          // oceanNoise();
     case EFFECT_ANIMATION:           tmp_mode = DEMO_ANIMATION; break;            // animation();
+    case EFFECT_DAWN_ALARM:          tmp_mode = DEMO_DAWN_ALARM; break;           // dawnProcedure();
+    
+
+    // Нет соответствия - выполняются для текущего режима thisMode
+    case EFFECT_BREATH:              // Дыхание
+    case EFFECT_COLOR:               // Цвет
+    case EFFECT_RAINBOW_PIX:         // Радуга пикс
+      break;
+  }
+
+  return tmp_mode;
+}
+
+byte mapEffectToModeCode(byte effect) {
+  byte tmp_mode = 255;
+  
+  switch (effect) {
+    case EFFECT_SNOW:                tmp_mode = MC_SNOW; break;                 // snowRoutine();
+    case EFFECT_BALL:                tmp_mode = MC_BALL; break;                 // ballRoutine();
+    case EFFECT_RAINBOW:             tmp_mode = MC_RAINBOW; break;              // rainbowRoutine();
+    case EFFECT_FIRE:                tmp_mode = MC_FIRE; break;                 // fireRoutine()
+    case EFFECT_MATRIX:              tmp_mode = MC_MATRIX; break;               // matrixRoutine();
+    case EFFECT_BALLS:               tmp_mode = MC_BALLS; break;                // ballsRoutine();
+    case EFFECT_CLOCK:               tmp_mode = MC_CLOCK; break;                // clockRoutine();
+    case EFFECT_STARFALL:            tmp_mode = MC_STARFALL; break;             // starfallRoutine()
+    case EFFECT_SPARKLES:            tmp_mode = MC_SPARKLES; break;             // sparklesRoutine()
+    case EFFECT_RAINBOW_DIAG:        tmp_mode = MC_RAINBOW_DIAG; break;         // rainbowDiagonalRoutine();
+    case EFFECT_NOISE_MADNESS:       tmp_mode = MC_NOISE_MADNESS;  break;       // madnessNoise();
+    case EFFECT_NOISE_CLOUD:         tmp_mode = MC_NOISE_CLOUD;  break;         // cloudNoise();
+    case EFFECT_NOISE_LAVA:          tmp_mode = MC_NOISE_LAVA;  break;          // lavaNoise();
+    case EFFECT_NOISE_PLASMA:        tmp_mode = MC_NOISE_PLASMA;  break;        // plasmaNoise();
+    case EFFECT_NOISE_RAINBOW:       tmp_mode = MC_NOISE_RAINBOW;  break;       // rainbowNoise();
+    case EFFECT_NOISE_RAINBOW_STRIP: tmp_mode = MC_NOISE_RAINBOW_STRIP;  break; // rainbowStripeNoise();
+    case EFFECT_NOISE_ZEBRA:         tmp_mode = MC_NOISE_ZEBRA;  break;         // zebraNoise();
+    case EFFECT_NOISE_FOREST:        tmp_mode = MC_NOISE_FOREST; break;         // forestNoise();
+    case EFFECT_NOISE_OCEAN:         tmp_mode = MC_NOISE_OCEAN; break;          // oceanNoise();
+    case EFFECT_ANIMATION:           tmp_mode = MC_IMAGE; break;                // animation();
+    case EFFECT_DAWN_ALARM:          tmp_mode = MC_DAWN_ALARM; break;           // dawnProcedure();
+    
 
     // Нет соответствия - выполняются для текущего режима thisMode
     case EFFECT_BREATH:              // Дыхание
@@ -449,6 +499,7 @@ byte mapModeToEffect(byte aMode) {
     case DEMO_RAINBOW_DIAG:         tmp_effect = EFFECT_RAINBOW_DIAG; break;        // rainbowDiagonalRoutine();
     case DEMO_FIRE:                 tmp_effect = EFFECT_FIRE;  break;               // fireRoutine()
     case DEMO_ANIMATION:            tmp_effect = EFFECT_ANIMATION; break;           // animation();
+    case DEMO_DAWN_ALARM:           tmp_effect = EFFECT_DAWN_ALARM; break;          // alarmProcedure();
 
     case DEMO_TEXT_0 :  break;      // Бегущий текст
     case DEMO_TEXT_1 :  break;      // Бегущий текст
@@ -489,7 +540,8 @@ byte mapModeToGame(byte aMode) {
     case DEMO_RAINBOW_DIAG:         break;       // rainbowDiagonalRoutine();
     case DEMO_FIRE:                 break;       // fireRoutine()
     case DEMO_ANIMATION:            break;       // animation();
-
+    case DEMO_DAWN_ALARM:           break;       // dawnProcedure; 
+    
     case DEMO_TEXT_0:               break;       // Бегущий текст
     case DEMO_TEXT_1:               break;       // Бегущий текст
     case DEMO_TEXT_2:               break;       // Бегущий текст

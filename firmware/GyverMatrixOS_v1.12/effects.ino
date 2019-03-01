@@ -452,3 +452,150 @@ void sparklesRoutine() {
   }
   fader(BRIGHT_STEP);
 }
+
+int8_t row, col;
+byte dawnBrightness;
+byte tailBrightnessStep;
+byte dawnColorIdx;
+byte dawnColorPrevIdx;
+byte downEffect = DEMO_DAWN_ALARM;
+boolean firstRowFlag;
+CHSV tailColor;
+
+// "Рассвет" - от красного к желтому - белому - голубому с плавным увеличением яркости;
+// Яркость меняется по таймеру - на каждое срабатывание таймера - +1 к яркости.
+// Диапазон изменения яркости - от MIN_DAWN_BRIGHT до MAX_DAWN_BRIGHT (количество шагов)
+// Время таймера увеличения яркости - время рассвета DAWN_NINUTES на количество шагов приращения яркости
+// Цветовой тон матрицы меняется каждые 16 шагов яркости
+byte dawnColorHue[16] PROGMEM = {0, 16, 28, 36, 44, 52, 57, 62, 64, 66, 66, 64, 62, 60, 128, 128};              // Цвет заполнения - HUE
+byte dawnColorSat[16] PROGMEM = {255, 250, 245, 235, 225, 210, 200, 185, 170, 155, 130, 105, 80, 50, 25, 80};   // Цвет заполнения - SAT
+
+byte MIN_DAWN_BRIGHT = 2;
+byte MAX_DAWN_BRIGHT = 255;
+byte DAWN_NINUTES = 20;
+
+// ********************* БУДИЛЬНИК-РАССВЕТ *********************
+void dawnProcedure() {
+  if (loadingFlag) {
+    modeCode = MC_DAWN_ALARM;
+
+    // Инициализация параметров изменения яркости, если в качестве рассвета используются 
+    // эффекты dawnLampSpiral() или dawnLampSquare()
+    row = 0, col = 0; 
+    dawnBrightness = MIN_DAWN_BRIGHT; 
+    tailBrightnessStep = 16;
+    firstRowFlag = true;
+    dawnColorIdx = 0;
+    dawnColorPrevIdx = 0;
+    tailColor = CHSV(0,0,0); 
+
+    FastLED.clear();  // очистить
+    FastLED.setBrightness(dawnBrightness);    
+    
+    dawnTimer.setInterval( (DAWN_NINUTES * 60 / (MAX_DAWN_BRIGHT - MIN_DAWN_BRIGHT)) * 1000);
+  }
+  
+  if (dawnTimer.isReady() && dawnBrightness < 255) {
+    dawnBrightness++;
+    FastLED.setBrightness(dawnBrightness);
+  }
+    
+  byte effect = downEffect; 
+  if (effect == DEMO_DAWN_ALARM) {
+    // Если устройство лампа (MATRIX_TYPE == 0) - матрица свернута в "трубу" - рассвет - огонек, бегущий вкруговую по спирали
+    // Если устройство плоская матрица в рамке (MATRIX_TYPE == 1) - рассвет - огонек, бегущий по спирали от центра матрицы к краям на плоскости
+    effect = MATRIX_TYPE == 0 ? DEMO_DAWN_ALARM_SPIRAL : DEMO_DAWN_ALARM_SQUARE;
+  }
+
+  customModes(effect);
+
+  // Сбрасывать флаг нужно ПОСЛЕ того как инициализированы И процедура рассвета И эффект,
+  // используемый в качестве рассвета
+  loadingFlag = false;
+}
+  
+// "Рассвет" по спирали на плоскости, для плоских матриц
+void dawnLampSquare() {
+
+  boolean flag = true;
+  int8_t x=col, y=row;
+
+  if (!firstRowFlag) fillAll(tailColor);
+
+  for (byte i=0; i<8; i++) {
+    x--;
+    if (x < 0) { x = WIDTH - 1; y--; }
+    if (y < 0) {
+      y = HEIGHT - 1;
+      flag = false;
+      if (firstRowFlag) break;
+    }
+    
+    byte idx = y > row ? dawnColorPrevIdx : dawnColorIdx;
+    byte dawnHue = pgm_read_byte(&(dawnColorHue[idx]));
+    byte dawnSat = pgm_read_byte(&(dawnColorSat[idx]));
+
+    tailColor = CHSV(dawnHue, dawnSat, 255 - i * tailBrightnessStep); 
+    drawPixelXY(x,y, tailColor);  
+  }
+  
+  if (flag) {
+    firstRowFlag = false;
+    dawnColorPrevIdx = dawnColorIdx;
+  }
+  if (dawnBrightness == 255 && tailBrightnessStep > 8) tailBrightnessStep -= 2;
+  
+  col++;
+  if (col >= WIDTH) {
+    col = 0; row++;
+  }
+  
+  if (row >= HEIGHT) row = 0;  
+
+  if (col == 0 && row == 0) {
+    dawnColorIdx = dawnBrightness >> 4;  // Кол-во элементов массива - 16; Шагов яркости - 255; Изменение индекса каждые 16 шагов яркости. 
+  }
+}
+
+// "Рассвет" по спирали, для ламп на круговой матрице
+void dawnLampSpiral() {
+  
+  boolean flag = true;
+  int8_t x=col, y=row;
+  
+  if (!firstRowFlag) fillAll(tailColor);
+  
+  for (byte i=0; i<8; i++) {
+    x--;
+    if (x < 0) { x = WIDTH - 1; y--; }
+    if (y < 0) {
+      y = HEIGHT - 1;
+      flag = false;
+      if (firstRowFlag) break;
+    }
+
+    byte idx = y > row ? dawnColorPrevIdx : dawnColorIdx;
+    byte dawnHue = pgm_read_byte(&(dawnColorHue[idx]));
+    byte dawnSat = pgm_read_byte(&(dawnColorSat[idx]));
+        
+    tailColor = CHSV(dawnHue, dawnSat, 255 - i * tailBrightnessStep); 
+    drawPixelXY(x,y, tailColor);  
+  }
+  
+  if (flag) {
+    firstRowFlag = false;
+    dawnColorPrevIdx = dawnColorIdx;
+  }
+  if (dawnBrightness == 255 && tailBrightnessStep > 8) tailBrightnessStep -= 2;
+  
+  col++;
+  if (col >= WIDTH) {
+    col = 0; row++;
+  }
+  
+  if (row >= HEIGHT) row = 0;  
+
+  if (col == 0 && row == 0) {
+    dawnColorIdx = dawnBrightness >> 4;  // Кол-во элементов массива - 16; Шагов яркости - 255; Изменение индекса каждые 16 шагов яркости. 
+  }
+}

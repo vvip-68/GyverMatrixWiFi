@@ -6,7 +6,7 @@
 void loadSettings() {
 
   // Адреса в EEPROM:
-  //    0 - если 0xAA - EEPROM инициализировано, если другое значение - нет 
+  //    0 - если EEPROM_OK - EEPROM инициализировано, если другое значение - нет 
   //    1 - максимальная яркость ленты 1-255
   //    2 - скорость прокрутки текста по умолчанию
   //    3 - скорость эффектов по умолчанию
@@ -36,7 +36,7 @@ void loadSettings() {
 
   // Инициализировано ли EEPROM
   bool isInitialized = EEPROMread(0) == EEPROM_OK;  
-  
+    
   if (isInitialized) {    
     globalBrightness = EEPROMread(1);
     scrollSpeed = map(EEPROMread(2),0,255,D_TEXT_SPEED_MIN,D_TEXT_SPEED_MAX);
@@ -45,7 +45,7 @@ void loadSettings() {
     AUTOPLAY = EEPROMread(6) == 1;
     autoplayTime = EEPROMread(7) * 1000;  // секунды -> миллисек 
     idleTime = EEPROMread(8) * 60 * 1000; // минуты -> миллисек
-#if (USE_CLOCK == 1 && USE_WIFI == 1)      
+#if (USE_CLOCK == 1)
     overlayEnabled = EEPROMread(5);
     useNtp = EEPROMread(9) == 1;
     SYNC_TIME_PERIOD = EEPROM_int_read(10);
@@ -142,7 +142,7 @@ void saveSettings() {
   EEPROMwrite(0, EEPROM_OK);
   
   EEPROM.commit();
-  Serial.println("Настройки сохранены в EEPROM");
+  Serial.println(F("Настройки сохранены в EEPROM"));
   
   eepromModified = false;
 }
