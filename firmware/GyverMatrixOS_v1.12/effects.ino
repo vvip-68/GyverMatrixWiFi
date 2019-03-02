@@ -453,48 +453,45 @@ void sparklesRoutine() {
   fader(BRIGHT_STEP);
 }
 
-int8_t row, col;
-byte dawnBrightness;
-byte tailBrightnessStep;
-byte dawnColorIdx;
-byte dawnColorPrevIdx;
-byte downEffect = DEMO_DAWN_ALARM;
-boolean firstRowFlag;
-CHSV tailColor;
+// ********************* БУДИЛЬНИК-РАССВЕТ *********************
+
+int8_t row, col;                   // Для эффекта спирали  - точка "глолвы" змейки, бегающей по спирали (первая змейка для круговой спирали)
+int8_t row2, col2;                 // Для эффекта спирали  - точка "глолвы" змейки, бегающей по спирали (вторая змейка для плоской спирали)
+byte dawnBrightness;               // Текущая яркость будильника "рассвет"
+byte tailBrightnessStep;           // Шаг приращения яркости будильника "рассвет"
+byte dawnColorIdx;                 // Индекс в массиве цвета "заливки" матрицы будильника "рассвет" (голова змейки)
+byte dawnColorPrevIdx;             // Предыдущий индекс - нужен для корректного цвета отрисовки "хвоста" змейки, 
+                                   // когда голова начинает новый кадр внизу матрицы, а хвост - вверху от предыдущего кадра
+byte downEffect = DEMO_DAWN_ALARM; // Какой эффект используется для будильника "рассвет". Могут быть обычные эффекты - их
+                                   // яркость просто будет постепенно увеличиваться
+boolean firstRowFlag;              // Флаг начала самого первого ряда первого кадра, чтобы не рисовать "хвост" змейки в предыдущем кадре, которого не было.
+CHSV tailColor;                    // Цвет последней точки "хвоста" змейки. Этот же цвет используется для предварительной заливки всей матрицы
+                                   // Предварительная заливка нужна для корректного отображения часов поверх специальных эффектов будильника
 
 // "Рассвет" - от красного к желтому - белому - голубому с плавным увеличением яркости;
 // Яркость меняется по таймеру - на каждое срабатывание таймера - +1 к яркости.
 // Диапазон изменения яркости - от MIN_DAWN_BRIGHT до MAX_DAWN_BRIGHT (количество шагов)
+// Цветовой тон матрицы меняется каждые 16 шагов яркости 255 / 16 -> дает 16 индексов в массиве цветов
 // Время таймера увеличения яркости - время рассвета DAWN_NINUTES на количество шагов приращения яркости
-// Цветовой тон матрицы меняется каждые 16 шагов яркости
 byte dawnColorHue[16] PROGMEM = {0, 16, 28, 36, 44, 52, 57, 62, 64, 66, 66, 64, 62, 60, 128, 128};              // Цвет заполнения - HUE
 byte dawnColorSat[16] PROGMEM = {255, 250, 245, 235, 225, 210, 200, 185, 170, 155, 130, 105, 80, 50, 25, 80};   // Цвет заполнения - SAT
 
-byte MIN_DAWN_BRIGHT = 2;
-byte MAX_DAWN_BRIGHT = 255;
-byte DAWN_NINUTES = 20;
+#define MIN_DAWN_BRIGHT = 2;       // Минимальное значение яркости будильника (с чего начинается)
+#define MAX_DAWN_BRIGHT = 255;     // Максимальное значение яркости будильника (чем заканчивается)
+byte DAWN_NINUTES = 20;            // Продолжительность рассыета в минутах
 
-// ********************* БУДИЛЬНИК-РАССВЕТ *********************
 void dawnProcedure() {
   if (loadingFlag) {
     modeCode = MC_DAWN_ALARM;
 
-    // Инициализация параметров изменения яркости, если в качестве рассвета используются 
-    // эффекты dawnLampSpiral() или dawnLampSquare()
-    row = 0, col = 0; 
-    dawnBrightness = MIN_DAWN_BRIGHT; 
-    tailBrightnessStep = 16;
-    firstRowFlag = true;
-    dawnColorIdx = 0;
-    dawnColorPrevIdx = 0;
-    tailColor = CHSV(0,0,0); 
-
-    FastLED.clear();  // очистить
+    FastLED.clear();
     FastLED.setBrightness(dawnBrightness);    
-    
+
+    // Интервал = кол-во шагов яркости на полное время рассвета в минутах
     dawnTimer.setInterval( (DAWN_NINUTES * 60 / (MAX_DAWN_BRIGHT - MIN_DAWN_BRIGHT)) * 1000);
   }
-  
+
+  // Пришло время увеличить яркость рассвета?
   if (dawnTimer.isReady() && dawnBrightness < 255) {
     dawnBrightness++;
     FastLED.setBrightness(dawnBrightness);
@@ -507,9 +504,10 @@ void dawnProcedure() {
     effect = MATRIX_TYPE == 0 ? DEMO_DAWN_ALARM_SPIRAL : DEMO_DAWN_ALARM_SQUARE;
   }
 
+  // Спец.режимы так же как и обычные вызываются в customModes (DEMO_DAWN_ALARM_SPIRAL и DEMO_DAWN_ALARM_SQUARE)
   customModes(effect);
 
-  // Сбрасывать флаг нужно ПОСЛЕ того как инициализированы И процедура рассвета И эффект,
+  // Сбрасывать флаг нужно ПОСЛЕ того как инициализированы: И процедура рассвета И применяемый эффект,
   // используемый в качестве рассвета
   loadingFlag = false;
 }
@@ -517,6 +515,19 @@ void dawnProcedure() {
 // "Рассвет" по спирали на плоскости, для плоских матриц
 void dawnLampSquare() {
 
+  if (loadingFlag) {
+    // Инициализация параметров изменения яркости, если в качестве рассвета используются 
+    // эффекты dawnLampSpiral() или dawnLampSquare()
+    row = 0, col = 0; row2 = 0; col2 = 0;
+    
+    dawnBrightness = MIN_DAWN_BRIGHT; 
+    tailBrightnessStep = 16;
+    firstRowFlag = true;
+    dawnColorIdx = 0;
+    dawnColorPrevIdx = 0;
+    tailColor = CHSV(0,0,0); 
+  }
+  
   boolean flag = true;
   int8_t x=col, y=row;
 
@@ -553,13 +564,27 @@ void dawnLampSquare() {
   if (row >= HEIGHT) row = 0;  
 
   if (col == 0 && row == 0) {
-    dawnColorIdx = dawnBrightness >> 4;  // Кол-во элементов массива - 16; Шагов яркости - 255; Изменение индекса каждые 16 шагов яркости. 
+    // Кол-во элементов массива - 16; Шагов яркости - 255; Изменение индекса каждые 16 шагов яркости. 
+    dawnColorIdx = dawnBrightness >> 4;  
   }
 }
 
-// "Рассвет" по спирали, для ламп на круговой матрице
+// "Рассвет" по спирали, для ламп на круговой матрице (свернутой в трубу)
 void dawnLampSpiral() {
   
+  if (loadingFlag) {
+    // Инициализация параметров изменения яркости, если в качестве рассвета используются 
+    // эффекты dawnLampSpiral() или dawnLampSquare()
+    row = 0, col = 0;
+    
+    dawnBrightness = MIN_DAWN_BRIGHT; 
+    tailBrightnessStep = 16;
+    firstRowFlag = true;
+    dawnColorIdx = 0;
+    dawnColorPrevIdx = 0;
+    tailColor = CHSV(0,0,0); 
+  }
+
   boolean flag = true;
   int8_t x=col, y=row;
   
@@ -596,6 +621,7 @@ void dawnLampSpiral() {
   if (row >= HEIGHT) row = 0;  
 
   if (col == 0 && row == 0) {
-    dawnColorIdx = dawnBrightness >> 4;  // Кол-во элементов массива - 16; Шагов яркости - 255; Изменение индекса каждые 16 шагов яркости. 
+    // Кол-во элементов массива - 16; Шагов яркости - 255; Изменение индекса каждые 16 шагов яркости. 
+    dawnColorIdx = dawnBrightness >> 4;  
   }
 }
