@@ -101,7 +101,7 @@ void doEffectWithOverlay(byte aMode) {
     customModes(aMode);                // режимы крутятся, пиксели мутятся
 
 #if (USE_CLOCK == 1)
-    if (millis() - showDateStateLastChange > (showDateState ? showDateDuration : showDateInterval) * 1000) {
+    if (millis() - showDateStateLastChange > (showDateState ? showDateDuration : showDateInterval) * 1000L) {
       showDateStateLastChange = millis();
       showDateState = !showDateState;
     }

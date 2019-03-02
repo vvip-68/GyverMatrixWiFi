@@ -270,7 +270,7 @@ void clockRoutine() {
     else  
       drawClock(hrs, mins, dotFlag, CLOCK_X, CLOCK_Y);
     
-    if (millis() - showDateStateLastChange > (showDateState ? showDateDuration : showDateInterval) * 1000) {
+    if (millis() - showDateStateLastChange > (showDateState ? showDateDuration : showDateInterval) * 1000L) {
       showDateStateLastChange = millis();
       showDateState = !showDateState;
     }

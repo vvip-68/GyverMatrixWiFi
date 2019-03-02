@@ -289,7 +289,8 @@ void drawFrame(int pcnt) {
                    255,           // S
                    (uint8_t)(((100.0 - pcnt) * matrixValue[0][newX] + pcnt * line[newX]) / 100.0) // V
                  );
-    leds[getPixelNumber(newX, 0)] = color;
+    //leds[getPixelNumber(newX, 0)] = color; // На форуме пишут что это ошибка - вместо newX должно быть x, иначе
+    leds[getPixelNumber(x, 0)] = color;      // на матрицах шире 16 столбцов нижний правый угол неработает
   }
 }
 
@@ -484,11 +485,19 @@ void dawnProcedure() {
   if (loadingFlag) {
     modeCode = MC_DAWN_ALARM;
 
-    FastLED.clear();
-    FastLED.setBrightness(dawnBrightness);    
+    // Инициализация параметров изменения яркости, если в качестве рассвета используются 
+    // эффекты dawnLampSpiral() или dawnLampSquare()
+    row = 0, col = 0; 
+    dawnBrightness = MIN_DAWN_BRIGHT; 
+    tailBrightnessStep = 16;
+    firstRowFlag = true;
+    dawnColorIdx = 0;
+    dawnColorPrevIdx = 0;
+    tailColor = CHSV(0,0,0); 
 
-    // Интервал = кол-во шагов яркости на полное время рассвета в минутах
-    dawnTimer.setInterval( (DAWN_NINUTES * 60 / (MAX_DAWN_BRIGHT - MIN_DAWN_BRIGHT)) * 1000);
+    FastLED.clear();  // очистить
+    FastLED.setBrightness(dawnBrightness);    
+    
   }
 
   // Пришло время увеличить яркость рассвета?
