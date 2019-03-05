@@ -460,6 +460,7 @@ int8_t row, col;                   // Для эффекта спирали  - т
 int8_t row2, col2;                 // Для эффекта спирали  - точка "глолвы" змейки, бегающей по спирали (вторая змейка для плоской спирали)
 int8_t dir, dir2;                  // Для эффекта спирали на плоскости - направление движениия змейки: 0 - вниз; 1 - влево; 2 - вверх; 3 - вправо; 
 int8_t range[4], range2[4];        // Для эффекта спирали на плоскости - границы разворачивания спирали; 
+uint16_t tail[8], tail2[8];        // Для эффекта спирали на плоскости - позиции хвоста змейки. HiByte = x, LoByte=y
 CHSV tailColor;                    // Цвет последней точки "хвоста" змейки. Этот же цвет используется для предварительной заливки всей матрицы
 CHSV tailColor2;                   // Предварительная заливка нужна для корректного отображения часов поверх специальных эффектов будильника
 boolean firstRowFlag;              // Флаг начала самого первого ряда первого кадра, чтобы не рисовать "хвост" змейки в предыдущем кадре, которого не было.
@@ -470,6 +471,7 @@ byte dawnColorPrevIdx;             // Предыдущий индекс - нуж
                                    // когда голова начинает новый кадр внизу матрицы, а хвост - вверху от предыдущего кадра
 byte downEffect = DEMO_DAWN_ALARM; // Какой эффект используется для будильника "рассвет". Могут быть обычные эффекты - их
                                    // яркость просто будет постепенно увеличиваться
+byte step_cnt;                     // Номер шага эффекта, чтобы определить какой длины "хвост" у змейки
 
 // "Рассвет" - от красного к желтому - белому - голубому с плавным увеличением яркости;
 // Яркость меняется по таймеру - на каждое срабатывание таймера - +1 к яркости.
@@ -528,6 +530,7 @@ void dawnLampSpiral() {
     firstRowFlag = true;
     dawnColorIdx = 0;
     dawnColorPrevIdx = 0;
+    
     tailColor = CHSV(0, 255, 255 - 8 * tailBrightnessStep); 
   }
 
@@ -581,28 +584,43 @@ void dawnLampSquare() {
     dawnBrightness = MIN_DAWN_BRIGHT; 
     tailBrightnessStep = 16;
     dawnColorIdx = 0;
-    dawnColorPrevIdx = 0;
+    step_cnt = 0;
+
+    memset(tail, 0, sizeof(uint16_t) * 8);
+    memset(tail2, 0, sizeof(uint16_t) * 8);
+    
     tailColor = CHSV(0, 255, 255 - 8 * tailBrightnessStep); 
   }
   
   int8_t x=col, y=row;
   int8_t x2=col2, y2=row2;
 
-  //fillAll(tailColor);
-  fillAll(CHSV(0,0,0));
+  fillAll(tailColor);
+  
+  step_cnt++;
+  
+  for (byte i=7; i>1; i++) {
+    tail[i]  = tail[i-1];
+    tail2[i] = tail2[i-1];
+  }
+  tail[0]  = (x<<8 | y);
+  tail2[0] = (x2<<8 | y2);
 
-  for (byte i=0; i<1; i++) {
+  byte dawnHue  = pgm_read_byte(&(dawnColorHue[dawnColorIdx]));
+  byte dawnSat  = pgm_read_byte(&(dawnColorSat[dawnColorIdx]));
+  byte dawnHue2 = pgm_read_byte(&(dawnColorHue2[dawnColorIdx]));
+  byte dawnSat2 = pgm_read_byte(&(dawnColorSat2[dawnColorIdx]));
+
+  for (byte i=0; i < min(step_cnt,(byte)8); i++) {
     
-    byte dawnHue  = pgm_read_byte(&(dawnColorHue[dawnColorIdx]));
-    byte dawnSat  = pgm_read_byte(&(dawnColorSat[dawnColorIdx]));
-    byte dawnHue2 = pgm_read_byte(&(dawnColorHue2[dawnColorIdx]));
-    byte dawnSat2 = pgm_read_byte(&(dawnColorSat2[dawnColorIdx]));
-
     tailColor  = CHSV(dawnHue, dawnSat, 255 - i * tailBrightnessStep); 
     tailColor2 = CHSV(dawnHue, dawnSat, 255 - i * tailBrightnessStep); 
 
-    drawPixelXY(x,  y,  CHSV(96,255,255));  
-    drawPixelXY(x2, y2, CHSV(128,255,255));  
+    x  = tail[i] >>8; y  = tail[i]  & 0xff;
+    x2 = tail2[i]>>8; y2 = tail2[i] & 0xff;
+    
+    drawPixelXY(x,  y,  tailColor);  
+    drawPixelXY(x2, y2, tailColor2);  
   }
   
   if (dawnBrightness == 255 && tailBrightnessStep > 8) tailBrightnessStep -= 2;
@@ -668,13 +686,14 @@ void dawnLampSquare() {
       }
       break;
   }
-
+  
   bool out  = (col  < 0 || col  >= WIDTH) && (row  < 0 || row  >= HEIGHT);
   bool out2 = (col2 < 0 || col2 >= WIDTH) && (row2 < 0 || row2 >= HEIGHT);
   if (out && out2) {
     // Кол-во элементов массива - 16; Шагов яркости - 255; Изменение индекса каждые 16 шагов яркости. 
     dawnColorIdx = dawnBrightness >> 4;  
     SetStartPos();
+    step_cnt = 0;
   }
 }
 
