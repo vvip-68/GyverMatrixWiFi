@@ -506,10 +506,12 @@ void parsing() {
         sendAcknowledge();
         break;
       case 18: 
-        if (intData[1] == 0)  // ping
+        if (intData[1] == 0) { // ping
           sendAcknowledge();
-        else                  // запрос параметров страницы приложения
+        } else {               // запрос параметров страницы приложения
+          saveSettings();      // Если были изменения параметров, сохраняемых в EEPROM - сохранить
           sendPageParams(intData[1]);
+        }
         break;
       case 19: 
 #if (USE_CLOCK == 1)

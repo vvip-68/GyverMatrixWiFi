@@ -494,7 +494,6 @@ void dawnProcedure() {
     FastLED.clear();  // очистить
     FastLED.setBrightness(dawnBrightness);        
 
-    effectTimer.setInterval(2000); // !!!!
     dawnTimer.setInterval( (DAWN_NINUTES * 60 / (MAX_DAWN_BRIGHT - MIN_DAWN_BRIGHT)) * 1000L);
   }
 
@@ -599,28 +598,29 @@ void dawnLampSquare() {
   
   step_cnt++;
   
-  for (byte i=7; i>1; i++) {
+  for (byte i=7; i>0; i--) {
     tail[i]  = tail[i-1];
     tail2[i] = tail2[i-1];
   }
-  tail[0]  = (x<<8 | y);
-  tail2[0] = (x2<<8 | y2);
+  tail[0]  = (uint)((int)x <<8 | (int)y);
+  tail2[0] = (uint)((int)x2<<8 | (int)y2);
 
   byte dawnHue  = pgm_read_byte(&(dawnColorHue[dawnColorIdx]));
   byte dawnSat  = pgm_read_byte(&(dawnColorSat[dawnColorIdx]));
   byte dawnHue2 = pgm_read_byte(&(dawnColorHue2[dawnColorIdx]));
   byte dawnSat2 = pgm_read_byte(&(dawnColorSat2[dawnColorIdx]));
 
-  for (byte i=0; i < min(step_cnt,(byte)8); i++) {
+  for (byte i=0; i < 8; i++) {
     
     tailColor  = CHSV(dawnHue, dawnSat, 255 - i * tailBrightnessStep); 
-    tailColor2 = CHSV(dawnHue, dawnSat, 255 - i * tailBrightnessStep); 
+    tailColor2 = CHSV(dawnHue2, dawnSat2, 255 - i * tailBrightnessStep); 
 
-    x  = tail[i] >>8; y  = tail[i]  & 0xff;
-    x2 = tail2[i]>>8; y2 = tail2[i] & 0xff;
-    
-    drawPixelXY(x,  y,  tailColor);  
-    drawPixelXY(x2, y2, tailColor2);  
+    if (i<=step_cnt) {
+      x  = tail[i] >>8; y  = tail[i]  & 0xff;
+      x2 = tail2[i]>>8; y2 = tail2[i] & 0xff;
+      drawPixelXY(x,  y,  tailColor);  
+      drawPixelXY(x2, y2, tailColor2);  
+    }
   }
   
   if (dawnBrightness == 255 && tailBrightnessStep > 8) tailBrightnessStep -= 2;
