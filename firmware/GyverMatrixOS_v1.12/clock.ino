@@ -192,6 +192,7 @@ void drawClock(byte hrs, byte mins, boolean dots, byte X, byte Y) {
   byte m01 = mins % 10;
   
   if (CLOCK_ORIENT == 0) {
+    if (h10 == 1 && m01 != 1) X--;
     //if (hrs > 9) 
     drawDigit3x5(h10, X + (h10 == 1 ? 1 : 0), Y, clockLED[0]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
     drawDigit3x5(h01, X + 4, Y, clockLED[1]);
