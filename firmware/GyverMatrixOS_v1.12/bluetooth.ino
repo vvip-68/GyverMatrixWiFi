@@ -165,6 +165,8 @@ void parsing() {
        - $14 3; Белый экран с часами;  
        - $14 4; Черный экран с часами мин яркости - ночной режим;  
        - $14 5; Черный экран с эффектом огня и часами (камин);  
+       - $14 6; Цветной экран;  
+       - $14 7; Цветной экран с часами;  
     15 - скорость $15 скорость таймер; 0 - таймер эффектов, 1 - таймер скроллинга текста 2 - таймер игр
     16 - Режим смены эффектов: $16 value; N:  0 - Autoplay on; 1 - Autoplay off; 2 - PrevMode; 3 - NextMode
     17 - Время автосмены эффектов и бездействия: $17 сек сек;
@@ -488,6 +490,18 @@ void parsing() {
           case 5:  // Черный экран с эффектом огня и часами (камин);
             tmp_eff = EFFECT_FIRE;
             specialClock = true;
+            break;
+          case 6:  // Экран указанного цвета;
+            tmp_eff = EFFECT_FILL_COLOR;
+            str = String(incomeBuffer).substring(6,12); // $14 6 00FFAA;
+            specialClock = false;
+            globalColor = (uint32_t)HEXtoInt(str);
+            break;
+          case 7:  // Экран указанного цвета с часами;
+            tmp_eff = EFFECT_FILL_COLOR;
+            str = String(incomeBuffer).substring(6,12); // $14 6 00FFAA;
+            specialClock = true;
+            globalColor = (uint32_t)HEXtoInt(str);
             break;
         }
 
