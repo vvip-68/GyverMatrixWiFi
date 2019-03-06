@@ -170,6 +170,7 @@ void customModes(byte aMode) {
     case DEMO_CLOCK:               clockRoutine(); break;
     case DEMO_ANIMATION:           animation(); break;
     case DEMO_DAWN_ALARM:          dawnProcedure(); break;
+    case DEMO_FILL_COLOR:          fillColorProcedure(); break;
 
     // Специальные режимы - доступные только для вызова из эффекта рассвета - dawnProcedure()
     case DEMO_DAWN_ALARM_SPIRAL:   dawnLampSpiral(); break;
@@ -412,8 +413,8 @@ byte mapEffectToMode(byte effect) {
     case EFFECT_NOISE_OCEAN:         tmp_mode = DEMO_NOISE_OCEAN; break;          // oceanNoise();
     case EFFECT_ANIMATION:           tmp_mode = DEMO_ANIMATION; break;            // animation();
     case EFFECT_DAWN_ALARM:          tmp_mode = DEMO_DAWN_ALARM; break;           // dawnProcedure();
+    case EFFECT_FILL_COLOR:          tmp_mode = DEMO_FILL_COLOR; break;           // fillColorProcedure();
     
-
     // Нет соответствия - выполняются для текущего режима thisMode
     case EFFECT_BREATH:              // Дыхание
     case EFFECT_COLOR:               // Цвет
@@ -449,7 +450,7 @@ byte mapEffectToModeCode(byte effect) {
     case EFFECT_NOISE_OCEAN:         tmp_mode = MC_NOISE_OCEAN; break;          // oceanNoise();
     case EFFECT_ANIMATION:           tmp_mode = MC_IMAGE; break;                // animation();
     case EFFECT_DAWN_ALARM:          tmp_mode = MC_DAWN_ALARM; break;           // dawnProcedure();
-    
+    case EFFECT_FILL_COLOR:          tmp_mode = MC_FILL_COLOR; break;           // fillColorProcedure();
 
     // Нет соответствия - выполняются для текущего режима thisMode
     case EFFECT_BREATH:              // Дыхание
@@ -500,6 +501,7 @@ byte mapModeToEffect(byte aMode) {
     case DEMO_FIRE:                 tmp_effect = EFFECT_FIRE;  break;               // fireRoutine()
     case DEMO_ANIMATION:            tmp_effect = EFFECT_ANIMATION; break;           // animation();
     case DEMO_DAWN_ALARM:           tmp_effect = EFFECT_DAWN_ALARM; break;          // alarmProcedure();
+    case DEMO_FILL_COLOR:           tmp_effect = EFFECT_FILL_COLOR; break;          // fillColorProcedure();
 
     case DEMO_TEXT_0 :  break;      // Бегущий текст
     case DEMO_TEXT_1 :  break;      // Бегущий текст
@@ -540,7 +542,8 @@ byte mapModeToGame(byte aMode) {
     case DEMO_RAINBOW_DIAG:         break;       // rainbowDiagonalRoutine();
     case DEMO_FIRE:                 break;       // fireRoutine()
     case DEMO_ANIMATION:            break;       // animation();
-    case DEMO_DAWN_ALARM:           break;       // dawnProcedure; 
+    case DEMO_DAWN_ALARM:           break;       // dawnProcedure(); 
+    case DEMO_FILL_COLOR:           break;       // fillColorProcedure(); 
     
     case DEMO_TEXT_0:               break;       // Бегущий текст
     case DEMO_TEXT_1:               break;       // Бегущий текст

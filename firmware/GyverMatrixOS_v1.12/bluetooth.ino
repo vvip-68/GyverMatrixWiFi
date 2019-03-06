@@ -134,6 +134,8 @@ void parsing() {
 // ****************** ОБРАБОТКА *****************
   String str;
   byte b_tmp;
+  int8_t tmp_eff;
+
   /*
     Протокол связи, посылка начинается с режима. Режимы:
     0 - отправка цвета $0 colorHEX;
@@ -156,12 +158,20 @@ void parsing() {
     11 - кнопка вправо
     12 - кнопка вниз
     13 - кнопка влево
-    14 - не используется
+    14 - быстрая установка ручных режимов с пред-настройками
+       - $14 0; Черный экран (выкл);  
+       - $14 1; Черный экран с часами;  
+       - $14 2; Белый экран (освещение);  
+       - $14 3; Белый экран с часами;  
+       - $14 4; Черный экран с часами мин яркости - ночной режим;  
+       - $14 5; Черный экран с эффектом огня и часами (камин);  
     15 - скорость $15 скорость таймер; 0 - таймер эффектов, 1 - таймер скроллинга текста 2 - таймер игр
     16 - Режим смены эффектов: $16 value; N:  0 - Autoplay on; 1 - Autoplay off; 2 - PrevMode; 3 - NextMode
     17 - Время автосмены эффектов и бездействия: $17 сек сек;
     18 - Запрос текущих параметров программой: $18 page;  page: 1 - настройки; 2 - рисование; 3 - картинка; 4 - текст; 5 - эффекты; 6 - игра; 7 - часы; 8 - о приложении 
     19 - работа с настройками часов
+    20 - настройки и управление будильников
+       - $20 0; - отключение будильника
   */  
   if (recievedFlag) {      // если получены данные
     recievedFlag = false;
@@ -169,9 +179,18 @@ void parsing() {
     // Режимы 16,17,18  не сбрасывают idleTimer
     if (intData[0] < 16 || intData[0] > 18) {
       idleTimer.reset();
-      idleState = false;
+      idleState = false;      
     }
 
+    // Режимы кроме 14 и 18 сбрасывают спец-режим
+    if (intData[0] != 14 && intData[0] != 18) {
+      if (specialMode) {
+        idleTimer.setInterval(idleTime);
+        idleTimer.reset();
+        specialMode = false;
+      }
+    }
+    
     switch (intData[0]) {
       case 0:
         if (!runningFlag) drawingFlag = true;
@@ -426,7 +445,69 @@ void parsing() {
         sendAcknowledge();
         break;
       case 14:
-        // не используется
+        AUTOPLAY = 0;
+        BTcontrol = true;
+        effectsFlag = true;
+        gamemodeFlag = false;
+        drawingFlag = false;
+        runningFlag = false;
+        loadingFlag = true;
+                
+        tmp_eff = -1;
+        specialBrightness = globalBrightness;
+        
+        switch(intData[1]) {
+          case 0:  // Черный экран (выкл);
+            tmp_eff = EFFECT_FILL_COLOR;
+            specialClock = false;
+            globalColor = 0x000000;
+            specialBrightness = 0;
+            break;
+          case 1:  // Черный экран с часами;  
+            tmp_eff = EFFECT_FILL_COLOR;
+            specialClock = true;
+            globalColor = 0x000000;
+            break;
+          case 2:  // Белый экран (освещение);
+            tmp_eff = EFFECT_FILL_COLOR;
+            specialClock = false;
+            globalColor = 0xffffff;
+            break;
+          case 3:  // Белый экран с часами;
+            tmp_eff = EFFECT_FILL_COLOR;
+            specialClock = true;
+            globalColor = 0xffffff;
+            break;
+          case 4:  // Черный экран с часами минимальной яркости - ночной режим;
+            tmp_eff = EFFECT_FILL_COLOR;
+            specialClock = true;
+            globalColor = 0x000000;
+            COLOR_MODE = 0; // Монохром, т.к все что не белоена миним. яркости черное, белое - красным.
+            specialBrightness = 1;
+            break;
+          case 5:  // Черный экран с эффектом огня и часами (камин);
+            tmp_eff = EFFECT_FIRE;
+            specialClock = true;
+            break;
+        }
+
+        if (tmp_eff >=0) {    
+          // Найти соответствие thisMode указанному эффекту. 
+          // Дльнейшее отображение изображения эффекта будет выполняться стандартной процедурой customRoutin()
+          b_tmp = mapEffectToMode(tmp_eff);
+          if (b_tmp != 255) {
+            effect = (byte)tmp_eff;
+            thisMode = b_tmp;
+            specialMode = true;
+            effectSpeed = getEffectSpeed(effect);
+            effectTimer.setInterval(effectSpeed);
+            // Таймер возврата в авторежим отключен    
+            idleTimer.setInterval(4294967295);
+            idleTimer.reset();
+            FastLED.setBrightness(specialBrightness);
+          }
+        }
+        sendPageParams(1);
         break;
       case 15: 
         if (intData[2] == 0) {
@@ -568,6 +649,16 @@ void parsing() {
         }
         sendAcknowledge();
 #endif        
+        break;
+      case 20:
+        switch (intData[1]) { 
+          case 0:  
+          if (isAlarming) {
+            
+          }
+          break;
+        }
+        sendAcknowledge();
         break;
     }
     lastMode = intData[0];  // запомнить предыдущий режим

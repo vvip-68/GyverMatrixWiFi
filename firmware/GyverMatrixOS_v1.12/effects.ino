@@ -721,3 +721,17 @@ void SetStartPos() {
   range[0] = row-2; range[1] = col-2; range[2] = row+2; range[3] = col+2;
   range2[0] = row2-2; range2[1] = col2-2; range2[2] = row2+2; range2[3] = col2+2;
 }
+
+// ******************* ЛАМПА ********************
+
+void fillColorProcedure() {
+  if (loadingFlag) {
+    modeCode = MC_FILL_COLOR;
+    loadingFlag = false;
+  }
+
+  if (specialMode) 
+    FastLED.setBrightness(specialBrightness);  
+  
+  fillAll(gammaCorrection(globalColor));    
+}

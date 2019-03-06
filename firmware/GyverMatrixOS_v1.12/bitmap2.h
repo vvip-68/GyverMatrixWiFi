@@ -1,5 +1,3 @@
-#if (USE_ANIMATION == 1)
-
 #define FRAME_WIDTH 16
 #define FRAME_HEIGHT 16
 
@@ -135,11 +133,3 @@ void animation() {
     }
   }  
 }
-
-#else 
-
-void loadImage(const uint16_t (*frame)) { }
-void imageRoutine() { }
-void animation() { }
-
-#endif      

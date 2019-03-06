@@ -8,6 +8,7 @@
 #define DOT_COLOR CRGB::White          // цвет точек
 
 #define NORMAL_CLOCK_COLOR CRGB::White // Нормальный цвет монохромных цветов
+
 #define CONTRAST_COLOR_1 CRGB::Orange  // контрастный цвет часов
 #define CONTRAST_COLOR_2 CRGB::Green   // контрастный цвет часов
 #define CONTRAST_COLOR_3 CRGB::Black   // контрастный цвет часов
@@ -82,6 +83,9 @@ void getNTP() {
 
 boolean overlayAllowed() {
 #if (OVERLAY_CLOCK == 1)  
+  // Оверлей разрешен текущими параметрами спец.режима?
+  if (specialMode) return specialClock;
+  
   // Оверлей разрешен общими настройками часов?
   bool allowed = getClockOverlayEnabled();
   // Оверлей разрешен настройками списка разрешенных для оверлея эффектов?
@@ -164,18 +168,22 @@ String dateCurrentTextLong() {
 }
 
 void clockColor() {
-  if (COLOR_MODE == 0) {       
+  if (COLOR_MODE == 0) {     
+    // Монохромные часы  
     for (byte i = 0; i < 5; i++) clockLED[i] = NORMAL_CLOCK_COLOR;
   } else if (COLOR_MODE == 1) {
+    // Каждая цифра своим цветом, плавная смкна цвета
     for (byte i = 0; i < 5; i++) clockLED[i] = CHSV(clockHue + HUE_GAP * i, 255, 255);
     clockLED[2] = CHSV(clockHue + 128 + HUE_GAP * 1, 255, 255); // точки делаем другой цвет
   } else if (COLOR_MODE == 2) {
+    // Часы, точки, минуты своим цветом, плавная смкна цвета
     clockLED[0] = CHSV(clockHue + HUE_GAP * 0, 255, 255);
     clockLED[1] = CHSV(clockHue + HUE_GAP * 0, 255, 255);
     clockLED[2] = CHSV(clockHue + 128 + HUE_GAP * 1, 255, 255); // точки делаем другой цвет
     clockLED[3] = CHSV(clockHue + HUE_GAP * 2, 255, 255);
     clockLED[4] = CHSV(clockHue + HUE_GAP * 2, 255, 255);
   } else if (COLOR_MODE == 3) {// для календаря -  
+    // Часы, точки, минуты своим заданным цветом
     clockLED[0] = HOUR_COLOR;  // число
     clockLED[1] = HOUR_COLOR;  // месяц
     clockLED[2] = DOT_COLOR;   // разделитель числа/месяца
@@ -398,7 +406,12 @@ void contrastClockB() {
 }
 
 void contrastClockC(){
-  for (byte i = 0; i < 5; i++) clockLED[i] = CONTRAST_COLOR_3;  
+  if (specialMode && specialClock){
+    CRGB color = -CRGB(globalColor);
+    for (byte i = 0; i < 5; i++) clockLED[i] = color;  
+  } else {  
+    for (byte i = 0; i < 5; i++) clockLED[i] = CONTRAST_COLOR_3;  
+  }
 }
 
 void setOverlayColors() {
@@ -431,6 +444,7 @@ void setOverlayColors() {
         contrastClockB();
         break;
       case MC_DAWN_ALARM:
+      case MC_FILL_COLOR:
         contrastClockC();
         break;
     }
