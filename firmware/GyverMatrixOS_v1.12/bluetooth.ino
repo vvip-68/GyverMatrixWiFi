@@ -668,7 +668,7 @@ void parsing() {
         switch (intData[1]) { 
           case 0:  
           if (isAlarming) {
-            
+             
           }
           break;
         }
@@ -842,15 +842,24 @@ void sendPageParams(int page) {
   // DI:число    интервал показа даты при отображении часов (в секундах)
   // LG:[список] список игр, разделенный запятыми, ограничители [] обязательны        
   // LE:[список] список эффектов, разделенный запятыми, ограничители [] обязательны        
+  // AL:X        сработал будильник 0-нет, 1-да
+  // AH:число    часы времени будильника
+  // AM:число    минуты времени будильника
+  // AW:число    битовая маска дней недели будильника b6..b0: b0 - пн .. b7 - вс
+  // AD:число    продолжительность рассвета, мин
+  // AE:число    эффект, использующийся для будильника
+  // AO:X        включен будильник 0-нет, 1-да
   String str = "", color, text;
   boolean allowed;
   byte b_tmp;
   switch (page) { 
     case 1:  // Настройки. Вернуть: Ширина/Высота матрицы; Яркость; Деморежм и Автосмена; Время смены режимо
       str="$18 W:"+String(WIDTH)+"|H:"+String(HEIGHT)+"|DM:";
-      if (BTcontrol) str+="0|AP:"; else str+="1|AP:";
-      if (AUTOPLAY)  str+="1|BR:"; else str+="0|BR:";
-      str+=String(globalBrightness) + "|PD:" + String(autoplayTime / 1000) + "|IT:" + String(idleTime / 60 / 1000) +  ";";
+      if (BTcontrol)  str+="0|AP:"; else str+="1|AP:";
+      if (AUTOPLAY)   str+="1|BR:"; else str+="0|BR:";
+      str+=String(globalBrightness) + "|PD:" + String(autoplayTime / 1000) + "|IT:" + String(idleTime / 60 / 1000) +  "|AL:";
+      if (isAlarming) str+="1"; else str+="0";
+      str+=";";
       break;
     case 2:  // Рисование. Вернуть: Яркость; Цвет точки;
       color = ("000000" + String(globalColor, HEX));
@@ -914,6 +923,15 @@ void sendPageParams(int page) {
       if (showDateInClock)  str+="1|DD:"; else str+="0|DD:";
       str+=String(showDateDuration) + "|DI:" + String(showDateInterval); 
       str+=";";
+#endif      
+      break;
+    case 8:  // Настройки будильника
+#if (USE_CLOCK == 1)      
+      str="$18 AL:"; 
+      if (isAlarming) str+="1|AO:"; else str+="0|AO:";
+      if (alarmOnOff) str+="1|AH:"; else str+="0|AH:";
+      str+=String(alarmHour)+"|AM:"+String(alarmMinute)+"|AW:"+String(alarmWeekDay)+"|AD:"+String(alarmDuration);
+      str+=";";      
 #endif      
       break;
     case 98:  // Запрос списка игр

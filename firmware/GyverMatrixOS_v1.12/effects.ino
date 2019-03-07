@@ -469,8 +469,6 @@ byte tailBrightnessStep;           // Шаг приращения яркости
 byte dawnColorIdx;                 // Индекс в массиве цвета "заливки" матрицы будильника "рассвет" (голова змейки)
 byte dawnColorPrevIdx;             // Предыдущий индекс - нужен для корректного цвета отрисовки "хвоста" змейки, 
                                    // когда голова начинает новый кадр внизу матрицы, а хвост - вверху от предыдущего кадра
-byte downEffect = DEMO_DAWN_ALARM; // Какой эффект используется для будильника "рассвет". Могут быть обычные эффекты - их
-                                   // яркость просто будет постепенно увеличиваться
 byte step_cnt;                     // Номер шага эффекта, чтобы определить какой длины "хвост" у змейки
 
 // "Рассвет" - от красного к желтому - белому - голубому с плавным увеличением яркости;
@@ -494,7 +492,7 @@ void dawnProcedure() {
     FastLED.clear();  // очистить
     FastLED.setBrightness(dawnBrightness);        
 
-    dawnTimer.setInterval( (DAWN_NINUTES * 60 / (MAX_DAWN_BRIGHT - MIN_DAWN_BRIGHT)) * 1000L);
+    dawnTimer.setInterval( (alarmDuration * 60 / (MAX_DAWN_BRIGHT - MIN_DAWN_BRIGHT)) * 1000L);
   }
 
   // Пришло время увеличить яркость рассвета?
@@ -503,7 +501,7 @@ void dawnProcedure() {
     FastLED.setBrightness(dawnBrightness);
   }
     
-  byte effect = downEffect; 
+  byte effect = alarmEffect; 
   if (effect == DEMO_DAWN_ALARM) {
     // Если устройство лампа (DEVICE_TYPE == 0) - матрица свернута в "трубу" - рассвет - огонек, бегущий вкруговую по спирали
     // Если устройство плоская матрица в рамке (MATRIX_TYPE == 1) - рассвет - огонек, бегущий по спирали от центра матрицы к краям на плоскости

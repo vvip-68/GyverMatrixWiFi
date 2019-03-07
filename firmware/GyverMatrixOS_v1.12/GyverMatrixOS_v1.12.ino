@@ -112,11 +112,6 @@ byte COLOR_MODE = 0;          // Режим цвета часов
 //                               3 - заданные цвета (часы, точки, минуты) - HOUR_COLOR, DOT_COLOR, MIN_COLOR в clock.ino
 #endif
 
-byte specialBrightness = false; // Яркость в спец.режиме
-boolean specialMode = false;    // Спец.режим, включенный вручную со смартфона из кнопок быстрого включения режима
-boolean specialClock = false;   // Спец.режим использует overlay часов
-boolean isAlarming = false;     // Сработал будильник "рассвет"
-
 // ID типа эффектов (тип группы - текст, игры имеют один ID типа на все подтипы)
 #define MC_TEXT                  0
 #define MC_CLOCK                 1
@@ -254,6 +249,7 @@ byte overlayList[] = {
 // чей индекс передается из приложения в контроллер матрицы для выбора, поэтому порядок должен соответствовать 
 // спискам эффектов и игр, определенному выше
 #define EFFECT_LIST F("Дыхание,Цвета,Снегопад,Шарик,Радуга,Радуга пикс,Огонь,The Matrix,Шарики,Часы,Звездопад,Конфетти,Радуга диагональная,Цветной шум,Облака,Лава,Плазма,Радужные переливы,Полосатые переливы,Зебра,Шумящий лес,Морской прибой,Анимация,Рассвет,Лампа")
+#define ALARM_LIST  F("Дыхание,Цвета,Снегопад,Шарик,Радуга,Радуга пикс,Огонь,The Matrix,Шарики,Часы,Звездопад,Конфетти,Радуга диагональная,Цветной шум,Облака,Лава,Плазма,Радужные переливы,Полосатые переливы,Зебра,Шумящий лес,Морской прибой,Анимация,Рассвет,Лампа")
 #define GAME_LIST   F("Змейка,Тетрис,Лабиринт,Runner,Flappy Bird,Арканоид")
 
 #if (SMOOTH_CHANGE == 1)
@@ -277,6 +273,19 @@ byte overlayList[] = {
 
 String runningText = "";
 byte buttons = 4;                  // 0 - верх, 1 - право, 2 - низ, 3 - лево, 4 - не нажата - управление играми
+
+boolean specialMode = false;    // Спец.режим, включенный вручную со смартфона из кнопок быстрого включения режима
+boolean specialClock = false;   // Спец.режим использует overlay часов
+byte specialBrightness = false; // Яркость в спец.режиме
+
+boolean isAlarming = false;         // Сработал будильник "рассвет"
+byte alarmHour = 0;                 // Часы времени срабатывания будильника
+byte alarmMinute = 0;               // Минуты времени срабатывания будильника
+byte alarmWeekDay = 0;              // Битовая маска дней недели будильника
+byte alarmDuration = 0;             // Продолжительность "рассвета"
+boolean alarmOnOff = false;         // Будильник включен/выключен
+byte alarmEffect = DEMO_DAWN_ALARM; // Какой эффект используется для будильника "рассвет". Могут быть обычные эффекты - их
+                                    // яркость просто будет постепенно увеличиваться
 
 static const byte maxDim = max(WIDTH, HEIGHT);
 int globalBrightness = BRIGHTNESS;
@@ -374,7 +383,7 @@ void setup() {
   delay(10);
 
 #if (USE_EEPROM == 1)
-  EEPROM.begin(256);
+  EEPROM.begin(512);
   loadSettings();
 #endif
   
