@@ -22,33 +22,27 @@ void bluetoothRoutine() {
   // на время принятия данных матрицу не обновляем!
   if (!parseStarted) {                          
 
-    #if (USE_CLOCK == 1)
-      if (WifiTimer.isReady() && wifi_connected) {  
-        if (useNtp) {
-          if (ntp_t > 0 && millis() - ntp_t > 3000) {
-            Serial.println(F("Таймаут NTP запроса!"));
-            init_time = 0;
-            ntp_t = 0;
-          }
-          if (ntpTimer.isReady() || (init_time == 0 && ntp_t == 0)) {
-            getNTP();
-          }
+    if (WifiTimer.isReady() && wifi_connected) {  
+      if (useNtp) {
+        if (ntp_t > 0 && millis() - ntp_t > 3000) {
+          Serial.println(F("Таймаут NTP запроса!"));
+          init_time = 0;
+          ntp_t = 0;
+        }
+        if (ntpTimer.isReady() || (init_time == 0 && ntp_t == 0)) {
+          getNTP();
         }
       }
-    #endif    
+    }
 
     if (!BTcontrol && effectsFlag && !isColorEffect(effect)) effectsFlag = false;
 
     if (runningFlag) {                         // бегущая строка - Running Text
       String text = runningText;
       if (text == "") {
-        #if (USE_CLOCK == 1)          
-           text = init_time ==0 
-             ? clockCurrentText()
-             : clockCurrentText() + " " + dateCurrentTextLong();  // + dateCurrentTextShort()
-        #else
-           text = "Gyver Matrix";
-        #endif           
+         text = init_time ==0 
+           ? clockCurrentText()
+           : clockCurrentText() + " " + dateCurrentTextLong();  // + dateCurrentTextShort()
       }
       fillString(text, globalColor); 
       // Включенная бегущая строка только формирует строку в массиве точек матрицы, но не отображает ее
@@ -616,7 +610,6 @@ void parsing() {
         }
         break;
       case 19: 
-#if (USE_CLOCK == 1)
          switch (intData[1]) {
            case 0:               // $19 0 N X; - сохранить настройку X "Часы в эффекте" для эффекта N
              saveEffectClock(intData[2], intData[3] == 1);
@@ -669,14 +662,11 @@ void parsing() {
              break;
         }
         sendAcknowledge();
-#endif        
         break;
       case 20:
         switch (intData[1]) { 
           case 0:  
-            if (isAlarming) {
-             
-            }
+            if (isAlarming) stopAlarm();
             break;
           case 1:
             //  $20 1 X DD EF HH MM WD;
@@ -687,13 +677,19 @@ void parsing() {
             //   MM    - установка времени будильника - минуты
             //   WD    - установка дней пн-вс как битовая маска
             alarmOnOff = intData[2] == 1;
-            alarmDuration = intData[3];
+            alarmDuration = constrain(intData[3],1,59);
             alarmEffect = mapAlarmToEffect(intData[4]);
-            alarmHour = intData[5];
-            alarmMinute = intData[6];
+            alarmHour = constrain(intData[5], 0, 23);
+            alarmMinute = constrain(intData[6], 0, 59);
             alarmWeekDay = intData[7];
-            if (alarmDuration<=0) alarmDuration = 1;
             saveAlarmParams(alarmOnOff,alarmHour,alarmMinute,alarmWeekDay,alarmDuration,alarmEffect);
+            
+            // Рассчитать время начала рассвета будильника
+            calculateDawnTime();
+
+            if (!alarmOnOff && isAlarming){
+              stopAlarm();
+            }
             break;
         }
         if (intData[1] == 0) { // ping
@@ -746,13 +742,11 @@ void parsing() {
         }
       }
 
-#if (USE_CLOCK == 1)
       // NTP packet from time server
       if (udp.remotePort() == 123) {
         parseNTP();
         haveIncomeData = 0;
       }
-#endif      
     }
 
     if (haveIncomeData) {         
@@ -887,7 +881,7 @@ void sendPageParams(int page) {
       if (BTcontrol)  str+="0|AP:"; else str+="1|AP:";
       if (AUTOPLAY)   str+="1|BR:"; else str+="0|BR:";
       str+=String(globalBrightness) + "|PD:" + String(autoplayTime / 1000) + "|IT:" + String(idleTime / 60 / 1000) +  "|AL:";
-      if (isAlarming) str+="1"; else str+="0";
+      if (isAlarming && !isAlarmStopped) str+="1"; else str+="0";
       str+=";";
       break;
     case 2:  // Рисование. Вернуть: Яркость; Цвет точки;
@@ -908,7 +902,7 @@ void sendPageParams(int page) {
       break;
     case 5:  // Эффекты. Вернуть: Номер эффекта, Остановлен или играет; Яркость; Скорость эффекта; Оверлей часов; Использовать в демо 
       allowed = false;
-#if (USE_CLOCK == 1 && OVERLAY_CLOCK == 1)      
+#if (OVERLAY_CLOCK == 1)      
       b_tmp = mapEffectToModeCode(effect); 
       if (b_tmp != 255) {
         for (byte i = 0; i < sizeof(overlayList); i++) {
@@ -920,14 +914,10 @@ void sendPageParams(int page) {
       str="$18 EF:"+String(effect+1) + "|ES:";
       if (effectsFlag)  str+="1|BR:"; else str+="0|BR:";
       str+=String(globalBrightness) + "|SE:" + String(constrain(map(effectSpeed, D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0, 255), 0,255));
-#if (USE_CLOCK == 1)      
       if (isColorEffect(effect) || !allowed || effect == EFFECT_CLOCK) 
           str+="|EC:X";  // X - параметр не используется (неприменим)
       else    
           str+="|EC:" + String(getEffectClock(effect));
-#else
-      str+="|EC:X";  // X - параметр не используется (неприменим)
-#endif      
       if (isColorEffect(effect)) 
           str+="|UE:X";  // X - параметр не используется (неприменим)
       else if (getEffectUsage(effect))
@@ -945,19 +935,16 @@ void sendPageParams(int page) {
       str+=";";
       break;
     case 7:  // Настройки часов. Вернуть: Оверлей вкл/выкл
-#if (USE_CLOCK == 1)      
       str="$18 CE:"+String(getClockOverlayEnabled()) + "|CC:" + String(COLOR_MODE) + "|NP:"; 
       if (useNtp)  str+="1|NT:"; else str+="0|NT:";
       str+=String(SYNC_TIME_PERIOD) + "|NZ:" + String(timeZoneOffset) + "|DC:"; 
       if (showDateInClock)  str+="1|DD:"; else str+="0|DD:";
       str+=String(showDateDuration) + "|DI:" + String(showDateInterval); 
       str+=";";
-#endif      
       break;
     case 8:  // Настройки будильника
-#if (USE_CLOCK == 1)      
       str="$18 AL:"; 
-      if (isAlarming) str+="1|AO:"; else str+="0|AO:";
+      if (isAlarming && !isAlarmStopped) str+="1|AO:"; else str+="0|AO:";
       if (alarmOnOff) str+="1|AT:"; else str+="0|AT:";
       str+=String(alarmHour)+" "+String(alarmMinute)+"|AD:"+String(alarmDuration)+"|AW:";
       for (int i=0; i<7; i++) {
@@ -966,7 +953,6 @@ void sendPageParams(int page) {
       }
       str+="|AE:" + String(mapEffectToAlarm(alarmEffect) + 1); // Индекс в списке в приложении смартфона начинается с 1
       str+=";";
-#endif      
       break;
     case 97:  // Запрос списка эффектов для будильника
       str="$18 LA:[" + String(ALARM_LIST) + "];"; 

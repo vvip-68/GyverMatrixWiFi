@@ -1,7 +1,5 @@
 // режим часов
 
-#if (USE_CLOCK == 1)
-
 // ****************** НАСТРОЙКИ ЧАСОВ *****************
 #define MIN_COLOR CRGB::White          // цвет минут
 #define HOUR_COLOR CRGB::White         // цвет часов
@@ -69,6 +67,7 @@ void parseNTP() {
     Serial.print(F("Секунд с 1970: "));
     Serial.println(t);
     setTime(t);
+    calculateDawnTime();
 }
 
 void getNTP() {
@@ -392,6 +391,7 @@ boolean needUnwrap() {
       modeCode == MC_FIRE) return true;
   else return false;
 }
+#endif
 
 void contrastClock() {  
   for (byte i = 0; i < 5; i++) clockLED[i] = NORMAL_CLOCK_COLOR;
@@ -453,27 +453,69 @@ void setOverlayColors() {
     clockColor();
 }
 
-#else
+// расчет времени начала рассвета
+void calculateDawnTime() {
+  // расчёт времени рассвета
+  if (alarmMinute > alarmDuration) {                 // если минут во времени будильника больше продолжительности рассвета
+    dawnHour = alarmHour;                            // час рассвета равен часу будильника
+    dawnMinute = alarmMinute - alarmDuration;        // минуты рассвета = минуты будильника - продолж. рассвета
+  } else {                                           // если минут во времени будильника меньше продолжительности рассвета
+    dawnHour = alarmHour - 1;                        // значит рассвет будет часом раньше
+    if (dawnHour < 0) dawnHour = 23;                 // защита от совсем поехавших
+    dawnMinute = 60 - (alarmDuration - alarmMinute); // находим минуту рассвета в новом часе
+  }
+  dawnWeekDay = weekday() - 1;                       // day of the week, Sunday is day 0 
+  if (dawnWeekDay == 0) dawnWeekDay = 7;             // Sunday is day 7, Monday is day 1;
+  if (dawnHour < hour()) dawnWeekDay++;              // Если час рассвета меньше текущего - это "завтра"
+  if (dawnWeekDay == 8) dawnWeekDay = 1;             // Если переход через вс (7) - это пн (1)
+}
 
-void clockOverlayWrapH(byte posX, byte posY) {
-  return;
-}
-void clockOverlayUnwrapH(byte posX, byte posY) {
-  return;
-}
-void clockOverlayWrapV(byte posX, byte posY) {
-  return;
-}
-void clockOverlayUnwrapV(byte posX, byte posY) {
-  return;
-}
-boolean needUnwrap() {
-  return true;
-}
-#endif
+// Проверка времени срабатывания будильника
+void checkAlarmTime() {
+  
+  // Будильник включен?
+  if (alarmOnOff) {
+    
+    //Часы / минуты начала рассвета наступили? Еще не запущен рассвет? Еще не остановлен пользователем?
+    if (dawnHour == hour() && dawnMinute == minute() && !isAlarming && !isAlarmStopped) {
+       // Включен ли будильник для текущего дня недели?       
+       if ((alarmWeekDay & (1 << (dawnWeekDay - 1))) > 0) {
+         specialMode = false;
+         isAlarming = true;
+         isAlarmStopped = false;
+         loadingFlag = true;
+         modeBeforeAlarm = thisMode;
+         thisMode = DEMO_DAWN_ALARM;
+         idleTimer.setInterval(4294967295);
+         sendPageParams(1);  // Параметры, включающие в себя статус IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
+         Serial.println("Alarm ON at "+String(hour())+ ":" + String(minute()));
+       }
+    }
 
-#else
+    // При наступлении времени срабатывания будильника, если он еще не выключен пользователем - запустить режим часов
+    if (alarmHour == hour() && alarmMinute == minute() && isAlarming) {
+      Serial.println("Alarm auto-OFF at "+String(hour())+ ":" + String(minute()));
+      isAlarming = false;
+      isAlarmStopped = false;
+      thisMode = DEMO_CLOCK;    
+      loadingFlag = true;
+      FastLED.setBrightness(globalBrightness);
+      sendPageParams(1);  // Параметры, включающие в себя статус IsAlarming (AL:0), чтобы изменить в смартфоне отображение активности будильника
+    }
+  }
+  
+}
 
-void clockRoutine() { }
-
-#endif
+void stopAlarm() {
+  if (isAlarming && !isAlarmStopped) {
+    Serial.println("Alarm OFF at "+String(hour())+ ":" + String(minute()));
+    isAlarmStopped = true;
+    thisMode = modeBeforeAlarm;
+    loadingFlag = true;
+    specialMode = false;
+    specialClock = false;
+    idleTimer.setInterval(idleTime);
+    FastLED.setBrightness(globalBrightness);
+    sendPageParams(1);  // Параметры, включающие в себя статус IsAlarming (AL:0), чтобы изменить в смартфонеот ображение активности будильника
+  }
+}

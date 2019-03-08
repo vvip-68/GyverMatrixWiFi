@@ -80,7 +80,7 @@ void customRoutine() {
 void doEffectWithOverlay(byte aMode) {
   if (effectTimer.isReady()) {
 
-#if (OVERLAY_CLOCK == 1 && USE_CLOCK == 1)
+#if (OVERLAY_CLOCK == 1)
     boolean loadFlag2;
     boolean needOverlay = modeCode != MC_TEXT && overlayAllowed();
     if (needOverlay) {
@@ -100,14 +100,12 @@ void doEffectWithOverlay(byte aMode) {
 
     customModes(aMode);                // режимы крутятся, пиксели мутятся
 
-#if (USE_CLOCK == 1)
     if (millis() - showDateStateLastChange > (showDateState ? showDateDuration : showDateInterval) * 1000L) {
       showDateStateLastChange = millis();
       showDateState = !showDateState;
     }
-#endif
         
-#if (OVERLAY_CLOCK == 1 && USE_CLOCK == 1)
+#if (OVERLAY_CLOCK == 1)
     if (needOverlay) {
       if (showDateInClock && showDateState) {
         calendarOverlayWrap(CALENDAR_X, CALENDAR_Y);

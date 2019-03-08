@@ -63,7 +63,6 @@ boolean AUTOPLAY = 1;         // 0 выкл / 1 вкл автоматическ�
 
 #define USE_NOISE_EFFECTS 1 // крутые полноэкранные эффекты (0 нет, 1 да) СИЛЬНО ЖРУТ ПАМЯТЬ!!!
 #define USE_FONTS 1         // использовать буквы (бегущая строка) (0 нет, 1 да)
-#define USE_CLOCK 1         // использовать часы (0 нет, 1 да)
 #define OVERLAY_CLOCK 1     // часы на фоне всех эффектов и игр. Жрёт SRAM память!
 #define USE_EEPROM 1        // Использовать сохранение настроек эффектов во флэш-памяти    
 
@@ -88,7 +87,6 @@ boolean AUTOPLAY = 1;         // 0 выкл / 1 вкл автоматическ�
 
 CRGB leds[NUM_LEDS];
 
-#if (USE_CLOCK == 1)
 byte CLOCK_ORIENT = 0;         // 0 горизонтальные, 1 вертикальные
 
 // Макрос центрирования отображения часов на матрице
@@ -110,7 +108,6 @@ byte COLOR_MODE = 0;          // Режим цвета часов
 //                               1 - радужная смена (каждая цифра)
 //                               2 - радужная смена (часы, точки, минуты)
 //                               3 - заданные цвета (часы, точки, минуты) - HOUR_COLOR, DOT_COLOR, MIN_COLOR в clock.ino
-#endif
 
 // ID типа эффектов (тип группы - текст, игры имеют один ID типа на все подтипы)
 #define MC_TEXT                  0
@@ -185,7 +182,7 @@ byte COLOR_MODE = 0;          // Режим цвета часов
 // ---------------------------------
 
 // Типы эффектов (см. выше), в которых могут отображаться часы в наложении
-#if (USE_CLOCK == 1 && OVERLAY_CLOCK == 1)
+#if (OVERLAY_CLOCK == 1)
 byte overlayList[] = {
   MC_NOISE_MADNESS,
   MC_NOISE_CLOUD,
@@ -268,14 +265,12 @@ const byte ALARM_LIST_IDX[] PROGMEM = {EFFECT_SNOW, EFFECT_BALL, EFFECT_RAINBOW,
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
-#if (USE_CLOCK == 1)
-  #include <OldTime.h>
-  boolean showDateInClock = true;    // Показывать дату при отображении часов
-  byte showDateDuration = 5;         // на 5 секунд
-  byte showDateInterval = 20;        // через каждые 20 секунд
-  byte showDateState = false;        // false - отображаются часы; true - отображается дата
-  long showDateStateLastChange = 0;  // Время, когда отображение часов сменилось на отображение календаря и наоборот
-#endif
+#include <OldTime.h>
+boolean showDateInClock = true;    // Показывать дату при отображении часов
+byte showDateDuration = 5;         // на 5 секунд
+byte showDateInterval = 20;        // через каждые 20 секунд
+byte showDateState = false;        // false - отображаются часы; true - отображается дата
+long showDateStateLastChange = 0;  // Время, когда отображение часов сменилось на отображение календаря и наоборот
 
 String runningText = "";
 byte buttons = 4;                  // 0 - верх, 1 - право, 2 - низ, 3 - лево, 4 - не нажата - управление играми
@@ -285,13 +280,17 @@ boolean specialClock = false;   // Спец.режим использует over
 byte specialBrightness = false; // Яркость в спец.режиме
 
 boolean isAlarming = false;           // Сработал будильник "рассвет"
+boolean isAlarmStopped = false;       // Сработавший будильник "рассвет" остановлен пользователем
 byte alarmHour = 0;                   // Часы времени срабатывания будильника
 byte alarmMinute = 0;                 // Минуты времени срабатывания будильника
 byte alarmWeekDay = 0;                // Битовая маска дней недели будильника
+byte dawnHour = 0;                    // Часы времени начала рассвета
+byte dawnMinute = 0;                  // Минуты времени начала рассвета
+byte dawnWeekDay = 0;                 // День недели времени начала рассвета
 byte alarmDuration = 0;               // Продолжительность "рассвета"
 boolean alarmOnOff = false;           // Будильник включен/выключен
-byte alarmEffect = EFFECT_DAWN_ALARM; // Какой эффект используется для будильника "рассвет". Могут быть обычные эффекты - их
-                                      // яркость просто будет постепенно увеличиваться
+byte alarmEffect = EFFECT_DAWN_ALARM; // Какой эффект используется для будильника "рассвет". Могут быть обычные эффекты - их яркость просто будет постепенно увеличиваться
+byte modeBeforeAlarm;                 // Запомнитьрежим перед включение "рассвета"
 
 static const byte maxDim = max(WIDTH, HEIGHT);
 int globalBrightness = BRIGHTNESS;
@@ -365,24 +364,19 @@ timerMinim dawnTimer(1000);              // Таймер шага рассвет
 WiFiUDP udp;
 unsigned int localPort = 2390;  // local port to listen for UDP packets
 
-#if (USE_CLOCK == 1)
-  timerMinim WifiTimer(500);  
-#endif 
+timerMinim WifiTimer(500);  
+const char* ntpServerName = "time.nist.gov";
+IPAddress timeServerIP;
+#define NTP_PACKET_SIZE 48           // NTP время в первых 48 байтах сообщения
+uint16_t SYNC_TIME_PERIOD = 60;      // Период синхронизации в минутах
+byte packetBuffer[NTP_PACKET_SIZE];  // буффер для хранения входящих и исходящих пакетов
 
-#if (USE_CLOCK == 1)
-  const char* ntpServerName = "time.nist.gov";
-  IPAddress timeServerIP;
-  #define NTP_PACKET_SIZE 48           // NTP время в первых 48 байтах сообщения
-  uint16_t SYNC_TIME_PERIOD = 60;      // Период синхронизации в минутах
-  byte packetBuffer[NTP_PACKET_SIZE];  // буффер для хранения входящих и исходящих пакетов
+int8_t timeZoneOffset = 7;           // set this to the offset in hours to your local time;
+long ntp_t = 0;
+byte init_time = 0;
+bool useNtp = true;
 
-  int8_t timeZoneOffset = 7;           // set this to the offset in hours to your local time;
-  long ntp_t = 0;
-  byte init_time = 0;
-  bool useNtp = true;
-  
-  timerMinim ntpTimer(1000 * 60 * SYNC_TIME_PERIOD);            // Сверяем время с NTP-сервером через SYNC_TIME_PERIOD минут
-#endif
+timerMinim ntpTimer(1000 * 60 * SYNC_TIME_PERIOD);            // Сверяем время с NTP-сервером через SYNC_TIME_PERIOD минут
 
 void setup() {
   Serial.begin(115200);
@@ -415,14 +409,16 @@ void setup() {
   FastLED.show();
   randomSeed(analogRead(0) + analogRead(1));    // пинаем генератор случайных чисел
 
-#if (USE_CLOCK == 1)
   if (CLOCK_X < 0) CLOCK_X = 0;
   if (CLOCK_Y < 0) CLOCK_Y = 0;  
-#endif  
+
+  // Рассчитать время начала рассвета
+  calculateDawnTime();
 }
 
 void loop() {
   checkWiFiConnection(); 
+  checkAlarmTime();
   bluetoothRoutine();
 }
 

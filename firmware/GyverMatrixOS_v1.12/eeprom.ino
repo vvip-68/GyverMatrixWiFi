@@ -51,7 +51,6 @@ void loadSettings() {
     AUTOPLAY = EEPROMread(6) == 1;
     autoplayTime = EEPROMread(7) * 1000L;  // секунды -> миллисек 
     idleTime = EEPROMread(8) * 60 * 1000L; // минуты -> миллисек
-#if (USE_CLOCK == 1)
     overlayEnabled = EEPROMread(5);
     useNtp = EEPROMread(9) == 1;
     SYNC_TIME_PERIOD = EEPROM_int_read(10);
@@ -62,12 +61,11 @@ void loadSettings() {
     showDateDuration = EEPROMread(17);
     showDateInterval = EEPROMread(18);
     alarmOnOff = EEPROMread(19) == 1; 
-    alarmHour = EEPROMread(20);
-    alarmMinute = EEPROMread(21);
+    alarmHour = constrain(EEPROMread(20), 0, 23);
+    alarmMinute = constrain(EEPROMread(21), 0, 59);
     alarmWeekDay = EEPROMread(22);
-    alarmDuration = EEPROMread(23);
+    alarmDuration = constrain(EEPROMread(23),1,59);
     alarmEffect = EEPROMread(24);
-#endif    
   } else {
     globalBrightness = BRIGHTNESS;
     scrollSpeed = D_TEXT_SPEED;
@@ -76,7 +74,6 @@ void loadSettings() {
     AUTOPLAY = true;
     autoplayTime = ((long)AUTOPLAY_PERIOD * 1000);     // секунды -> миллисек
     idleTime = ((long)IDLE_TIME * 60 * 1000);          // минуты -> миллисек
-#if (USE_CLOCK == 1)  
     overlayEnabled = true;
     useNtp = true;
     SYNC_TIME_PERIOD = 60;
@@ -92,17 +89,13 @@ void loadSettings() {
     alarmWeekDay = 0;
     alarmDuration = 20;
     alarmEffect = EFFECT_DAWN_ALARM;
-#endif    
   }
 
   scrollTimer.setInterval(scrollSpeed);
   effectTimer.setInterval(effectSpeed);
   gameTimer.setInterval(gameSpeed);
-  idleTimer.setInterval(idleTime);
-  
-#if (USE_CLOCK == 1)    
+  idleTimer.setInterval(idleTime);  
   ntpTimer.setInterval(1000 * 60 * SYNC_TIME_PERIOD);
-#endif    
   
   // После первой инициализации значений - сохранить их принудительно
   if (!isInitialized) {
@@ -123,7 +116,6 @@ void saveDefaults() {
   EEPROMwrite(7, autoplayTime / 1000);
   EEPROMwrite(8, constrain(idleTime / 60 / 1000, 0, 255));
 
-#if (USE_CLOCK == 1)  
   EEPROMwrite(5, overlayEnabled);
   EEPROMwrite(9, useNtp ? 1 : 0);
   EEPROM_int_write(10, SYNC_TIME_PERIOD);
@@ -134,7 +126,6 @@ void saveDefaults() {
   EEPROMwrite(17, showDateDuration);
   EEPROMwrite(18, showDateInterval);
   saveAlarmParams(alarmOnOff,alarmHour,alarmMinute,alarmWeekDay,alarmDuration,alarmEffect);
-#endif
 
   EEPROMwrite(15, 1);    // Использовать бегущий текст в демо-режиме: 0 - нет; 1 - да
 
@@ -292,7 +283,6 @@ long getIdleTime() {
   return time;
 }
 
-#if (USE_CLOCK == 1)
 void saveEffectClock(byte effect, boolean overlay) {
   if (overlay != getEffectClock(effect)) {
     const int addr = EFFECT_EEPROM;  
@@ -464,7 +454,6 @@ byte getAlarmDuration() {
 byte getAlarmEffect() { 
   return EEPROMread(24);
 }
-#endif
 
 bool getUseTextInDemo() {
   return EEPROMread(15) == 1;
@@ -527,7 +516,6 @@ void saveAutoplayTime(long value) { }
 long getAutoplayTime() { return autoplayTime; }
 void saveIdleTime(long value) { }
 long getIdleTime() { return autoplayTime; }
-#if (USE_CLOCK == 1)
 void saveEffectClock(byte effect, boolean overlay) { }
 boolean getEffectClock(byte effect) { return overlayAllowed(); }
 boolean getClockOverlayEnabled() { return overlayEnabled; }
@@ -555,7 +543,6 @@ byte getAlarmMinute() { return 0;}
 byte getAlarmWeekDay() { return 0;}
 byte getAlarmDuration() { return 1;}
 byte getAlarmEffect() { return EFFECT_DAWN_ALARM;}
-#endif
 bool getUseTextInDemo() { return true; }
 void setUseTextInDemo(boolean use) {  }
 
