@@ -519,6 +519,19 @@ byte mapModeToEffect(byte aMode) {
   return tmp_effect;
 }
 
+// Соответствие индекса в списке эффектов, доступных в качестве будильника индексам списка известных эффектов
+byte mapAlarmToEffect(byte alrmIdx) {
+  //                              0        1     2                  3     4          5            6         7        8      9           10          11     12   13     14                15                 16    17          18             19       20 
+  //                0       1     2        3     4      5           6     7          8       9   10        11       12     13           14          15     16   17     18                19                 20    21          22             23       24      25
+  // ALARM_LIST  F(              "Снегопад,Шарик,Радуга,            Огонь,The Matrix,Шарики,     Звездопад,Конфетти,Радуга диагональная,Цветной шум,Облака,Лава,Плазма,Радужные переливы,Полосатые переливы,Зебра,Шумящий лес,Морской прибой,Анимация,Рассвет")
+  // EFFECT_LIST F("Дыхание,Цвета,Снегопад,Шарик,Радуга,Радуга пикс,Огонь,The Matrix,Шарики,Часы,Звездопад,Конфетти,Радуга диагональная,Цветной шум,Облака,Лава,Плазма,Радужные переливы,Полосатые переливы,Зебра,Шумящий лес,Морской прибой,Анимация,Рассвет,Лампа")
+  // const byte ALARM_LIST_IDX[] PROGMEM = {EFFECT_SNOW, EFFECT_BALL, EFFECT_RAINBOW, EFFECT_FIRE, EFFECT_MATRIX, EFFECT_BALLS,
+  //                                        EFFECT_STARFALL, EFFECT_SPARKLES, EFFECT_RAINBOW_DIAG, EFFECT_NOISE_MADNESS, EFFECT_NOISE_CLOUD,
+  //                                        EFFECT_NOISE_LAVA, EFFECT_NOISE_PLASMA, EFFECT_NOISE_RAINBOW, EFFECT_NOISE_RAINBOW_STRIP, 
+  //                                        EFFECT_NOISE_ZEBRA, EFFECT_NOISE_FOREST, EFFECT_NOISE_OCEAN, EFFECT_ANIMATION, EFFECT_DAWN_ALARM};
+  return pgm_read_byte(&(ALARM_LIST_IDX[alrmIdx]));
+}
+
 byte mapModeToGame(byte aMode) {
   byte tmp_game = 255;
   // Если режима нет в списке - ему нет соответствия среди тгр - значит это эффект или бегущий текст

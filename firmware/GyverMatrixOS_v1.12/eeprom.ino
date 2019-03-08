@@ -24,7 +24,13 @@ void loadSettings() {
   //   16 - Отображать с часами текущую дату 
   //   17 - Кол-во секунд отображения даты
   //   18 - Кол-во секунд отображения часов
-  //   19 - зарезервировано
+  //   19 - Будильник вкал/выкл 1 - вкл; 0 -выкл
+  //   20 - Будильник, время: часы
+  //   21 - Будильник, время: минуты
+  //   22 - Будильник, дни недели
+  //   23 - Будильник, продолжительность "рассвета"
+  //   24 - Будильник, эффект "рассвета"
+  //   25 - зарезервировано
   //  ... - зарезервировано
   //  149 - зарезервировано
   //  150 - 150+(Nэфф*3)   - скорость эффекта
@@ -74,6 +80,12 @@ void loadSettings() {
     showDateInClock = true;  
     showDateDuration = 5;
     showDateInterval = 20;
+    alarmOnOff = false;
+    alarmHour = 0;
+    alarmMinute = 0;
+    alarmWeekDay = 0;
+    alarmDuration = 20;
+    alarmEffect = EFFECT_DAWN_ALARM;
 #endif    
   }
 
@@ -115,6 +127,7 @@ void saveDefaults() {
   EEPROMwrite(16, showDateInClock ? 1 : 0);
   EEPROMwrite(17, showDateDuration);
   EEPROMwrite(18, showDateInterval);
+  saveAlarmParams(alarmOnOff,alarmHour,alarmMinute,alarmWeekDay,alarmDuration,alarmEffect);
 #endif
 
   EEPROMwrite(15, 1);    // Использовать бегущий текст в демо-режиме: 0 - нет; 1 - да
@@ -388,6 +401,63 @@ void setShowDateInterval(byte Interval) {
   }
 }
 
+void saveAlarmParams(boolean alarmOnOff, byte alarmHour, byte alarmMinute, byte alarmWeekDay, byte alarmDuration, byte alarmEffect) {
+  //   19 - Будильник вкал/выкл 1 - вкл; 0 -выкл
+  //   20 - Будильник, время: часы
+  //   21 - Будильник, время: минуты
+  //   22 - Будильник, дни недели
+  //   23 - Будильник, продолжительность "рассвета"
+  //   24 - Будильник, эффект "рассвета"
+  //   25 - зарезервировано
+  if (alarmOnOff != getAlarmOnOff()) {
+    EEPROMwrite(19, alarmOnOff ? 1 : 0);
+    eepromModified = true;
+  }
+  if (alarmHour != getAlarmHour()) {
+    EEPROMwrite(20, alarmHour);
+    eepromModified = true;
+  }
+  if (alarmMinute != getAlarmMinute()) {
+    EEPROMwrite(21, alarmMinute);
+    eepromModified = true;
+  }
+  if (alarmWeekDay != getAlarmWeekDay()) {
+    EEPROMwrite(22, alarmWeekDay);
+    eepromModified = true;
+  }
+  if (alarmDuration != getAlarmDuration()) {
+    EEPROMwrite(23, alarmDuration);
+    eepromModified = true;
+  }
+  if (alarmEffect != getAlarmEffect()) {
+    EEPROMwrite(24, alarmEffect);
+    eepromModified = true;
+  }
+}
+
+bool getAlarmOnOff() { 
+  return EEPROMread(19) == 1;
+}
+
+byte getAlarmHour() { 
+  return EEPROMread(20);
+}
+
+byte getAlarmMinute() { 
+  return EEPROMread(21);
+}
+
+byte getAlarmWeekDay() { 
+  return EEPROMread(22);
+}
+
+byte getAlarmDuration() { 
+  return EEPROMread(23);
+}
+
+byte getAlarmEffect() { 
+  return EEPROMread(24);
+}
 #endif
 
 bool getUseTextInDemo() {
@@ -472,6 +542,13 @@ byte getShowDateDuration() { return 5; }
 void setShowDateDuration(byte Duration) { }
 byte getShowDateInterval() { return 20; }
 void setShowDateInterval(byte Interval) { }
+void saveAlarmParams(boolean alarmOnOff, byte alarmHour, byte alarmMinute, byte alarmWeekDay, byte alarmDuration, byte alarmEffect) { }
+bool getAlarmOnOff() { return false; }
+byte getAlarmHour() { return 0;}
+byte getAlarmMinute() { return 0;}
+byte getAlarmWeekDay() { return 0;}
+byte getAlarmDuration() { return 1;}
+byte getAlarmEffect() { return EFFECT_DAWN_ALARM;}
 #endif
 bool getUseTextInDemo() { return true; }
 void setUseTextInDemo(boolean use) {  }

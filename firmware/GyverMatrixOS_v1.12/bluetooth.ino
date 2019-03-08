@@ -1,4 +1,4 @@
-#define PARSE_AMOUNT 4          // максимальное количество значений в массиве, который хотим получить
+#define PARSE_AMOUNT 8          // максимальное количество значений в массиве, который хотим получить
 #define header '$'              // стартовый символ
 #define divider ' '             // разделительный символ
 #define ending ';'              // завершающий символ
@@ -173,7 +173,14 @@ void parsing() {
     18 - Запрос текущих параметров программой: $18 page;  page: 1 - настройки; 2 - рисование; 3 - картинка; 4 - текст; 5 - эффекты; 6 - игра; 7 - часы; 8 - о приложении 
     19 - работа с настройками часов
     20 - настройки и управление будильников
-       - $20 0; - отключение будильника
+       - $20 0;       - отключение будильника (сброс состояния isAlarming)
+       - $20 1 X DD EF HH MM WD;
+            X    - вкл/выкл будильника X=0 - выключено, X=1 - включено 
+           DD    - установка продолжительности рассвета (рассвет начинается за DD минут до установленного времени будильника)
+           EF    - установка эффекта, который будет использован в качестве рассвета
+           HH    - установка времени будильника - часы
+           MM    - установка времени будильника - минуты
+           WD    - установка дней пн-вс как битовая маска
   */  
   if (recievedFlag) {      // если получены данные
     recievedFlag = false;
@@ -667,12 +674,33 @@ void parsing() {
       case 20:
         switch (intData[1]) { 
           case 0:  
-          if (isAlarming) {
+            if (isAlarming) {
              
-          }
-          break;
+            }
+            break;
+          case 1:
+            //  $20 1 X DD EF HH MM WD;
+            //    X    - вкл/выкл будильника X=0 - выключено, X=1 - включено 
+            //   DD    - установка продолжительности рассвета (рассвет начинается за DD минут до установленного времени будильника)
+            //   EF    - установка эффекта, который будет использован в качестве рассвета
+            //   HH    - установка времени будильника - часы
+            //   MM    - установка времени будильника - минуты
+            //   WD    - установка дней пн-вс как битовая маска
+            alarmOnOff = intData[2] == 1;
+            alarmDuration = intData[3];
+            alarmEffect = mapAlarmToEffect(intData[4]);
+            alarmHour = intData[5];
+            alarmMinute = intData[6];
+            alarmWeekDay = intData[7];
+            if (alarmDuration<=0) alarmDuration = 1;
+            saveAlarmParams(alarmOnOff,alarmHour,alarmMinute,alarmWeekDay,alarmDuration,alarmEffect);
+            break;
         }
-        sendAcknowledge();
+        if (intData[1] == 0) { // ping
+          sendAcknowledge();
+        } else {
+          sendPageParams(8);
+        }
         break;
     }
     lastMode = intData[0];  // запомнить предыдущий режим
@@ -842,9 +870,9 @@ void sendPageParams(int page) {
   // DI:число    интервал показа даты при отображении часов (в секундах)
   // LG:[список] список игр, разделенный запятыми, ограничители [] обязательны        
   // LE:[список] список эффектов, разделенный запятыми, ограничители [] обязательны        
+  // LA:[список] список эффектов для будильника, разделенный запятыми, ограничители [] обязательны        
   // AL:X        сработал будильник 0-нет, 1-да
-  // AH:число    часы времени будильника
-  // AM:число    минуты времени будильника
+  // AT:HH MM     часы-минуты времени будильника -> например "09 15"
   // AW:число    битовая маска дней недели будильника b6..b0: b0 - пн .. b7 - вс
   // AD:число    продолжительность рассвета, мин
   // AE:число    эффект, использующийся для будильника
@@ -929,10 +957,17 @@ void sendPageParams(int page) {
 #if (USE_CLOCK == 1)      
       str="$18 AL:"; 
       if (isAlarming) str+="1|AO:"; else str+="0|AO:";
-      if (alarmOnOff) str+="1|AH:"; else str+="0|AH:";
-      str+=String(alarmHour)+"|AM:"+String(alarmMinute)+"|AW:"+String(alarmWeekDay)+"|AD:"+String(alarmDuration);
+      if (alarmOnOff) str+="1|AT:"; else str+="0|AT:";
+      str+=String(alarmHour)+" "+String(alarmMinute)+"|AD:"+String(alarmDuration)+"|AW:";
+      for (int i=0; i<7; i++) {
+         if (((alarmWeekDay>>i) & 0x01) == 1) str+="1"; else str+="0";  
+         if (i<6) str+='.';
+      }
       str+=";";      
 #endif      
+      break;
+    case 97:  // Запрос списка эффектов для будильника
+      str="$18 LA:[" + String(ALARM_LIST) + "];"; 
       break;
     case 98:  // Запрос списка игр
       str="$18 LG:[" + String(GAME_LIST) + "];"; 
