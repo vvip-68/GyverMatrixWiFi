@@ -468,6 +468,17 @@ void calculateDawnTime() {
   if (dawnWeekDay == 0) dawnWeekDay = 7;             // Sunday is day 7, Monday is day 1;
   if (dawnHour < hour()) dawnWeekDay++;              // Если час рассвета меньше текущего - это "завтра"
   if (dawnWeekDay == 8) dawnWeekDay = 1;             // Если переход через вс (7) - это пн (1)
+
+  Serial.print(String(F("Следующий рассвет в "))+String(dawnHour)+ F(":") + String(dawnMinute));
+  switch(dawnWeekDay) {
+    case 1: Serial.println(F(", понедельник")); break;
+    case 2: Serial.println(F(", вторник")); break;
+    case 3: Serial.println(F(", среда")); break;
+    case 4: Serial.println(F(", четверг")); break;
+    case 5: Serial.println(F(", пятница")); break;
+    case 6: Serial.println(F(", суббота")); break;
+    case 7: Serial.println(F(", воскресенье")); break;
+  }  
 }
 
 // Проверка времени срабатывания будильника
@@ -487,35 +498,41 @@ void checkAlarmTime() {
          modeBeforeAlarm = thisMode;
          thisMode = DEMO_DAWN_ALARM;
          idleTimer.setInterval(4294967295);
-         sendPageParams(1);  // Параметры, включающие в себя статус IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
-         Serial.println("Alarm ON at "+String(hour())+ ":" + String(minute()));
+         sendPageParams(8);  // Параметры, включающие в себя статус IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
+         Serial.println(String(F("Рассвет ВКЛ в "))+String(hour())+ ":" + String(minute()));
        }
     }
 
     // При наступлении времени срабатывания будильника, если он еще не выключен пользователем - запустить режим часов
     if (alarmHour == hour() && alarmMinute == minute() && isAlarming) {
-      Serial.println("Alarm auto-OFF at "+String(hour())+ ":" + String(minute()));
+      Serial.println(String(F("Рассвет Авто-ВЫКЛ в "))+String(hour())+ ":" + String(minute()));
       isAlarming = false;
       isAlarmStopped = false;
       thisMode = DEMO_CLOCK;    
       loadingFlag = true;
       FastLED.setBrightness(globalBrightness);
-      sendPageParams(1);  // Параметры, включающие в себя статус IsAlarming (AL:0), чтобы изменить в смартфоне отображение активности будильника
+      sendPageParams(8);  // Параметры, включающие в себя статус IsAlarming (AL:0), чтобы изменить в смартфоне отображение активности будильника
     }
-  }
-  
+
+    // Если рассвет начинался и остановлен пользователем и время начала рассвета уже прошло - сбросить флаги, подготовив их к следующему циклу
+    if (!(dawnHour == hour() && dawnMinute == minute()) && isAlarming && isAlarmStopped) {
+      isAlarming = false;
+      isAlarmStopped = false;
+    }
+  }  
 }
 
 void stopAlarm() {
   if (isAlarming && !isAlarmStopped) {
-    Serial.println("Alarm OFF at "+String(hour())+ ":" + String(minute()));
-    isAlarmStopped = true;
+    Serial.println(String(F("Рассвет ВЫКЛ в ")) + String(hour())+ ":" + String(minute()));
+    isAlarming = dawnHour == hour() && dawnMinute == minute(); // Если час/мин начала рассвета уже пройден - isAlarming будет false - готово к новому рассвету
+    isAlarmStopped = isAlarming;                               // Если после провверки обнаружили, что все еще isAlarming - оставить isStopped в true
     thisMode = modeBeforeAlarm;
     loadingFlag = true;
     specialMode = false;
     specialClock = false;
     idleTimer.setInterval(idleTime);
     FastLED.setBrightness(globalBrightness);
-    sendPageParams(1);  // Параметры, включающие в себя статус IsAlarming (AL:0), чтобы изменить в смартфонеот ображение активности будильника
+    sendPageParams(8);  // Параметры, включающие в себя статус IsAlarming (AL:0), чтобы изменить в смартфонеот ображение активности будильника
   }
 }

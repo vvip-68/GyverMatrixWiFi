@@ -193,6 +193,9 @@ void parsing() {
         specialMode = false;
       }
     }
+
+    // Режимы кроме 18 останавливают будильник, если он работает (идет рассвет)
+    if (intData[0] != 18) stopAlarm();
     
     switch (intData[0]) {
       case 0:
