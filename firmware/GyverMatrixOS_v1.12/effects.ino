@@ -501,15 +501,16 @@ void dawnProcedure() {
     FastLED.setBrightness(dawnBrightness);
   }
     
-  byte effect = alarmEffect; 
-  if (effect == DEMO_DAWN_ALARM) {
+  byte b_tmp = mapEffectToMode(alarmEffect);
+  if (b_tmp == 255) b_tmp = DEMO_DAWN_ALARM;
+  if (b_tmp == DEMO_DAWN_ALARM) {
     // Если устройство лампа (DEVICE_TYPE == 0) - матрица свернута в "трубу" - рассвет - огонек, бегущий вкруговую по спирали
-    // Если устройство плоская матрица в рамке (MATRIX_TYPE == 1) - рассвет - огонек, бегущий по спирали от центра матрицы к краям на плоскости
-    effect = DEVICE_TYPE == 0 ? DEMO_DAWN_ALARM_SPIRAL : DEMO_DAWN_ALARM_SQUARE;
+    // Если устройство плоская матрица в рамке (DEVICE_TYPE == 1) - рассвет - огонек, бегущий по спирали от центра матрицы к краям на плоскости
+    b_tmp = DEVICE_TYPE == 0 ? DEMO_DAWN_ALARM_SPIRAL : DEMO_DAWN_ALARM_SQUARE;
   }
 
   // Спец.режимы так же как и обычные вызываются в customModes (DEMO_DAWN_ALARM_SPIRAL и DEMO_DAWN_ALARM_SQUARE)
-  customModes(effect);
+  customModes(b_tmp);
 
   // Сбрасывать флаг нужно ПОСЛЕ того как инициализированы: И процедура рассвета И применяемый эффект,
   // используемый в качестве рассвета

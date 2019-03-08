@@ -532,6 +532,14 @@ byte mapAlarmToEffect(byte alrmIdx) {
   return pgm_read_byte(&(ALARM_LIST_IDX[alrmIdx]));
 }
 
+// Соответствие индекса в списке известных эффектов индексам списка эффектов, доступных в качестве будильника
+byte mapEffectToAlarm(byte effect) {
+  for(byte i=0; i<sizeof(ALARM_LIST_IDX); i++) {
+    if (mapAlarmToEffect(i) == effect) return i;
+  }
+  return sizeof(ALARM_LIST_IDX) - 1; // последний эффект в списке = "Рассвет"
+}
+
 byte mapModeToGame(byte aMode) {
   byte tmp_game = 255;
   // Если режима нет в списке - ему нет соответствия среди тгр - значит это эффект или бегущий текст

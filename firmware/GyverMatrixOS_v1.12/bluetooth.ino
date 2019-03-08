@@ -361,7 +361,7 @@ void parsing() {
           // Найти соответствие thisMode указанному эффекту. 
           // Дльнейшее отображение изображения эффекта будет выполняться стандартной процедурой customRoutin()
           if (!isColorEffect(effect)) {            
-             b_tmp = mapEffectToMode(effect);           
+            b_tmp = mapEffectToMode(effect);           
             if (b_tmp != 255) thisMode = b_tmp;
           }
 
@@ -700,6 +700,7 @@ void parsing() {
           sendAcknowledge();
         } else {
           sendPageParams(8);
+          saveSettings();      // Если были изменения параметров, сохраняемых в EEPROM - сохранить
         }
         break;
     }
@@ -963,7 +964,8 @@ void sendPageParams(int page) {
          if (((alarmWeekDay>>i) & 0x01) == 1) str+="1"; else str+="0";  
          if (i<6) str+='.';
       }
-      str+=";";      
+      str+="|AE:" + String(mapEffectToAlarm(alarmEffect) + 1); // Индекс в списке в приложении смартфона начинается с 1
+      str+=";";
 #endif      
       break;
     case 97:  // Запрос списка эффектов для будильника

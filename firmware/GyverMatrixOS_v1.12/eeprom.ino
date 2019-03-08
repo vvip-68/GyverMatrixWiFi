@@ -61,6 +61,12 @@ void loadSettings() {
     showDateInClock = EEPROMread(16) == 1;  
     showDateDuration = EEPROMread(17);
     showDateInterval = EEPROMread(18);
+    alarmOnOff = EEPROMread(19) == 1; 
+    alarmHour = EEPROMread(20);
+    alarmMinute = EEPROMread(21);
+    alarmWeekDay = EEPROMread(22);
+    alarmDuration = EEPROMread(23);
+    alarmEffect = EEPROMread(24);
 #endif    
   } else {
     globalBrightness = BRIGHTNESS;
