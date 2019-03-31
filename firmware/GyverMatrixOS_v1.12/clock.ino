@@ -200,8 +200,11 @@ void drawClock(byte hrs, byte mins, boolean dots, byte X, byte Y) {
   
   if (CLOCK_ORIENT == 0) {
     if (h10 == 1 && m01 != 1) X--;
-    //if (hrs > 9) 
-    drawDigit3x5(h10, X + (h10 == 1 ? 1 : 0), Y, clockLED[0]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
+    // 0 в часах невыводим, для центрирования сдвигаем остальные цифры влево на место нуля
+    if (h10 > 0) 
+      drawDigit3x5(h10, X + (h10 == 1 ? 1 : 0), Y, clockLED[0]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
+    else 
+      X -= 2;
     drawDigit3x5(h01, X + 4, Y, clockLED[1]);
     if (dots) {
       drawPixelXY(X + 7, Y + 1, clockLED[2]);
