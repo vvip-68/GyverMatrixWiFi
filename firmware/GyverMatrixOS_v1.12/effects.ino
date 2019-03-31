@@ -488,11 +488,13 @@ byte DAWN_NINUTES = 20;            // Продолжительность рас�
 void dawnProcedure() {
   if (loadingFlag) {
     modeCode = MC_DAWN_ALARM;
-
+    dawnBrightness = MIN_DAWN_BRIGHT;
+    
     FastLED.clear();  // очистить
     FastLED.setBrightness(dawnBrightness);        
 
-    dawnTimer.setInterval( (alarmDuration * 60 / (MAX_DAWN_BRIGHT - MIN_DAWN_BRIGHT)) * 1000L);
+    if (realAlarmDuration <= 0 || realAlarmDuration > alarmDuration) realAlarmDuration = alarmDuration;
+    dawnTimer.setInterval((realAlarmDuration * 60 / (MAX_DAWN_BRIGHT - MIN_DAWN_BRIGHT)) * 1000L);
   }
 
   // Пришло время увеличить яркость рассвета?
