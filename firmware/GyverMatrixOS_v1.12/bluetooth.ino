@@ -22,16 +22,14 @@ void bluetoothRoutine() {
   // на время принятия данных матрицу не обновляем!
   if (!parseStarted) {                          
 
-    if (WifiTimer.isReady() && wifi_connected) {  
-      if (useNtp) {
-        if (ntp_t > 0 && millis() - ntp_t > 3000) {
-          Serial.println(F("Таймаут NTP запроса!"));
-          init_time = 0;
-          ntp_t = 0;
-        }
-        if (ntpTimer.isReady() || (init_time == 0 && ntp_t == 0)) {
-          getNTP();
-        }
+    if (wifi_connected && useNtp) {
+      if (ntp_t > 0 && millis() - ntp_t > 3000) {
+        Serial.println(F("Таймаут NTP запроса!"));
+        init_time = 0;
+        ntp_t = 0;
+      }
+      if (ntpSyncTimer.isReady() || (init_time == 0 && ntp_t == 0)) {
+        getNTP();
       }
     }
 
@@ -631,7 +629,7 @@ void parsing() {
              saveTimeZone(timeZoneOffset);
              saveNtpSyncTime(SYNC_TIME_PERIOD);
              saveTimeZone(timeZoneOffset);
-             ntpTimer.setInterval(1000 * 60 * SYNC_TIME_PERIOD);
+             ntpSyncTimer.setInterval(1000 * 60 * SYNC_TIME_PERIOD);
              init_time = 0; ntp_t = 0;
              break;
            case 4:               // $19 4 X; - Ориентация часов  X: 0 - горизонтально, 1 - вертикально

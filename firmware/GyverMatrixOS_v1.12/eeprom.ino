@@ -32,6 +32,10 @@ void loadSettings() {
   //   24 - Будильник, эффект "рассвета"
   //   25 - зарезервировано
   //  ... - зарезервировано
+  //  80-103  - имя сети  WiFi
+  //  104-119 - пароль сети  WiFi
+  //  120-149 - имя NTP сервера
+  //  ... - зарезервировано
   //  149 - зарезервировано
   //  150 - 150+(Nэфф*3)   - скорость эффекта
   //  151 - 150+(Nэфф*3)+1 - 1 - оверлей часов разрешен; 0 - нет оверлея часов
@@ -66,6 +70,12 @@ void loadSettings() {
     alarmWeekDay = EEPROMread(22);
     alarmDuration = constrain(EEPROMread(23),1,59);
     alarmEffect = EEPROMread(24);
+
+    EEPROM_string_read(80,24).toCharArray(ssid, 24);            //  80-103  - имя сети  WiFi    (24 байта макс)
+    EEPROM_string_read(104,16).toCharArray(pass, 16);           //  104-119 - пароль сети  WiFi (16 байт макс)
+    EEPROM_string_read(120,30).toCharArray(ntpServerName, 30);  //  120-149 - имя NTP сервера   (30 байт макс)    
+    if (strlen(ntpServerName) == 0) strcpy(ntpServerName, "time.nist.gov");
+    
   } else {
     globalBrightness = BRIGHTNESS;
     scrollSpeed = D_TEXT_SPEED;
@@ -89,13 +99,17 @@ void loadSettings() {
     alarmWeekDay = 0;
     alarmDuration = 20;
     alarmEffect = EFFECT_DAWN_ALARM;
+    
+    strcpy(ssid, "");
+    strcpy(pass, "");
+    strcpy(ntpServerName, "time.nist.gov");
   }
 
   scrollTimer.setInterval(scrollSpeed);
   effectTimer.setInterval(effectSpeed);
   gameTimer.setInterval(gameSpeed);
   idleTimer.setInterval(idleTime);  
-  ntpTimer.setInterval(1000 * 60 * SYNC_TIME_PERIOD);
+  ntpSyncTimer.setInterval(1000 * 60 * SYNC_TIME_PERIOD);
   
   // После первой инициализации значений - сохранить их принудительно
   if (!isInitialized) {
@@ -140,7 +154,10 @@ void saveDefaults() {
   for (int i = 0; i < MAX_GAME; i++) {
     saveGameParams(i, gameSpeed, true);
   }
-  
+    
+  strcpy(ntpServerName, "time.nist.gov");
+  EEPROM_string_write(120, ntpServerName);
+      
   eepromModified = true;
 }
 
@@ -467,6 +484,7 @@ void setUseTextInDemo(boolean use) {
 }
 
 // ----------------------------------------------------------
+
 byte EEPROMread(byte addr) {    
   return EEPROM.read(addr);
 }
@@ -483,13 +501,39 @@ uint16_t EEPROM_int_read(byte addr) {
   return num;
 }
 
-// запись
+// запись uint16_t
 void EEPROM_int_write(byte addr, uint16_t num) {
   byte raw[2];
   (uint16_t&)raw = num;
   for (byte i = 0; i < 2; i++) EEPROMwrite(addr+i, raw[i]);
 }
 
+// чтение стоки (макс 32 байта)
+String EEPROM_string_read(byte addr, byte len) {
+     if (len>32) len = 32;
+     char buffer[len+1];
+
+     byte i = 0;
+     while (i < len) {
+       char c = EEPROMread(addr+i);
+       if (isAlphaNumeric(c)) buffer[i] = c;
+       else break;
+       i++;
+     }
+     buffer[i] = 0;
+     return String(buffer);
+}
+
+// запись строки (макс 32 байта)
+void EEPROM_string_write(byte addr, String buffer) {
+     uint16_t len = buffer.length();
+     if (len>32) len = 32;
+     byte i = 0;
+     while (i < len) {
+       EEPROMwrite(addr+i, buffer[i++]);
+     }
+     if (i < len-1) EEPROMwrite(addr+i,0);
+}
 // ----------------------------------------------------------
 
 #else

@@ -82,10 +82,14 @@ void getNTP() {
 
 boolean overlayAllowed() {
 #if (OVERLAY_CLOCK == 1)  
+
+  // Оверлей не разрешен, если часы еще не инициализированы
+  if (init_time == 0) return false;
+  
   // Оверлей разрешен текущими параметрами спец.режима?
   if (specialMode) return specialClock;
   
-  // Оверлей разрешен общими настройками часов?
+  // Оверлей разрешен общими настройками часов? 
   bool allowed = getClockOverlayEnabled();
   // Оверлей разрешен настройками списка разрешенных для оверлея эффектов?
   if (allowed) {
