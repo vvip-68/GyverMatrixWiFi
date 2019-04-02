@@ -524,7 +524,7 @@ void checkAlarmTime() {
     }
 
     // Если рассвет начинался и остановлен пользователем и время начала рассвета уже прошло - сбросить флаги, подготовив их к следующему циклу
-    if (!(dawnHour == hour() && dawnMinute == minute()) && isAlarming && isAlarmStopped) {
+    if (!isAlarming && isAlarmStopped && ((hour() * 60L + minute()) >= (alarmHour * 60L + alarmMinute))) {
       isAlarming = false;
       isAlarmStopped = false;
     }
