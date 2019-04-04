@@ -365,7 +365,7 @@ void parsing() {
               setSoftAPName(str);
               break;
             case 5:
-              str.toCharArray(apPass, 8);
+              str.toCharArray(apPass, 16);
               setSoftAPPass(str);
               // Передается в одном пакете - использовать SoftAP, имя точки и пароль
               // После получения пароля - перезапустить создание точки доступа

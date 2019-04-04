@@ -35,8 +35,8 @@ void loadSettings() {
   //   25 - Использовать режим точки доступа
   //   26 - зарезервировано
   //  ... - зарезервировано  
-  //  56-71   - имя точки доступа    - 16 байт
-  //  72-79   - пароль точки доступа -  8 байт
+  //  48-63   - имя точки доступа    - 16 байт
+  //  64-79   - пароль точки доступа - 16 байт
   //  80-103  - имя сети  WiFi       - 24 байта
   //  104-119 - пароль сети  WiFi    - 16 байт
   //  120-149 - имя NTP сервера      - 30 байт
@@ -77,8 +77,8 @@ void loadSettings() {
     alarmEffect = EEPROMread(24);
     useSoftAP = EEPROMread(25) == 1;
 
-    getSoftAPName().toCharArray(apName, 17);        //  56-71   - имя точки доступа    (16 байта макс) + 1 байт '\0'
-    getSoftAPPass().toCharArray(apPass, 9);         //  72-79   - пароль точки доступа (8 байт макс) + 1 байт '\0'
+    getSoftAPName().toCharArray(apName, 17);        //  48-63   - имя точки доступа    (16 байта макс) + 1 байт '\0'
+    getSoftAPPass().toCharArray(apPass, 17);        //  64-79   - пароль точки доступа (16 байт макс) + 1 байт '\0'
     getSsid().toCharArray(ssid, 25);                //  80-103  - имя сети  WiFi       (24 байта макс) + 1 байт '\0'
     getPass().toCharArray(pass, 17);                //  104-119 - пароль сети  WiFi    (16 байт макс) + 1 байт '\0'
     getNtpServer().toCharArray(ntpServerName, 31);  //  120-149 - имя NTP сервера      (30 байт макс) + 1 байт '\0'
@@ -514,23 +514,23 @@ void setUseSoftAP(boolean use) {
 }
 
 String getSoftAPName() {
-  return EEPROM_string_read(56, 16);
+  return EEPROM_string_read(48, 16);
 }
 
 void setSoftAPName(String SoftAPName) {
   if (SoftAPName != getSoftAPName()) {
-    EEPROM_string_write(56, SoftAPName);
+    EEPROM_string_write(48, SoftAPName);
     eepromModified = true;
   }
 }
 
 String getSoftAPPass() {
-  return EEPROM_string_read(72, 8);
+  return EEPROM_string_read(64, 16);
 }
 
 void setSoftAPPass(String SoftAPPass) {
   if (SoftAPPass != getSoftAPPass()) {
-    EEPROM_string_write(72, SoftAPPass);
+    EEPROM_string_write(64, SoftAPPass);
     eepromModified = true;
   }
 }

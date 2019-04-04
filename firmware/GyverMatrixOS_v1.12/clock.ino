@@ -462,6 +462,9 @@ void setOverlayColors() {
 
 // расчет времени начала рассвета
 void calculateDawnTime() {
+  
+  if (!init_time) return;
+  
   // расчёт времени рассвета
   if (alarmMinute > alarmDuration) {                 // если минут во времени будильника больше продолжительности рассвета
     dawnHour = alarmHour;                            // час рассвета равен часу будильника
@@ -471,6 +474,7 @@ void calculateDawnTime() {
     if (dawnHour < 0) dawnHour = 23;                 // защита от совсем поехавших
     dawnMinute = 60 - (alarmDuration - alarmMinute); // находим минуту рассвета в новом часе
   }
+  
   dawnWeekDay = weekday() - 1;                       // day of the week, Sunday is day 0 
   if (dawnWeekDay == 0) dawnWeekDay = 7;             // Sunday is day 7, Monday is day 1;
   if (dawnHour <= hour()) dawnWeekDay++;             // Если час рассвета меньше текущего - это "завтра"
@@ -492,7 +496,7 @@ void calculateDawnTime() {
 void checkAlarmTime() {
   
   // Будильник включен?
-  if (alarmOnOff) {
+  if (init_time && alarmOnOff) {
     
     // Включен ли будильник для текущего дня недели?       
     if ((alarmWeekDay & (1 << (dawnWeekDay - 1))) > 0) {

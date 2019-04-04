@@ -382,10 +382,22 @@ void setup() {
   loadSettings();
   
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
+  WiFi.mode(WIFI_AP_STA);
 
-  // Инициализируем подключение к WiFi или создаём точку доступа, если подключение к указанной сети не доступно
+  // Если задано подключение в режиме точки доступа - создать точку доступа
+  if (useSoftAP) startSoftAP();    
+
+  // Подключиться к WiFi сети
   startWiFi();
-  delay(1000);
+
+  // Если режим точки тоступане используется и к WiFi сети подключиться не удалось- создать точку доступа
+  if (!wifi_connected &&  !ap_connected) startSoftAP();
+
+  // Сообщить UDP порт, на колторый ожидаются подключения
+  if (wifi_connected || ap_connected) {
+    Serial.print(F("UDP-сервер на порту "));
+    Serial.println(localPort);
+  }
 
   // UDP-клиент на указанном порту
   udp.begin(localPort);
@@ -421,56 +433,46 @@ void loop() {
 // -----------------------------------------
 
 void startWiFi() { 
+  
+  WiFi.disconnect(true);
   wifi_connected = false;
-
-  WiFi.disconnect();
-  WiFi.mode(WIFI_STA);
-
+  
   // Пытаемся соединиться с роутером в сети
   if (strlen(ssid) > 0) {
     Serial.print(F("Подключение к "));
     Serial.print(ssid);
         
     WiFi.begin(ssid, pass);
-    delay(250);
   
-    // Проверка соединения (таймаут 15 секунд)
-    for (int j = 0; j < 60; j++ ) {
+    // Проверка соединения (таймаут 10 секунд)
+    for (int j = 0; j < 10; j++ ) {
       wifi_connected = WiFi.status() == WL_CONNECTED; 
       if (wifi_connected) {
         // Подключение установлено
         Serial.println();
         Serial.print(F("WiFi подключен. IP адрес: "));
         Serial.println(WiFi.localIP());
-        Serial.print(F("UDP-сервер на порту "));
-        Serial.print(localPort);
         break;
       }
-      delay(250);
+      delay(1000);
       Serial.print(".");
     }
     Serial.println();
+    
     if (!wifi_connected)
       Serial.println(F("Не удалось подключиться к сети WiFi."));
-  }
-  
-  if (!wifi_connected || useSoftAP) {
-    startSoftAP();    
-    if (wifi_connected || ap_connected) {
-      Serial.print(F("UDP-сервер на порту "));
-      Serial.println(localPort);
-    }
-  }
+  }  
 }
 
 void startSoftAP() {
-  ap_connected = false;
   WiFi.softAPdisconnect(true);
-  WiFi.mode(WIFI_AP_STA);
+  ap_connected = false;
+
   Serial.print(F("Создание точки доступа "));
   Serial.print(apName);
-  delay(100);
+  
   ap_connected = WiFi.softAP(apName, apPass);
+
   for (int j = 0; j < 10; j++ ) {    
     if (ap_connected) {
       Serial.println();
@@ -487,14 +489,16 @@ void startSoftAP() {
       Serial.println(WiFi.softAPIP());
       break;
     }    
+    
     WiFi.enableAP(false);
     WiFi.softAPdisconnect(true);
     delay(1000);
+    
     Serial.print(".");
     ap_connected = WiFi.softAP(apName, apPass);
-  }
-  
+  }  
   Serial.println();  
+  
   if (!ap_connected) 
     Serial.println(F("Не удалось создать WiFi точку доступа."));
 }
