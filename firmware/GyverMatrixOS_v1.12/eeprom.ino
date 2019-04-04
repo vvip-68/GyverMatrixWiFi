@@ -1,7 +1,9 @@
-#if (USE_EEPROM == 1)
-#define EEPROM_OK 0xA5        // Флаг, показывающий, что EEPROM инициализирована корректными данными 
-#define EFFECT_EEPROM 150     // начальная ячейка eeprom с параметрами эффектов
-#define GAME_EEPROM 230       // начальная ячейка eeprom с параметрами игр
+#define EEPROM_OK 0xA5                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
+#define EFFECT_EEPROM 150                  // начальная ячейка eeprom с параметрами эффектов
+#define GAME_EEPROM 230                    // начальная ячейка eeprom с параметрами игр
+#define DEFAULT_AP_NAME "MatrixAP"         // Имя точки доступа по умолчанию 
+#define DEFAULT_AP_PASS "12341234"         // Пароль точки доступа по умолчанию
+#define DEFAULT_NTP_SERVER "time.nist.gov" // NTP сервер по умолчанию
 
 void loadSettings() {
 
@@ -30,11 +32,14 @@ void loadSettings() {
   //   22 - Будильник, дни недели
   //   23 - Будильник, продолжительность "рассвета"
   //   24 - Будильник, эффект "рассвета"
-  //   25 - зарезервировано
-  //  ... - зарезервировано
-  //  80-103  - имя сети  WiFi
-  //  104-119 - пароль сети  WiFi
-  //  120-149 - имя NTP сервера
+  //   25 - Использовать режим точки доступа
+  //   26 - зарезервировано
+  //  ... - зарезервировано  
+  //  56-71   - имя точки доступа    - 16 байт
+  //  72-79   - пароль точки доступа -  8 байт
+  //  80-103  - имя сети  WiFi       - 24 байта
+  //  104-119 - пароль сети  WiFi    - 16 байт
+  //  120-149 - имя NTP сервера      - 30 байт
   //  ... - зарезервировано
   //  149 - зарезервировано
   //  150 - 150+(Nэфф*3)   - скорость эффекта
@@ -70,11 +75,16 @@ void loadSettings() {
     alarmWeekDay = EEPROMread(22);
     alarmDuration = constrain(EEPROMread(23),1,59);
     alarmEffect = EEPROMread(24);
+    useSoftAP = EEPROMread(25) == 1;
 
-    EEPROM_string_read(80,24).toCharArray(ssid, 24);            //  80-103  - имя сети  WiFi    (24 байта макс)
-    EEPROM_string_read(104,16).toCharArray(pass, 16);           //  104-119 - пароль сети  WiFi (16 байт макс)
-    EEPROM_string_read(120,30).toCharArray(ntpServerName, 30);  //  120-149 - имя NTP сервера   (30 байт макс)    
-    if (strlen(ntpServerName) == 0) strcpy(ntpServerName, "time.nist.gov");
+    getSoftAPName().toCharArray(apName, 17);        //  56-71   - имя точки доступа    (16 байта макс) + 1 байт '\0'
+    getSoftAPPass().toCharArray(apPass, 9);         //  72-79   - пароль точки доступа (8 байт макс) + 1 байт '\0'
+    getSsid().toCharArray(ssid, 25);                //  80-103  - имя сети  WiFi       (24 байта макс) + 1 байт '\0'
+    getPass().toCharArray(pass, 17);                //  104-119 - пароль сети  WiFi    (16 байт макс) + 1 байт '\0'
+    getNtpServer().toCharArray(ntpServerName, 31);  //  120-149 - имя NTP сервера      (30 байт макс) + 1 байт '\0'
+    if (strlen(apName) == 0) strcpy(apName, DEFAULT_AP_NAME);
+    if (strlen(apPass) == 0) strcpy(apPass, DEFAULT_AP_PASS);
+    if (strlen(ntpServerName) == 0) strcpy(ntpServerName, DEFAULT_NTP_SERVER);
     
   } else {
     globalBrightness = BRIGHTNESS;
@@ -99,10 +109,13 @@ void loadSettings() {
     alarmWeekDay = 0;
     alarmDuration = 20;
     alarmEffect = EFFECT_DAWN_ALARM;
+    useSoftAP = false;
     
+    strcpy(apName, DEFAULT_AP_NAME);
+    strcpy(apPass, DEFAULT_AP_PASS);
     strcpy(ssid, "");
     strcpy(pass, "");
-    strcpy(ntpServerName, "time.nist.gov");
+    strcpy(ntpServerName, DEFAULT_NTP_SERVER);
   }
 
   scrollTimer.setInterval(scrollSpeed);
@@ -142,6 +155,7 @@ void saveDefaults() {
   saveAlarmParams(alarmOnOff,alarmHour,alarmMinute,alarmWeekDay,alarmDuration,alarmEffect);
 
   EEPROMwrite(15, 1);    // Использовать бегущий текст в демо-режиме: 0 - нет; 1 - да
+  EEPROMwrite(25, 0);    // Использовать режим точки доступа: 0 - нет; 1 - да
 
   // Настройки по умолчанию для эффектов
   int addr = EFFECT_EEPROM;
@@ -155,8 +169,13 @@ void saveDefaults() {
     saveGameParams(i, gameSpeed, true);
   }
     
-  strcpy(ntpServerName, "time.nist.gov");
-  EEPROM_string_write(120, ntpServerName);
+  strcpy(apName, DEFAULT_AP_NAME);
+  strcpy(apPass, DEFAULT_AP_PASS);
+  setSoftAPName(String(apName));
+  setSoftAPPass(String(apPass));
+  
+  strcpy(ntpServerName, DEFAULT_NTP_SERVER);
+  setNtpServer(String(ntpServerName));
       
   eepromModified = true;
 }
@@ -483,6 +502,72 @@ void setUseTextInDemo(boolean use) {
   }
 }
 
+bool getUseSoftAP() {
+  return EEPROMread(25) == 1;
+}
+
+void setUseSoftAP(boolean use) {  
+  if (use != getUseSoftAP()) {
+    EEPROMwrite(25, use ? 1 : 0);
+    eepromModified = true;
+  }
+}
+
+String getSoftAPName() {
+  return EEPROM_string_read(56, 16);
+}
+
+void setSoftAPName(String SoftAPName) {
+  if (SoftAPName != getSoftAPName()) {
+    EEPROM_string_write(56, SoftAPName);
+    eepromModified = true;
+  }
+}
+
+String getSoftAPPass() {
+  return EEPROM_string_read(72, 8);
+}
+
+void setSoftAPPass(String SoftAPPass) {
+  if (SoftAPPass != getSoftAPPass()) {
+    EEPROM_string_write(72, SoftAPPass);
+    eepromModified = true;
+  }
+}
+
+String getSsid() {
+  return EEPROM_string_read(80, 24);
+}
+
+void setSsid(String Ssid) {
+  if (Ssid != getSsid()) {
+    EEPROM_string_write(80, Ssid);
+    eepromModified = true;
+  }
+}
+
+String getPass() {
+  return EEPROM_string_read(104, 16);
+}
+
+void setPass(String Pass) {
+  if (Pass != getPass()) {
+    EEPROM_string_write(104, Pass);
+    eepromModified = true;
+  }
+}
+
+String getNtpServer() {
+  return EEPROM_string_read(120, 30);
+}
+
+void setNtpServer(String server) {
+  if (server != getNtpServer()) {
+    EEPROM_string_write(120, server);
+    eepromModified = true;
+  }
+}
+
 // ----------------------------------------------------------
 
 byte EEPROMread(byte addr) {    
@@ -510,84 +595,29 @@ void EEPROM_int_write(byte addr, uint16_t num) {
 
 // чтение стоки (макс 32 байта)
 String EEPROM_string_read(byte addr, byte len) {
-     if (len>32) len = 32;
-     char buffer[len+1];
-
-     byte i = 0;
-     while (i < len) {
-       char c = EEPROMread(addr+i);
-       if (isAlphaNumeric(c)) buffer[i] = c;
-       else break;
-       i++;
-     }
-     buffer[i] = 0;
-     return String(buffer);
+   if (len>32) len = 32;
+   char buffer[len+1];
+   memset(buffer,'\0',len+1);
+   byte i = 0;
+   while (i < len) {
+     byte c = EEPROMread(addr+i);
+     if (isAlphaNumeric(c) || isPunct(c))
+        buffer[i++] = c;
+     else
+       break;
+   }
+   return String(buffer);
 }
 
 // запись строки (макс 32 байта)
 void EEPROM_string_write(byte addr, String buffer) {
-     uint16_t len = buffer.length();
-     if (len>32) len = 32;
-     byte i = 0;
-     while (i < len) {
-       EEPROMwrite(addr+i, buffer[i++]);
-     }
-     if (i < len-1) EEPROMwrite(addr+i,0);
+   uint16_t len = buffer.length();
+   if (len>32) len = 32;
+   byte i = 0;
+   while (i < len) {
+     EEPROMwrite(addr+i, buffer[i++]);
+   }
+   if (i < 32) EEPROMwrite(addr+i,0);
 }
+
 // ----------------------------------------------------------
-
-#else
-
-void loadSettings() { }
-void saveSettings() { eepromModified = false; }
-void saveEffectParams(byte effect, int speed, boolean overlay, boolean use) { }
-void saveEffectSpeed(byte effect, int speed) { }
-int getEffectSpeed(byte effect) { return effectSpeed; }
-void saveEffectUsage(byte effect, boolean use) { }
-boolean getEffectUsage(byte effect) { return true;  }
-void saveGameParams(byte game, int speed, boolean use) { }
-void saveGameSpeed(byte game, int speed) { }
-int getGameSpeed(byte game) { return gameSpeed; }
-void saveGameUsage(byte game, boolean use) { }
-boolean getGameUsage(byte game) { return true;  }
-void saveScrollSpeed(int speed) { }
-int getScrollSpeed() { return scrollSpeed; }
-byte getMaxBrightness(byte brightness) { return globalBrightness; }
-void saveMaxBrightness(byte brightness) {}
-void saveAutoplay(boolean value) { }
-bool getAutoplay() { return AUTOPLAY; }
-void saveAutoplayTime(long value) { }
-long getAutoplayTime() { return autoplayTime; }
-void saveIdleTime(long value) { }
-long getIdleTime() { return autoplayTime; }
-void saveEffectClock(byte effect, boolean overlay) { }
-boolean getEffectClock(byte effect) { return overlayAllowed(); }
-boolean getClockOverlayEnabled() { return overlayEnabled; }
-void saveClockOverlayEnabled(boolean enabled) { }
-void saveUseNtp(boolean value) { }
-bool getUseNtp() { return useNtp;}
-void saveNtpSyncTime(uint16_t value) { }
-uint16_t getNtpSyncTime() { return SYNC_TIME_PERIOD; }
-void saveTimeZone(int8_t value) { }
-int8_t getTimeZone() { return timeZoneOffset; }
-byte getClockOrientation() { return CLOCK_ORIENT; }
-void saveClockOrientation(byte orientation) { }
-byte getClockColorMode() { return COLOR_MODE; }
-void saveClockColorMode(byte ColorMode) { }
-bool getShowDateInClock() { return true; }
-void setShowDateInClock(boolean use) {  }
-byte getShowDateDuration() { return 5; }
-void setShowDateDuration(byte Duration) { }
-byte getShowDateInterval() { return 20; }
-void setShowDateInterval(byte Interval) { }
-void saveAlarmParams(boolean alarmOnOff, byte alarmHour, byte alarmMinute, byte alarmWeekDay, byte alarmDuration, byte alarmEffect) { }
-bool getAlarmOnOff() { return false; }
-byte getAlarmHour() { return 0;}
-byte getAlarmMinute() { return 0;}
-byte getAlarmWeekDay() { return 0;}
-byte getAlarmDuration() { return 1;}
-byte getAlarmEffect() { return EFFECT_DAWN_ALARM;}
-bool getUseTextInDemo() { return true; }
-void setUseTextInDemo(boolean use) {  }
-
-#endif

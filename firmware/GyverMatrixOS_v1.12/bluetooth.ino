@@ -15,6 +15,7 @@ char incomeBuffer[UDP_TX_PACKET_MAX_SIZE];        // Буфер для прие�
 char replyBuffer[7];                              // ответ клиенту - подтверждения получения команды: "ack;/r/n/0"
 
 unsigned long ackCounter = 0;
+String receiveText = "";
 
 void bluetoothRoutine() {  
   parsing();                                    // принимаем данные
@@ -25,10 +26,16 @@ void bluetoothRoutine() {
     if (wifi_connected && useNtp) {
       if (ntp_t > 0 && millis() - ntp_t > 3000) {
         Serial.println(F("Таймаут NTP запроса!"));
-        init_time = 0;
+        init_time = false;
         ntp_t = 0;
+        ntp_cnt++;
+        if (ntp_cnt >= 10) {
+          Serial.println(F("Не удалось установить соединение с NTP сервером."));  
+        }
       }
-      if (ntpSyncTimer.isReady() || (init_time == 0 && ntp_t == 0)) {
+      bool timeToSync = ntpSyncTimer.isReady();
+      if (timeToSync) ntp_cnt = 0;
+      if (timeToSync || (!init_time && ntp_t == 0 && ntp_cnt < 10)) {
         getNTP();
       }
     }
@@ -38,9 +45,9 @@ void bluetoothRoutine() {
     if (runningFlag) {                         // бегущая строка - Running Text
       String text = runningText;
       if (text == "") {
-         text = init_time ==0 
-           ? clockCurrentText()
-           : clockCurrentText() + " " + dateCurrentTextLong();  // + dateCurrentTextShort()
+         text = init_time
+           ? clockCurrentText() + " " + dateCurrentTextLong()  // + dateCurrentTextShort()
+           : clockCurrentText();
       }
       fillString(text, globalColor); 
       // Включенная бегущая строка только формирует строку в массиве точек матрицы, но не отображает ее
@@ -136,8 +143,18 @@ void parsing() {
     3 - очистка - $3;
     4 - яркость - $4 value;
     5 - картинка построчно $5 Y colorHEX X|colorHEX X|...|colorHEX X;
-    6 - текст $6 some text
-    7 - управление текстом: $7 1 пуск; $7 0 стоп; $7 2 использовать в демо-режиме; $7 3 НЕ использовать в демо-режиме; 
+    6 - текст $6 N|some text, где N - назначение текстаЖ
+        0 - текст бегущей строки
+        1 - имя сервера NTP
+        2 - SSID сети подключения
+        3 - пароль для подключения к сети 
+        4 - имя точки доступа
+        5 - пароль к точке доступа
+    7 - управление текстом: 
+        $7 1 пуск; 
+        $7 0 стоп; 
+        $7 2 использовать в демо-режиме; 
+        $7 3 НЕ использовать в демо-режиме; 
     8 - эффект
       - $8 0 номер эффекта;
       - $8 1 N X старт/стоп; N - номер эффекта, X=0 - стоп X=1 - старт 
@@ -173,6 +190,7 @@ void parsing() {
            HH    - установка времени будильника - часы
            MM    - установка времени будильника - минуты
            WD    - установка дней пн-вс как битовая маска
+    21 - настройки подключения к сети . точке доступа
   */  
   if (recievedFlag) {      // если получены данные
     recievedFlag = false;
@@ -310,7 +328,52 @@ void parsing() {
         break;
       case 6:
         loadingFlag = true;
-        // строка принимается в переменную runningText
+        // строка принимается в переменную receiveText, формат строки N|text, где N:
+        // 0 - текст для бегущей строки
+        // 1 - имя сервера NTP
+        // 2 - имя сети (SSID)
+        // 3 - пароль к сети
+        // 4 - имя точки доступа
+        // 5 - пароль точки доступа
+        tmp_eff = receiveText.indexOf("|");
+        if (tmp_eff > 0) {
+           b_tmp = receiveText.substring(0, tmp_eff).toInt();
+           str = receiveText.substring(tmp_eff+1, receiveText.length()+1);
+           switch(b_tmp) {
+            case 0:
+              runningText = str;
+              break;
+            case 1:
+              str.toCharArray(ntpServerName, 30);
+              setNtpServer(str);
+              saveSettings(); // Если были изменения параметров, сохраняемых в EEPROM - сохранить
+              break;
+            case 2:
+              str.toCharArray(ssid, 24);
+              setSsid(str);
+              break;
+            case 3:
+              str.toCharArray(pass, 16);
+              setPass(str);
+              // Передается в одном пакете - ssid и pass
+              // После получения пароля - перезапустить подключение к сети WiFi
+              saveSettings(); // Если были изменения параметров, сохраняемых в EEPROM - сохранить
+              startWiFi();
+              break;
+            case 4:
+              str.toCharArray(apName, 16);
+              setSoftAPName(str);
+              break;
+            case 5:
+              str.toCharArray(apPass, 8);
+              setSoftAPPass(str);
+              // Передается в одном пакете - использовать SoftAP, имя точки и пароль
+              // После получения пароля - перезапустить создание точки доступа
+              saveSettings(); // Если были изменения параметров, сохраняемых в EEPROM - сохранить
+              if (useSoftAP) startSoftAP();
+              break;
+           }
+        }
         sendAcknowledge();
         break;
       case 7:
@@ -621,7 +684,7 @@ void parsing() {
            case 2:               // $19 2 X; - Использовать синхронизацию часов NTP  X: 0 - нет, 1 - да
              useNtp = intData[2] == 1;
              saveUseNtp(useNtp);
-             init_time = 0; ntp_t = 0;
+             init_time = false; ntp_t = 0; ntp_cnt = 0;
              break;
            case 3:               // $19 3 N Z; - Период синхронизации часов NTP и Часовой пояс
              SYNC_TIME_PERIOD = intData[2];
@@ -630,7 +693,7 @@ void parsing() {
              saveNtpSyncTime(SYNC_TIME_PERIOD);
              saveTimeZone(timeZoneOffset);
              ntpSyncTimer.setInterval(1000 * 60 * SYNC_TIME_PERIOD);
-             init_time = 0; ntp_t = 0;
+             init_time = false; ntp_t = 0; ntp_cnt = 0;
              break;
            case 4:               // $19 4 X; - Ориентация часов  X: 0 - горизонтально, 1 - вертикально
              CLOCK_ORIENT = intData[2] == 1 ? 1  : 0;
@@ -660,6 +723,10 @@ void parsing() {
              showDateInterval = intData[3];
              setShowDateDuration(showDateDuration);
              setShowDateInterval(showDateInterval);
+             break;
+           case 8:               // $19 8 YYYY MM DD HH MM; - Установить текущее время YYYY.MM.DD HH:MM
+             setTime(intData[5],intData[6],0,intData[4],intData[3],intData[2]);
+             init_time = true; ntp_cnt = 0;
              break;
         }
         sendAcknowledge();
@@ -699,6 +766,25 @@ void parsing() {
           sendPageParams(8);
           saveSettings();      // Если были изменения параметров, сохраняемых в EEPROM - сохранить
         }
+        break;
+      case 21:
+        // Настройки подключения к сети
+        switch (intData[1]) { 
+          // $21 0 0 - не использовать точку доступа $21 0 1 - использовать точку доступа
+          case 0:  
+            useSoftAP = intData[2] == 1;
+            setUseSoftAP(useSoftAP);
+            if (useSoftAP && !ap_connected) 
+              startSoftAP();
+            else if (!useSoftAP && ap_connected) {
+              ap_connected = false;
+              WiFi.softAPdisconnect(true);
+              Serial.println(F("Точка доступа отключена."));
+            }      
+            break;
+        }
+        sendPageParams(9);
+        saveSettings();      // Если были изменения параметров, сохраняемых в EEPROM - сохранить
         break;
     }
     lastMode = intData[0];  // запомнить предыдущий режим
@@ -762,9 +848,9 @@ void parsing() {
           // Оставшийся буфер преобразуем с строку
           if (intData[0] == 5) {  // строка картинки
             pictureLine = String(&incomeBuffer[bufIdx]);
-          } if (intData[0] == 6) {  // текст бегущей строки
-            runningText = String(&incomeBuffer[bufIdx]);
-            runningText.trim();
+          } if (intData[0] == 6) {  // текст
+            receiveText = String(&incomeBuffer[bufIdx]);
+            receiveText.trim();
           }
                     
           incomingByte = ending;                       // сразу завершаем парс
@@ -858,6 +944,7 @@ void sendPageParams(int page) {
   // NP:Х        использовать NTP, где Х = 0 - выкл; 1 - вкл
   // NT:число    период синхронизации NTP в минутах
   // NZ:число    часовой пояс -12..+12
+  // NS:[текст]  сервер NTP, ограничители [] обязательны
   // UT:X        использовать бегущую строку в демо-режиме 0-нет, 1-да
   // UE:X        использовать эффект в демо-режиме 0-нет, 1-да
   // UG:X        использовать игру в демо-режиме 0-нет, 1-да
@@ -873,6 +960,11 @@ void sendPageParams(int page) {
   // AD:число    продолжительность рассвета, мин
   // AE:число    эффект, использующийся для будильника
   // AO:X        включен будильник 0-нет, 1-да
+  // NW:[текст]  SSID сети подключения
+  // NA:[текст]  пароль подключения к сети
+  // AU:X        создавать точку доступа 0-нет, 1-да
+  // AN:[текст]  имя точки доступа
+  // AA:[текст]  парольточки доступа
   String str = "", color, text;
   boolean allowed;
   byte b_tmp;
@@ -940,7 +1032,8 @@ void sendPageParams(int page) {
       if (useNtp)  str+="1|NT:"; else str+="0|NT:";
       str+=String(SYNC_TIME_PERIOD) + "|NZ:" + String(timeZoneOffset) + "|DC:"; 
       if (showDateInClock)  str+="1|DD:"; else str+="0|DD:";
-      str+=String(showDateDuration) + "|DI:" + String(showDateInterval); 
+      str+=String(showDateDuration) + "|DI:" + String(showDateInterval) + "|NS:["; 
+      str+=String(ntpServerName)+"]";
       str+=";";
       break;
     case 8:  // Настройки будильника
@@ -953,6 +1046,15 @@ void sendPageParams(int page) {
          if (i<6) str+='.';
       }
       str+="|AE:" + String(mapEffectToAlarm(alarmEffect) + 1); // Индекс в списке в приложении смартфона начинается с 1
+      str+=";";
+      break;
+    case 9:  // Настройки подключения
+      str="$18 AU:"; 
+      if (useSoftAP) str+="1|AN:["; else str+="0|AN:[";
+      str+=String(apName) + "]|AA:[";
+      str+=String(apPass) + "]|NW:[";
+      str+=String(ssid) + "]|NA:[";
+      str+=String(pass) + "]";
       str+=";";
       break;
     case 97:  // Запрос списка эффектов для будильника

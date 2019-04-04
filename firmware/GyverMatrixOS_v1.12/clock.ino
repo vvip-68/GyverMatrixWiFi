@@ -29,7 +29,8 @@ CRGB clockLED[5] = {HOUR_COLOR, HOUR_COLOR, DOT_COLOR, MIN_COLOR, MIN_COLOR};
 
 // send an NTP request to the time server at the given address
  unsigned long sendNTPpacket(IPAddress& address) {
-  Serial.println(F("Отправка NTP пакета..."));
+  Serial.print(F("Отправка NTP пакета на сервер "));
+  Serial.println(ntpServerName);
   // set all bytes in the buffer to 0
   memset(packetBuffer, 0, NTP_PACKET_SIZE);
   // Initialize values needed to form NTP request
@@ -53,8 +54,7 @@ CRGB clockLED[5] = {HOUR_COLOR, HOUR_COLOR, DOT_COLOR, MIN_COLOR, MIN_COLOR};
 
 void parseNTP() {
     Serial.println(F("Разбор пакета NTP"));
-    ntp_t = 0;
-    init_time = 1;
+    ntp_t = 0; ntp_cnt = 0; init_time = true;
     //udp.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
     unsigned long highWord = word(incomeBuffer[40], incomeBuffer[41]);
     unsigned long lowWord = word(incomeBuffer[42], incomeBuffer[43]);
@@ -84,7 +84,7 @@ boolean overlayAllowed() {
 #if (OVERLAY_CLOCK == 1)  
 
   // Оверлей не разрешен, если часы еще не инициализированы
-  if (init_time == 0) return false;
+  if (!init_time) return false;
   
   // Оверлей разрешен текущими параметрами спец.режима?
   if (specialMode) return specialClock;

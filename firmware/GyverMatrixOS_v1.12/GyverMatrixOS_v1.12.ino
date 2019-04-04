@@ -64,7 +64,6 @@ boolean AUTOPLAY = 1;         // 0 выкл / 1 вкл автоматическ�
 #define USE_NOISE_EFFECTS 1 // крутые полноэкранные эффекты (0 нет, 1 да) СИЛЬНО ЖРУТ ПАМЯТЬ!!!
 #define USE_FONTS 1         // использовать буквы (бегущая строка) (0 нет, 1 да)
 #define OVERLAY_CLOCK 1     // часы на фоне всех эффектов и игр. Жрёт SRAM память!
-#define USE_EEPROM 1        // Использовать сохранение настроек эффектов во флэш-памяти    
 
 // игры
 #define USE_SNAKE 1         // игра змейка (0 нет, 1 да)
@@ -264,8 +263,9 @@ const byte ALARM_LIST_IDX[] PROGMEM = {EFFECT_SNOW, EFFECT_BALL, EFFECT_RAINBOW,
 #define FASTLED_ALLOW_INTERRUPTS 0
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
-bool wifi_connected = false;       // true - подключение к сети или инициализация точки доступа выполнена  
-bool isAP = false;                 // true - работаем в режиме точки доступа; false - нормальный режим в сети 
+bool useSoftAP = false;            // использовать режим точки доступа
+bool wifi_connected = false;       // true - подключение к wifi сети выполнена  
+bool ap_connected = false;         // true - работаем в режиме точки доступа;
 
 #include <OldTime.h>
 boolean showDateInClock = true;    // Показывать дату при отображении часов
@@ -330,9 +330,7 @@ boolean fullTextFlag = false;
 bool eepromModified = false;
 String text;
 
-#if (USE_EEPROM == 1)
 #include <EEPROM.h>
-#endif
 
 #if (USE_FONTS == 1)
 #include "fonts.h"
@@ -351,13 +349,13 @@ timerMinim halfsecTimer(500);            // Полусекундный тайм�
 timerMinim idleTimer(idleTime);          // Таймер бездействия ручного управлениядля автоперехода а демо-режим 
 timerMinim dawnTimer(1000);              // Таймер шага рассвета для будильника "рассвет" 
 
+                                         // к длине +1 байт на \0 - терминальный символ
+char apName[17] = "";                    // Имя сети в режиме точки доступа
+char apPass[9]  = "";                    // Пароль подключения к точке доступа
+char ssid[25] = "";                      // SSID (имя) вашего роутера (конфигурируется подключением через точку доступа и сохранением в EEPROM)
+char pass[17] = "";                      // пароль роутера
+
 #include "bitmap2.h"                     // файлы с картинками анимации
-
-char ssid[24] = "";                      // SSID (имя) вашего роутера (конфигурируется подключением через точку доступа и сохранением в EEPROM)
-char pass[16] = "";                      // пароль роутера
-
-char apName[] = "Matrix_0001";           // Имя сети в режиме точки доступа
-char apPass[] = "12341234";              // Пароль подключения к точке доступа
 
 WiFiUDP udp;
 unsigned int localPort = 2390;           // local port to listen for UDP packets
@@ -369,9 +367,10 @@ byte packetBuffer[NTP_PACKET_SIZE];      // буффер для хранения
 
 int8_t timeZoneOffset = 7;               // смещение часового пояса от UTC
 long ntp_t = 0;                          // Время, прошедшее с запроса данных с NTP-сервера (таймаут)
-byte init_time = 0;                      // Флаг 0 - время не инициализировано; 1 - время инициализировано
+byte ntp_cnt = 0;                        // Счетчик попыток получить данные от сервера
+bool init_time = false;                  // Флаг false - время не инициализировано; true - время инициализировано
 bool useNtp = true;                      // Использовать синхронизацию времени с NTP-сервером
-char ntpServerName[30] = "";             // Используемый сервер NTP
+char ntpServerName[31] = "";             // Используемый сервер NTP
 
 timerMinim ntpSyncTimer(1000 * 60 * SYNC_TIME_PERIOD);            // Сверяем время с NTP-сервером через SYNC_TIME_PERIOD минут
 
@@ -379,10 +378,8 @@ void setup() {
   Serial.begin(115200);
   delay(10);
 
-#if (USE_EEPROM == 1)
   EEPROM.begin(256);
   loadSettings();
-#endif
   
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
 
@@ -391,7 +388,7 @@ void setup() {
   delay(1000);
 
   // UDP-клиент на указанном порту
-  if (wifi_connected) udp.begin(localPort);
+  udp.begin(localPort);
 
   // Таймер бездействия
   if (idleTime == 0) // Таймер Idle  отключен
@@ -412,11 +409,6 @@ void setup() {
   if (CLOCK_X < 0) CLOCK_X = 0;
   if (CLOCK_Y < 0) CLOCK_Y = 0;  
 
-  if (wifi_connected && useNtp) {
-    Serial.print(F("Сервер времени NTP: '"));
-    Serial.print(ntpServerName);
-  }
-
   // Рассчитать время начала рассвета
   calculateDawnTime();
 }
@@ -429,54 +421,80 @@ void loop() {
 // -----------------------------------------
 
 void startWiFi() { 
-  isAP = false;
   wifi_connected = false;
-  
+
+  WiFi.disconnect();
+  WiFi.mode(WIFI_STA);
+
   // Пытаемся соединиться с роутером в сети
   if (strlen(ssid) > 0) {
     Serial.print(F("Подключение к "));
     Serial.print(ssid);
-    Serial.println(F("..."));
+        
     WiFi.begin(ssid, pass);
-    delay(1000);
+    delay(250);
   
     // Проверка соединения (таймаут 15 секунд)
-    for (int j = 0; j < 15; j++ ) {
+    for (int j = 0; j < 60; j++ ) {
       wifi_connected = WiFi.status() == WL_CONNECTED; 
       if (wifi_connected) {
         // Подключение установлено
+        Serial.println();
         Serial.print(F("WiFi подключен. IP адрес: "));
         Serial.println(WiFi.localIP());
         Serial.print(F("UDP-сервер на порту "));
-        Serial.println(localPort);
-        wifi_connected = WiFi.status() == WL_CONNECTED; 
-        return;
+        Serial.print(localPort);
+        break;
       }
-      delay(1000);
-      Serial.println(".");
+      delay(250);
+      Serial.print(".");
     }
-    Serial.print(F("Не удалось подключиться к сети WiFi."));
+    Serial.println();
+    if (!wifi_connected)
+      Serial.println(F("Не удалось подключиться к сети WiFi."));
   }
   
-  // Подключение к WiFi недоступно - нет сети или не заданы (не подходят) имя / пароль
-  // Создаем собственную точку доступа
+  if (!wifi_connected || useSoftAP) {
+    startSoftAP();    
+    if (wifi_connected || ap_connected) {
+      Serial.print(F("UDP-сервер на порту "));
+      Serial.println(localPort);
+    }
+  }
+}
+
+void startSoftAP() {
+  ap_connected = false;
+  WiFi.softAPdisconnect(true);
+  WiFi.mode(WIFI_AP_STA);
   Serial.print(F("Создание точки доступа "));
   Serial.print(apName);
-  Serial.println(F("..."));
-  isAP = WiFi.softAP(apName, apPass);
-  if (isAP) {
-    Serial.print(F("Точка доступа создана. Сеть: '"));
-    Serial.print(apName);
-    Serial.print(F("'; Пароль: '"));
-    Serial.print(apPass);
-    Serial.println(F("'."));
-    Serial.print(F("IP адрес: "));
-    Serial.println(WiFi.localIP());
-    Serial.print(F("UDP-сервер на порту "));
-    Serial.println(localPort);
-    wifi_connected = true;
-  } else {
-    Serial.println(F("Не удалось создать WiFi точку доступа."));
-    Serial.println(F("Попробуйте выключить и снова включить устройство."));
+  delay(100);
+  ap_connected = WiFi.softAP(apName, apPass);
+  for (int j = 0; j < 10; j++ ) {    
+    if (ap_connected) {
+      Serial.println();
+      Serial.print(F("Точка доступа создана. Сеть: '"));
+      Serial.print(apName);
+      // Если пароль совпадает с паролем по умолчанию - печатать для информации,
+      // если был изменен пользователем - не печатать
+      if (strcmp(apPass, "12341234") == 0) {
+        Serial.print(F("'. Пароль: '"));
+        Serial.print(apPass);
+      }
+      Serial.println(F("'."));
+      Serial.print(F("IP адрес: "));
+      Serial.println(WiFi.softAPIP());
+      break;
+    }    
+    WiFi.enableAP(false);
+    WiFi.softAPdisconnect(true);
+    delay(1000);
+    Serial.print(".");
+    ap_connected = WiFi.softAP(apName, apPass);
   }
+  
+  Serial.println();  
+  if (!ap_connected) 
+    Serial.println(F("Не удалось создать WiFi точку доступа."));
 }
