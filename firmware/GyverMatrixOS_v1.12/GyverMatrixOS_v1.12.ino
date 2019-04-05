@@ -374,7 +374,23 @@ char ntpServerName[31] = "";             // Используемый серве�
 
 timerMinim ntpSyncTimer(1000 * 60 * SYNC_TIME_PERIOD);            // Сверяем время с NTP-сервером через SYNC_TIME_PERIOD минут
 
+#include <SoftwareSerial.h>
+// D3 is RX of ESP8266, connect to TX of DFPlayer
+// D4 is TX of ESP8266, connect to RX of DFPlayer module
+#define SRX D4
+#define STX D3
+
+SoftwareSerial mp3Serial(SRX, STX);
+
+#include "DFRobotDFPlayerMini.h"
+#define PIN_BUSY D5
+
+DFRobotDFPlayerMini dfPlayer;
+
 void setup() {
+  
+  pinMode(PIN_BUSY, INPUT);
+  
   Serial.begin(115200);
   delay(10);
 
@@ -393,7 +409,7 @@ void setup() {
   // Если режим точки тоступане используется и к WiFi сети подключиться не удалось- создать точку доступа
   if (!wifi_connected &&  !ap_connected) startSoftAP();
 
-  // Сообщить UDP порт, на колторый ожидаются подключения
+  // Сообщить UDP порт, на который ожидаются подключения
   if (wifi_connected || ap_connected) {
     Serial.print(F("UDP-сервер на порту "));
     Serial.println(localPort);
@@ -402,6 +418,22 @@ void setup() {
   // UDP-клиент на указанном порту
   udp.begin(localPort);
 
+  mp3Serial.begin(9600);
+  
+  dfPlayer.begin(mp3Serial);
+  dfPlayer.setTimeOut(500);
+  dfPlayer.volume(30);
+  dfPlayer.EQ(DFPLAYER_EQ_NORMAL);
+  dfPlayer.play(1);
+  dfPlayer.enableLoop();
+
+  //----Read imformation----
+  Serial.println(dfPlayer.readState()); //read mp3 state
+  Serial.println(dfPlayer.readVolume()); //read current volume
+  Serial.println(dfPlayer.readEQ()); //read EQ setting
+  Serial.println(dfPlayer.readFileCounts()); //read all file counts in SD card
+  Serial.println(dfPlayer.readCurrentFileNumber()); //read current play file number
+    
   // Таймер бездействия
   if (idleTime == 0) // Таймер Idle  отключен
     idleTimer.setInterval(4294967295);
