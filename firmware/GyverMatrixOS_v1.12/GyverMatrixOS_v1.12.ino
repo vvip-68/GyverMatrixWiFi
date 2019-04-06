@@ -403,7 +403,9 @@ void setup() {
   
   Serial.begin(115200);
   delay(10);
-
+  
+  Serial.println();
+  
   EEPROM.begin(256);
   loadSettings();
 

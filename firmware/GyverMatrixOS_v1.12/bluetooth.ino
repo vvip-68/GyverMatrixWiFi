@@ -767,6 +767,7 @@ void parsing() {
             alarmMinute = constrain(intData[6], 0, 59);
             alarmWeekDay = intData[7];
             saveAlarmParams(alarmOnOff,alarmHour,alarmMinute,alarmWeekDay,dawnDuration,alarmEffect);
+            saveSettings();
             
             // Рассчитать время начала рассвета будильника
             calculateDawnTime();
@@ -779,19 +780,36 @@ void parsing() {
             if (isDfPlayerOk) {
               // $20 2 X DD VV MA MB;
               //    X    - исп звук будильника X=0 - нет, X=1 - да 
-              //   DD    - игратьзвук будильника DD минут послесрабатывания будильника
+              //   DD    - играть звук будильника DD минут послесрабатывания будильника
               //   VV    - максимальная громкость
               //   MA    - номер файла звука будильника
               //   MB    - номер файла звука рассвета
+              useAlarmSound = intData[2] == 1;
+              alarmDuration = constrain(intData[3],1,10);
+              maxAlarmVolume = constrain(intData[4],0,30);
+              alarmSound = intData[5];
+              dawnSound = intData[6];
+              saveAlarmSounds(useAlarmSound, alarmDuration, maxAlarmVolume, alarmSound, dawnSound);
+              saveSettings();
             }
             break;
           case 3:
             if (isDfPlayerOk) {
-             // $20 3 NN VV X; - пример звука будильника
-             //  NN - номер файла звука будильника из папки SD:/01
-             //  VV - уровень громкости
-             //  X  - 1 играть 0 - остановить
-            }
+              // $20 3 NN VV X; - пример звука будильника
+              //  NN - номер файла звука будильника из папки SD:/01
+              //  VV - уровень громкости
+              //  X  - 1 играть 0 - остановить
+              if (intData[4] == 0) {
+                dfPlayer.stop();
+              } else {
+                b_tmp = intData[2];
+                if (b_tmp > 0 && b_tmp <= alarmSoundsCount) {
+                  dfPlayer.volume(constrain(intData[3],0,30));
+                  dfPlayer.playFolder(1, b_tmp);
+                  dfPlayer.enableLoop();
+                }
+              }
+            }  
             break;
           case 4:
             if (isDfPlayerOk) {
@@ -799,12 +817,23 @@ void parsing() {
              //    NN - номер файла звука рассвета из папки SD:/02
              //    VV - уровень громкости
              //    X  - 1 играть 0 - остановить
+              if (intData[4] == 0) {
+                dfPlayer.stop();
+              } else {
+                b_tmp = intData[2];
+                if (b_tmp > 0 && b_tmp <= dawnSoundsCount) {
+                  dfPlayer.volume(constrain(intData[3],0,30));
+                  dfPlayer.playFolder(2, b_tmp);
+                  dfPlayer.enableLoop();
+                }
+              }
             }
             break;
           case 5:
             if (isDfPlayerOk) {
              // $20 5 VV; - установит уровень громкости проигрывания примеров (когда уже играет)
              //    VV - уровень громкости
+             dfPlayer.volume(constrain(intData[2],0,30));
             }
             break;
         }
