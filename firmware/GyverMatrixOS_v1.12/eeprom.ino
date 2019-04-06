@@ -32,7 +32,12 @@ void loadSettings() {
   //   22 - Будильник, дни недели
   //   23 - Будильник, продолжительность "рассвета"
   //   24 - Будильник, эффект "рассвета"
-  //   25 - Использовать режим точки доступа
+  //   25 - Будильник, использовать звук
+  //   26 - Будильник, играть звук N минут после срабатывания
+  //   27 - Будильник, Номер мелодии будильника (из папки 01 на SD карте)
+  //   28 - Будильник, Номер мелодии рассвета (из папки 02 на SD карте) 
+  //   29 - Будильник, Максимальная громкость будильника
+  //   30 - Использовать режим точки доступа
   //   26 - зарезервировано
   //  ... - зарезервировано  
   //  48-63   - имя точки доступа    - 16 байт
@@ -53,30 +58,37 @@ void loadSettings() {
   bool isInitialized = EEPROMread(0) == EEPROM_OK;  
     
   if (isInitialized) {    
-    globalBrightness = EEPROMread(1);
-    scrollSpeed = map(EEPROMread(2),0,255,D_TEXT_SPEED_MIN,D_TEXT_SPEED_MAX);
+    globalBrightness = getMaxBrightness();
+    scrollSpeed = getScrollSpeed();
     effectSpeed = map(EEPROMread(3),0,255,D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX);
-    gameSpeed = map(EEPROMread(4),0,255,D_GAME_SPEED_MIN,D_GAME_SPEED_MAX);   
-    AUTOPLAY = EEPROMread(6) == 1;
-    autoplayTime = EEPROMread(7) * 1000L;  // секунды -> миллисек 
-    idleTime = EEPROMread(8) * 60 * 1000L; // минуты -> миллисек
-    overlayEnabled = EEPROMread(5);
-    useNtp = EEPROMread(9) == 1;
-    SYNC_TIME_PERIOD = EEPROM_int_read(10);
-    timeZoneOffset = (uint8_t)EEPROMread(12);
-    CLOCK_ORIENT = EEPROMread(13) == 1 ? 1 : 0;
-    COLOR_MODE = EEPROMread(14);
-    showDateInClock = EEPROMread(16) == 1;  
-    showDateDuration = EEPROMread(17);
-    showDateInterval = EEPROMread(18);
-    alarmOnOff = EEPROMread(19) == 1; 
-    alarmHour = constrain(EEPROMread(20), 0, 23);
-    alarmMinute = constrain(EEPROMread(21), 0, 59);
-    alarmWeekDay = EEPROMread(22);
-    dawnDuration = constrain(EEPROMread(23),1,59);
-    alarmEffect = EEPROMread(24);
-    useSoftAP = EEPROMread(25) == 1;
+    gameSpeed = map(EEPROMread(4),0,255,D_GAME_SPEED_MIN,D_GAME_SPEED_MAX); 
+    AUTOPLAY = getAutoplay();
+    autoplayTime = getAutoplayTime();
+    idleTime = getIdleTime();    
+    overlayEnabled = getClockOverlayEnabled();
+    useNtp = getUseNtp();
+    SYNC_TIME_PERIOD = getNtpSyncTime();
+    timeZoneOffset = getTimeZone();
+    CLOCK_ORIENT = getClockOrientation();
+    COLOR_MODE = getClockColorMode();
+    showDateInClock = getShowDateInClock();  
+    showDateDuration = getShowDateDuration();
+    showDateInterval = getShowDateInterval();
+    alarmOnOff = getAlarmOnOff(); 
+    
+    alarmHour = getAlarmHour();
+    alarmMinute = getAlarmMinute();
+    alarmWeekDay = getAlarmWeekDay();
+    alarmEffect = getAlarmEffect();
+    alarmDuration = getAlarmDuration();
 
+    dawnDuration = getDawnDuration();
+    useAlarmSound = getUseAlarmSound();    
+    alarmSound = getAlarmSound();
+    dawnSound = getDawnSound();
+    maxAlarmVolume = getMaxAlarmVolume();
+
+    useSoftAP = getUseSoftAP();
     getSoftAPName().toCharArray(apName, 17);        //  48-63   - имя точки доступа    (16 байта макс) + 1 байт '\0'
     getSoftAPPass().toCharArray(apPass, 17);        //  64-79   - пароль точки доступа (16 байт макс) + 1 байт '\0'
     getSsid().toCharArray(ssid, 25);                //  80-103  - имя сети  WiFi       (24 байта макс) + 1 байт '\0'
@@ -85,15 +97,16 @@ void loadSettings() {
     if (strlen(apName) == 0) strcpy(apName, DEFAULT_AP_NAME);
     if (strlen(apPass) == 0) strcpy(apPass, DEFAULT_AP_PASS);
     if (strlen(ntpServerName) == 0) strcpy(ntpServerName, DEFAULT_NTP_SERVER);
-    
+
+
   } else {
     globalBrightness = BRIGHTNESS;
     scrollSpeed = D_TEXT_SPEED;
     effectSpeed = D_EFFECT_SPEED;
     gameSpeed = D_GAME_SPEED;
     AUTOPLAY = true;
-    autoplayTime = ((long)AUTOPLAY_PERIOD * 1000);     // секунды -> миллисек
-    idleTime = ((long)IDLE_TIME * 60 * 1000);          // минуты -> миллисек
+    autoplayTime = ((long)AUTOPLAY_PERIOD * 1000L);     // секунды -> миллисек
+    idleTime = ((long)IDLE_TIME * 60L * 1000L);         // минуты -> миллисек
     overlayEnabled = true;
     useNtp = true;
     SYNC_TIME_PERIOD = 60;
@@ -110,6 +123,11 @@ void loadSettings() {
     dawnDuration = 20;
     alarmEffect = EFFECT_DAWN_ALARM;
     useSoftAP = false;
+    useAlarmSound = false;
+    alarmDuration = 1;
+    alarmSound = 1;
+    dawnSound = 1;
+    maxAlarmVolume = 30;
     
     strcpy(apName, DEFAULT_AP_NAME);
     strcpy(apPass, DEFAULT_AP_PASS);
@@ -135,13 +153,13 @@ void saveDefaults() {
 
   EEPROMwrite(1, globalBrightness);
 
-  EEPROMwrite(2, constrain(map(scrollSpeed, D_TEXT_SPEED_MIN, D_TEXT_SPEED_MAX, 0, 255), 0, 255));
-  EEPROMwrite(3, constrain(map(effectSpeed, D_EFFECT_SPEED_MIN, D_EFFECT_SPEED_MAX, 0, 255), 0, 255));
-  EEPROMwrite(4, constrain(map(gameSpeed, D_GAME_SPEED_MIN, D_GAME_SPEED_MAX, 0, 255), 0, 255));
+  EEPROMwrite(2, D_TEXT_SPEED);
+  EEPROMwrite(3, D_EFFECT_SPEED);
+  EEPROMwrite(4, D_GAME_SPEED);
 
   EEPROMwrite(6, AUTOPLAY ? 1 : 0);
-  EEPROMwrite(7, autoplayTime / 1000);
-  EEPROMwrite(8, constrain(idleTime / 60 / 1000, 0, 255));
+  EEPROMwrite(7, autoplayTime / 1000L);
+  EEPROMwrite(8, constrain(idleTime / 60L / 1000L, 0, 255));
 
   EEPROMwrite(5, overlayEnabled);
   EEPROMwrite(9, useNtp ? 1 : 0);
@@ -152,10 +170,11 @@ void saveDefaults() {
   EEPROMwrite(16, showDateInClock ? 1 : 0);
   EEPROMwrite(17, showDateDuration);
   EEPROMwrite(18, showDateInterval);
+  
   saveAlarmParams(alarmOnOff,alarmHour,alarmMinute,alarmWeekDay,dawnDuration,alarmEffect);
 
   EEPROMwrite(15, 1);    // Использовать бегущий текст в демо-режиме: 0 - нет; 1 - да
-  EEPROMwrite(25, 0);    // Использовать режим точки доступа: 0 - нет; 1 - да
+  EEPROMwrite(30, 0);    // Использовать режим точки доступа: 0 - нет; 1 - да
 
   // Настройки по умолчанию для эффектов
   int addr = EFFECT_EEPROM;
@@ -295,7 +314,7 @@ bool getAutoplay() {
 
 void saveAutoplayTime(long value) {
   if (value != getAutoplayTime()) {
-    EEPROMwrite(7, constrain(value / 1000, 0, 255));
+    EEPROMwrite(7, constrain(value / 1000L, 0, 255));
     eepromModified = true;
   }
 }
@@ -308,14 +327,14 @@ long getAutoplayTime() {
 
 void saveIdleTime(long value) {
   if (value != getIdleTime()) {
-    EEPROMwrite(8, constrain(value / 60 / 1000, 0, 255));
+    EEPROMwrite(8, constrain(value / 60L / 1000L, 0, 255));
     eepromModified = true;
   }
 }
 
 long getIdleTime() {
   long time = EEPROMread(8) * 60 * 1000L;  
-  if (time == 0) time = ((long)IDLE_TIME * 60 * 1000);
+  if (time == 0) time = ((long)IDLE_TIME * 60L * 1000L);
   return time;
 }
 
@@ -434,13 +453,12 @@ void setShowDateInterval(byte Interval) {
 }
 
 void saveAlarmParams(boolean alarmOnOff, byte alarmHour, byte alarmMinute, byte alarmWeekDay, byte dawnDuration, byte alarmEffect) {
-  //   19 - Будильник вкал/выкл 1 - вкл; 0 -выкл
+  //   19 - Будильник вкл/выкл 1 - вкл; 0 -выкл
   //   20 - Будильник, время: часы
   //   21 - Будильник, время: минуты
   //   22 - Будильник, дни недели
   //   23 - Будильник, продолжительность "рассвета"
   //   24 - Будильник, эффект "рассвета"
-  //   25 - зарезервировано
   if (alarmOnOff != getAlarmOnOff()) {
     EEPROMwrite(19, alarmOnOff ? 1 : 0);
     eepromModified = true;
@@ -457,7 +475,7 @@ void saveAlarmParams(boolean alarmOnOff, byte alarmHour, byte alarmMinute, byte 
     EEPROMwrite(22, alarmWeekDay);
     eepromModified = true;
   }
-  if (dawnDuration != getAlarmDuration()) {
+  if (dawnDuration != getDawnDuration()) {
     EEPROMwrite(23, dawnDuration);
     eepromModified = true;
   }
@@ -472,23 +490,75 @@ bool getAlarmOnOff() {
 }
 
 byte getAlarmHour() { 
-  return EEPROMread(20);
+  return constrain(EEPROMread(20), 0, 23);
 }
 
+
 byte getAlarmMinute() { 
-  return EEPROMread(21);
+  return constrain(EEPROMread(21), 0, 59);
 }
 
 byte getAlarmWeekDay() { 
   return EEPROMread(22);
 }
 
-byte getAlarmDuration() { 
-  return EEPROMread(23);
+byte getDawnDuration() { 
+  return constrain(EEPROMread(23),1,59);
 }
 
 byte getAlarmEffect() { 
   return EEPROMread(24);
+}
+
+void saveAlarmSounds(boolean useSound, byte duration, byte maxVolume, int8_t alarmSound, int8_t dawnSound) {
+  //   25 - Будильник звук: вкл/выкл 1 - вкл; 0 -выкл
+  //   26 - Будильник, длительностьзвука будильника, минут
+  //   27 - Будильник, мелодия будильника
+  //   28 - Будильник, мелодия рассвета
+  //   29 - Будильник, максимальная громкость
+  if (useSound != getUseAlarmSound()) {
+    EEPROMwrite(25, useSound ? 1 : 0);
+    eepromModified = true;
+  }
+  if (duration != getAlarmDuration()) {
+    EEPROMwrite(26, duration);
+    eepromModified = true;
+  }
+  if (maxVolume != getMaxAlarmVolume()) {
+    EEPROMwrite(29, maxVolume);
+    eepromModified = true;
+  }
+  if (alarmSound != getAlarmSound()) {
+    EEPROMwrite(27, (byte)alarmSound);
+    eepromModified = true;
+  }
+  if (dawnSound != getDawnSound()) {
+    EEPROMwrite(28, (byte)dawnSound);
+  }
+  if (alarmEffect != getAlarmEffect()) {
+    EEPROMwrite(24, alarmEffect);
+    eepromModified = true;
+  }
+}
+
+bool getUseAlarmSound() { 
+  return EEPROMread(25) == 1;
+}
+
+byte getAlarmDuration() { 
+  return constrain(EEPROMread(25),1,10);
+}
+
+byte getMaxAlarmVolume() { 
+  return constrain(EEPROMread(29),0,30);
+}
+
+int8_t getAlarmSound() { 
+  return constrain((int8_t)EEPROMread(27),-1,127);
+}
+
+int8_t getDawnSound() { 
+  return constrain((int8_t)EEPROMread(28),-1,127);
 }
 
 bool getUseTextInDemo() {
@@ -503,12 +573,12 @@ void setUseTextInDemo(boolean use) {
 }
 
 bool getUseSoftAP() {
-  return EEPROMread(25) == 1;
+  return EEPROMread(30) == 1;
 }
 
 void setUseSoftAP(boolean use) {  
   if (use != getUseSoftAP()) {
-    EEPROMwrite(25, use ? 1 : 0);
+    EEPROMwrite(30, use ? 1 : 0);
     eepromModified = true;
   }
 }

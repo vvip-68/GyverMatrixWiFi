@@ -277,20 +277,25 @@ long showDateStateLastChange = 0;  // Время, когда отображен�
 String runningText = "";
 byte buttons = 4;                  // 0 - верх, 1 - право, 2 - низ, 3 - лево, 4 - не нажата - управление играми
 
-boolean specialMode = false;    // Спец.режим, включенный вручную со смартфона из кнопок быстрого включения режима
-boolean specialClock = false;   // Спец.режим использует overlay часов
-byte specialBrightness = false; // Яркость в спец.режиме
+boolean specialMode = false;       // Спец.режим, включенный вручную со смартфона из кнопок быстрого включения режима
+boolean specialClock = false;      // Спец.режим использует overlay часов
+byte specialBrightness = false;    // Яркость в спец.режиме
 
-boolean isAlarming = false;           // Сработал будильник "рассвет"
-boolean isAlarmStopped = false;       // Сработавший будильник "рассвет" остановлен пользователем
-byte alarmHour = 0;                   // Часы времени срабатывания будильника
-byte alarmMinute = 0;                 // Минуты времени срабатывания будильника
-byte alarmWeekDay = 0;                // Битовая маска дней недели будильника
-byte dawnHour = 0;                    // Часы времени начала рассвета
-byte dawnMinute = 0;                  // Минуты времени начала рассвета
-byte dawnWeekDay = 0;                 // День недели времени начала рассвета
-byte dawnDuration = 0;                // Продолжительность "рассвета" по настройкам
-byte realDawnDuration = 0;            // Продолжительность "рассвета" по вычисленому времени срабатывания будильника
+boolean isAlarming = false;        // Сработал будильник "рассвет"
+boolean isAlarmStopped = false;    // Сработавший будильник "рассвет" остановлен пользователем
+byte alarmHour = 0;                // Часы времени срабатывания будильника
+byte alarmMinute = 0;              // Минуты времени срабатывания будильника
+byte alarmWeekDay = 0;             // Битовая маска дней недели будильника
+byte alarmDuration = 1;            // Проигрывать звук будильнике N минут после срабатывания (по окончанию рассвета)
+byte dawnHour = 0;                 // Часы времени начала рассвета
+byte dawnMinute = 0;               // Минуты времени начала рассвета
+byte dawnWeekDay = 0;              // День недели времени начала рассвета
+byte dawnDuration = 0;             // Продолжительность "рассвета" по настройкам
+byte realDawnDuration = 0;         // Продолжительность "рассвета" по вычисленому времени срабатывания будильника
+bool useAlarmSound = false;        // Использовать звуки в будильнике
+int8_t alarmSound = 0;             // Звук будильника - номер файла в папке SD:/01 [-1 не использовать; 0 - случайный; 1..N] номер файла
+int8_t dawnSound = 0;              // Звук рассвета   - номер файла в папке SD:/02 [-1 не использовать; 0 - случайный; 1..N] номер файла
+byte maxAlarmVolume = 30;          // Максимальная громкость будильника (1..30)
 
 boolean alarmOnOff = false;           // Будильник включен/выключен
 byte alarmEffect = EFFECT_DAWN_ALARM; // Какой эффект используется для будильника "рассвет". Могут быть обычные эффекты - их яркость просто будет постепенно увеличиваться
@@ -404,15 +409,8 @@ void setup() {
 
   randomSeed(analogRead(0) + analogRead(1));    // пинаем генератор случайных чисел
 
-  // Инициализация MP3-плеера --------------
-  mp3Serial.begin(9600);  
-  
-  isDfPlayerOk = dfPlayer.begin(mp3Serial, true, true);
-  if (isDfPlayerOk) {    
-    dfPlayer.setTimeOut(2000);
-    dfPlayer.EQ(DFPLAYER_EQ_NORMAL);
-    dfPlayer.volume(1);
-  } 
+  // Первый этап инициализации плеера - подключение и основные настройки  
+  InitializeDfPlayer1();
      
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
   WiFi.mode(WIFI_AP_STA);
@@ -449,22 +447,11 @@ void setup() {
   if (CURRENT_LIMIT > 0) FastLED.setMaxPowerInVoltsAndMilliamps(5, CURRENT_LIMIT);
   FastLED.clear();
   FastLED.show();
-    
-  if (isDfPlayerOk) {
-    alarmSoundsCount = dfPlayer.readFileCountsInFolder(1);  // Звуки будильника
-    dawnSoundsCount = dfPlayer.readFileCountsInFolder(2);   // Звуки рассвета
-  }
 
-  Serial.println(F("------------------------------------"));
-  Serial.println(String(F("Звуков будильника найдено: ")) + String(alarmSoundsCount));
-  Serial.println(String(F("Звуков рассвета найдено: ")) + String(dawnSoundsCount));
-  Serial.println(F("------------------------------------"));
+  // Второй этап инициализации плеера - проверка наличия файлов звуков на SD карте  
+  if (isDfPlayerOk) InitializeDfPlayer2();
+  if (!isDfPlayerOk) Serial.println(F("MP3 плеер недоступен."));
 
-  isDfPlayerOk = alarmSoundsCount + dawnSoundsCount > 0;
-  
-  if (!isDfPlayerOk) 
-    Serial.println(F("MP3 плеер недоступен."));
-    
   if (CLOCK_X < 0) CLOCK_X = 0;
   if (CLOCK_Y < 0) CLOCK_Y = 0;  
 
@@ -474,34 +461,24 @@ void setup() {
 
 void loop() {
 
-  if (isDfPlayerOk &&  millis() - timer > 1000) {
-    timer = millis();
-    if (!isPlayerBusy()) {
-      if (dfPlayer.readCurrentFileNumber() <= 0) {
-        Serial.println("Начальный файл");
-        dfPlayer.playFolder(2, 1);
-      } else {
-        Serial.println("Следующий файл");
-        dfPlayer.volume(1);
-        dfPlayer.next();
-      }      
-    }
-
-    byte vol = dfPlayer.readVolume();
-    if (vol > 0  && vol < 30) {
-      Serial.print(F("Громкость: "));
-      Serial.println(vol+1);
-      dfPlayer.volumeUp();
-    }
-  }
-  
   checkAlarmTime();
   bluetoothRoutine();
 
   if (dfPlayer.available()) {
-    printDetail(dfPlayer.readType(), dfPlayer.read());
+    
+    byte msg_type = dfPlayer.readType();
+    printDetail(msg_type, dfPlayer.read());
+    
+    if (msg_type == DFPlayerCardRemoved) {
+      isDfPlayerOk = false;
+      alarmSoundsCount = 0;
+      dawnSoundsCount = 0;
+    } else if (msg_type == DFPlayerCardOnline) {
+      // Плеер распознал карту - переинициализировать стадию 2
+      if (isDfPlayerOk) InitializeDfPlayer2();
+      if (!isDfPlayerOk) Serial.println(F("MP3 плеер недоступен."));
+    }
   }
-  
 }
 
 // -----------------------------------------
