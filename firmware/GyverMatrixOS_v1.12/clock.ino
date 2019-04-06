@@ -466,13 +466,13 @@ void calculateDawnTime() {
   if (!init_time) return;
   
   // расчёт времени рассвета
-  if (alarmMinute > alarmDuration) {                 // если минут во времени будильника больше продолжительности рассвета
+  if (alarmMinute > dawnDuration) {                 // если минут во времени будильника больше продолжительности рассвета
     dawnHour = alarmHour;                            // час рассвета равен часу будильника
-    dawnMinute = alarmMinute - alarmDuration;        // минуты рассвета = минуты будильника - продолж. рассвета
+    dawnMinute = alarmMinute - dawnDuration;        // минуты рассвета = минуты будильника - продолж. рассвета
   } else {                                           // если минут во времени будильника меньше продолжительности рассвета
     dawnHour = alarmHour - 1;                        // значит рассвет будет часом раньше
     if (dawnHour < 0) dawnHour = 23;                 // защита от совсем поехавших
-    dawnMinute = 60 - (alarmDuration - alarmMinute); // находим минуту рассвета в новом часе
+    dawnMinute = 60 - (dawnDuration - alarmMinute); // находим минуту рассвета в новом часе
   }
   
   dawnWeekDay = weekday() - 1;                       // day of the week, Sunday is day 0 
@@ -508,8 +508,8 @@ void checkAlarmTime() {
          loadingFlag = true;
          modeBeforeAlarm = thisMode;
          thisMode = DEMO_DAWN_ALARM;
-         realAlarmDuration = (alarmHour * 60L + alarmMinute) - (dawnHour * 60L + dawnMinute);
-         if (realAlarmDuration > alarmDuration) realAlarmDuration = alarmDuration;
+         realDawnDuration = (alarmHour * 60L + alarmMinute) - (dawnHour * 60L + dawnMinute);
+         if (realDawnDuration > dawnDuration) realDawnDuration = dawnDuration;
          idleTimer.setInterval(4294967295);
          sendPageParams(8);  // Параметры, включающие в себя статус IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
          Serial.println(String(F("Рассвет ВКЛ в "))+String(hour())+ ":" + String(minute()));

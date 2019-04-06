@@ -73,7 +73,7 @@ void loadSettings() {
     alarmHour = constrain(EEPROMread(20), 0, 23);
     alarmMinute = constrain(EEPROMread(21), 0, 59);
     alarmWeekDay = EEPROMread(22);
-    alarmDuration = constrain(EEPROMread(23),1,59);
+    dawnDuration = constrain(EEPROMread(23),1,59);
     alarmEffect = EEPROMread(24);
     useSoftAP = EEPROMread(25) == 1;
 
@@ -107,7 +107,7 @@ void loadSettings() {
     alarmHour = 0;
     alarmMinute = 0;
     alarmWeekDay = 0;
-    alarmDuration = 20;
+    dawnDuration = 20;
     alarmEffect = EFFECT_DAWN_ALARM;
     useSoftAP = false;
     
@@ -152,7 +152,7 @@ void saveDefaults() {
   EEPROMwrite(16, showDateInClock ? 1 : 0);
   EEPROMwrite(17, showDateDuration);
   EEPROMwrite(18, showDateInterval);
-  saveAlarmParams(alarmOnOff,alarmHour,alarmMinute,alarmWeekDay,alarmDuration,alarmEffect);
+  saveAlarmParams(alarmOnOff,alarmHour,alarmMinute,alarmWeekDay,dawnDuration,alarmEffect);
 
   EEPROMwrite(15, 1);    // Использовать бегущий текст в демо-режиме: 0 - нет; 1 - да
   EEPROMwrite(25, 0);    // Использовать режим точки доступа: 0 - нет; 1 - да
@@ -433,7 +433,7 @@ void setShowDateInterval(byte Interval) {
   }
 }
 
-void saveAlarmParams(boolean alarmOnOff, byte alarmHour, byte alarmMinute, byte alarmWeekDay, byte alarmDuration, byte alarmEffect) {
+void saveAlarmParams(boolean alarmOnOff, byte alarmHour, byte alarmMinute, byte alarmWeekDay, byte dawnDuration, byte alarmEffect) {
   //   19 - Будильник вкал/выкл 1 - вкл; 0 -выкл
   //   20 - Будильник, время: часы
   //   21 - Будильник, время: минуты
@@ -457,8 +457,8 @@ void saveAlarmParams(boolean alarmOnOff, byte alarmHour, byte alarmMinute, byte 
     EEPROMwrite(22, alarmWeekDay);
     eepromModified = true;
   }
-  if (alarmDuration != getAlarmDuration()) {
-    EEPROMwrite(23, alarmDuration);
+  if (dawnDuration != getAlarmDuration()) {
+    EEPROMwrite(23, dawnDuration);
     eepromModified = true;
   }
   if (alarmEffect != getAlarmEffect()) {

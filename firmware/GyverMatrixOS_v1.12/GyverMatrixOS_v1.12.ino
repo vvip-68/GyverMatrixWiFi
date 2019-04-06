@@ -15,7 +15,7 @@
 #include "FastLED.h"
 
 #define BRIGHTNESS 32         // стандартная маскимальная яркость (0-255)
-#define CURRENT_LIMIT 0       // лимит по току в миллиамперах, автоматически управляет яркостью (пожалей свой блок питания!) 0 - выключить лимит
+#define CURRENT_LIMIT 10000   // лимит по току в миллиамперах, автоматически управляет яркостью (пожалей свой блок питания!) 0 - выключить лимит
 
 #define WIDTH 16              // ширина матрицы
 #define HEIGHT 16             // высота матрицы
@@ -289,12 +289,12 @@ byte alarmWeekDay = 0;                // Битовая маска дней не
 byte dawnHour = 0;                    // Часы времени начала рассвета
 byte dawnMinute = 0;                  // Минуты времени начала рассвета
 byte dawnWeekDay = 0;                 // День недели времени начала рассвета
-byte alarmDuration = 0;               // Продолжительность "рассвета" по настройкам
-byte realAlarmDuration = 0;           // Продолжительность "рассвета" по вычисленому времени срабатывания будильника
+byte dawnDuration = 0;                // Продолжительность "рассвета" по настройкам
+byte realDawnDuration = 0;            // Продолжительность "рассвета" по вычисленому времени срабатывания будильника
 
 boolean alarmOnOff = false;           // Будильник включен/выключен
 byte alarmEffect = EFFECT_DAWN_ALARM; // Какой эффект используется для будильника "рассвет". Могут быть обычные эффекты - их яркость просто будет постепенно увеличиваться
-byte modeBeforeAlarm;                 // Запомнитьрежим перед включение "рассвета"
+byte modeBeforeAlarm;                 // Запомнить режим перед включение "рассвета"
 
 static const byte maxDim = max(WIDTH, HEIGHT);
 int globalBrightness = BRIGHTNESS;
@@ -386,6 +386,11 @@ SoftwareSerial mp3Serial(SRX, STX);
 #define PIN_BUSY D5
 
 DFRobotDFPlayerMini dfPlayer;
+bool isDfPlayerOk = false;
+int16_t alarmSoundsCount = 0;  // Кол-во файлов звуков в папке '01' на SD-карте
+int16_t dawnSoundsCount = 0;   // Кол-во файлов звуков в папке '02' на SD-карте
+
+unsigned long timer = millis();
 
 void setup() {
   
@@ -396,7 +401,19 @@ void setup() {
 
   EEPROM.begin(256);
   loadSettings();
+
+  randomSeed(analogRead(0) + analogRead(1));    // пинаем генератор случайных чисел
+
+  // Инициализация MP3-плеера --------------
+  mp3Serial.begin(9600);  
   
+  isDfPlayerOk = dfPlayer.begin(mp3Serial, true, true);
+  if (isDfPlayerOk) {    
+    dfPlayer.setTimeOut(2000);
+    dfPlayer.EQ(DFPLAYER_EQ_NORMAL);
+    dfPlayer.volume(1);
+  } 
+     
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
   WiFi.mode(WIFI_AP_STA);
 
@@ -418,22 +435,6 @@ void setup() {
   // UDP-клиент на указанном порту
   udp.begin(localPort);
 
-  mp3Serial.begin(9600);
-  
-  dfPlayer.begin(mp3Serial);
-  dfPlayer.setTimeOut(500);
-  dfPlayer.volume(30);
-  dfPlayer.EQ(DFPLAYER_EQ_NORMAL);
-  dfPlayer.play(1);
-  dfPlayer.enableLoop();
-
-  //----Read imformation----
-  Serial.println(dfPlayer.readState()); //read mp3 state
-  Serial.println(dfPlayer.readVolume()); //read current volume
-  Serial.println(dfPlayer.readEQ()); //read EQ setting
-  Serial.println(dfPlayer.readFileCounts()); //read all file counts in SD card
-  Serial.println(dfPlayer.readCurrentFileNumber()); //read current play file number
-    
   // Таймер бездействия
   if (idleTime == 0) // Таймер Idle  отключен
     idleTimer.setInterval(4294967295);
@@ -448,8 +449,22 @@ void setup() {
   if (CURRENT_LIMIT > 0) FastLED.setMaxPowerInVoltsAndMilliamps(5, CURRENT_LIMIT);
   FastLED.clear();
   FastLED.show();
-  randomSeed(analogRead(0) + analogRead(1));    // пинаем генератор случайных чисел
+    
+  if (isDfPlayerOk) {
+    alarmSoundsCount = dfPlayer.readFileCountsInFolder(1);  // Звуки будильника
+    dawnSoundsCount = dfPlayer.readFileCountsInFolder(2);   // Звуки рассвета
+  }
 
+  Serial.println(F("------------------------------------"));
+  Serial.println(String(F("Звуков будильника найдено: ")) + String(alarmSoundsCount));
+  Serial.println(String(F("Звуков рассвета найдено: ")) + String(dawnSoundsCount));
+  Serial.println(F("------------------------------------"));
+
+  isDfPlayerOk = alarmSoundsCount + dawnSoundsCount > 0;
+  
+  if (!isDfPlayerOk) 
+    Serial.println(F("MP3 плеер недоступен."));
+    
   if (CLOCK_X < 0) CLOCK_X = 0;
   if (CLOCK_Y < 0) CLOCK_Y = 0;  
 
@@ -458,8 +473,35 @@ void setup() {
 }
 
 void loop() {
+
+  if (isDfPlayerOk &&  millis() - timer > 1000) {
+    timer = millis();
+    if (!isPlayerBusy()) {
+      if (dfPlayer.readCurrentFileNumber() <= 0) {
+        Serial.println("Начальный файл");
+        dfPlayer.playFolder(2, 1);
+      } else {
+        Serial.println("Следующий файл");
+        dfPlayer.volume(1);
+        dfPlayer.next();
+      }      
+    }
+
+    byte vol = dfPlayer.readVolume();
+    if (vol > 0  && vol < 30) {
+      Serial.print(F("Громкость: "));
+      Serial.println(vol+1);
+      dfPlayer.volumeUp();
+    }
+  }
+  
   checkAlarmTime();
   bluetoothRoutine();
+
+  if (dfPlayer.available()) {
+    printDetail(dfPlayer.readType(), dfPlayer.read());
+  }
+  
 }
 
 // -----------------------------------------

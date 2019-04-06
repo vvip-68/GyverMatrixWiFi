@@ -493,8 +493,8 @@ void dawnProcedure() {
     FastLED.clear();  // очистить
     FastLED.setBrightness(dawnBrightness);        
 
-    if (realAlarmDuration <= 0 || realAlarmDuration > alarmDuration) realAlarmDuration = alarmDuration;
-    dawnTimer.setInterval((realAlarmDuration * 60 / (MAX_DAWN_BRIGHT - MIN_DAWN_BRIGHT)) * 1000L);
+    if (realDawnDuration <= 0 || realDawnDuration > dawnDuration) realDawnDuration = dawnDuration;
+    dawnTimer.setInterval((realDawnDuration * 60 / (MAX_DAWN_BRIGHT - MIN_DAWN_BRIGHT)) * 1000L);
   }
 
   // Пришло время увеличить яркость рассвета?

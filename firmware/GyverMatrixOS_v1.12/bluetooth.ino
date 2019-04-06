@@ -745,12 +745,12 @@ void parsing() {
             //   MM    - установка времени будильника - минуты
             //   WD    - установка дней пн-вс как битовая маска
             alarmOnOff = intData[2] == 1;
-            alarmDuration = constrain(intData[3],1,59);
+            dawnDuration = constrain(intData[3],1,59);
             alarmEffect = mapAlarmToEffect(intData[4]);
             alarmHour = constrain(intData[5], 0, 23);
             alarmMinute = constrain(intData[6], 0, 59);
             alarmWeekDay = intData[7];
-            saveAlarmParams(alarmOnOff,alarmHour,alarmMinute,alarmWeekDay,alarmDuration,alarmEffect);
+            saveAlarmParams(alarmOnOff,alarmHour,alarmMinute,alarmWeekDay,dawnDuration,alarmEffect);
             
             // Рассчитать время начала рассвета будильника
             calculateDawnTime();
@@ -1040,7 +1040,7 @@ void sendPageParams(int page) {
       str="$18 AL:"; 
       if (isAlarming && !isAlarmStopped) str+="1|AO:"; else str+="0|AO:";
       if (alarmOnOff) str+="1|AT:"; else str+="0|AT:";
-      str+=String(alarmHour)+" "+String(alarmMinute)+"|AD:"+String(alarmDuration)+"|AW:";
+      str+=String(alarmHour)+" "+String(alarmMinute)+"|AD:"+String(dawnDuration)+"|AW:";
       for (int i=0; i<7; i++) {
          if (((alarmWeekDay>>i) & 0x01) == 1) str+="1"; else str+="0";  
          if (i<6) str+='.';
