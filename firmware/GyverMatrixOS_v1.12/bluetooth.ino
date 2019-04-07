@@ -787,8 +787,8 @@ void parsing() {
               useAlarmSound = intData[2] == 1;
               alarmDuration = constrain(intData[3],1,10);
               maxAlarmVolume = constrain(intData[4],0,30);
-              alarmSound = intData[5];
-              dawnSound = intData[6];
+              alarmSound = intData[5] - 2;  // Индекс от приложения: 0 - нет; 1 - случайно; 2 - 1-й файл; 3 - ... -> -1 - нет; 0 - случайно; 1 - 1-й файл и т.д
+              dawnSound = intData[6] - 2;   // Индекс от приложения: 0 - нет; 1 - случайно; 2 - 1-й файл; 3 - ... -> -1 - нет; 0 - случайно; 1 - 1-й файл и т.д
               saveAlarmSounds(useAlarmSound, alarmDuration, maxAlarmVolume, alarmSound, dawnSound);
               saveSettings();
             }
@@ -801,11 +801,15 @@ void parsing() {
               //  X  - 1 играть 0 - остановить
               if (intData[4] == 0) {
                 dfPlayer.stop();
+                soundFolder = 0;
+                soundFile = 0;
               } else {
                 b_tmp = intData[2];
                 if (b_tmp > 0 && b_tmp <= alarmSoundsCount) {
+                  soundFolder = 1;
+                  soundFile = b_tmp;
                   dfPlayer.volume(constrain(intData[3],0,30));
-                  dfPlayer.playFolder(1, b_tmp);
+                  dfPlayer.playFolder(soundFolder, soundFile);
                   dfPlayer.enableLoop();
                 }
               }
@@ -819,11 +823,15 @@ void parsing() {
              //    X  - 1 играть 0 - остановить
               if (intData[4] == 0) {
                 dfPlayer.stop();
+                soundFolder = 0;
+                soundFile = 0;
               } else {
                 b_tmp = intData[2];
                 if (b_tmp > 0 && b_tmp <= dawnSoundsCount) {
+                  soundFolder = 2;
+                  soundFile = b_tmp;
                   dfPlayer.volume(constrain(intData[3],0,30));
-                  dfPlayer.playFolder(2, b_tmp);
+                  dfPlayer.playFolder(soundFolder, soundFile);
                   dfPlayer.enableLoop();
                 }
               }
@@ -837,11 +845,9 @@ void parsing() {
             }
             break;
         }
-        if (intData[1] == 0) { // ping
-          sendAcknowledge();
-        } else {
-          sendPageParams(8);
-          saveSettings();      // Если были изменения параметров, сохраняемых в EEPROM - сохранить
+        sendPageParams(8);
+        if (intData[1] == 1 || intData[1] == 2) { // Режимы установки параметров - сохранить
+          saveSettings();
         }
         break;
       case 21:
@@ -1048,6 +1054,7 @@ void sendPageParams(int page) {
   // MV:число    максимальная громкость будильника
   // MA:число    номер файла звука будильника из SD:/01
   // MB:число    номер файла звука рассвета из SD:/02
+  // MP:папка.файл  номер папки и файла звука который проигрывается
   String str = "", color, text;
   boolean allowed;
   byte b_tmp;
@@ -1135,6 +1142,7 @@ void sendPageParams(int page) {
       str+="|MV:" + String(maxAlarmVolume); 
       str+="|MA:" + String(alarmSound); 
       str+="|MB:" + String(dawnSound); 
+      str+="|MP:" + String(soundFolder) + '.' + String(soundFile); 
       str+=";";
       break;
     case 9:  // Настройки подключения

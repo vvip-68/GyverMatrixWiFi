@@ -394,6 +394,8 @@ DFRobotDFPlayerMini dfPlayer;
 bool isDfPlayerOk = false;
 int16_t alarmSoundsCount = 0;  // Кол-во файлов звуков в папке '01' на SD-карте
 int16_t dawnSoundsCount = 0;   // Кол-во файлов звуков в папке '02' на SD-карте
+byte soundFolder = 0;
+byte soundFile = 0;
 
 unsigned long timer = millis();
 
@@ -475,9 +477,10 @@ void loop() {
       isDfPlayerOk = false;
       alarmSoundsCount = 0;
       dawnSoundsCount = 0;
-    } else if (msg_type == DFPlayerCardOnline) {
+      Serial.println(F("MP3 плеер недоступен."));
+    } else if (msg_type == DFPlayerCardOnline || msg_type == DFPlayerCardInserted) {
       // Плеер распознал карту - переинициализировать стадию 2
-      if (isDfPlayerOk) InitializeDfPlayer2();
+      InitializeDfPlayer2();
       if (!isDfPlayerOk) Serial.println(F("MP3 плеер недоступен."));
     }
   }
