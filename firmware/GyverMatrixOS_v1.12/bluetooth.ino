@@ -700,7 +700,9 @@ void parsing() {
            case 2:               // $19 2 X; - Использовать синхронизацию часов NTP  X: 0 - нет, 1 - да
              useNtp = intData[2] == 1;
              saveUseNtp(useNtp);
-             init_time = false; ntp_t = 0; ntp_cnt = 0;
+             if (wifi_connected) {
+               init_time = false; ntp_t = 0; ntp_cnt = 0;
+             }
              break;
            case 3:               // $19 3 N Z; - Период синхронизации часов NTP и Часовой пояс
              SYNC_TIME_PERIOD = intData[2];
@@ -811,8 +813,8 @@ void parsing() {
               //  X  - 1 играть 0 - остановить
               //  NN - номер файла звука будильника из папки SD:/01
               //  VV - уровень громкости
+              dfPlayer.stop();
               if (intData[2] == 0) {
-                dfPlayer.stop();
                 soundFolder = 0;
                 soundFile = 0;
               } else {
@@ -824,7 +826,6 @@ void parsing() {
                   dfPlayer.playFolder(soundFolder, soundFile);
                   dfPlayer.enableLoop();
                 } else {
-                  dfPlayer.stop();
                   soundFolder = 0;
                   soundFile = 0;
                 }
@@ -837,8 +838,8 @@ void parsing() {
              //    X  - 1 играть 0 - остановить
              //    NN - номер файла звука рассвета из папки SD:/02
              //    VV - уровень громкости
+              dfPlayer.stop();
               if (intData[2] == 0) {
-                dfPlayer.stop();
                 soundFolder = 0;
                 soundFile = 0;
               } else {
@@ -850,7 +851,6 @@ void parsing() {
                   dfPlayer.playFolder(soundFolder, soundFile);
                   dfPlayer.enableLoop();
                 } else {
-                  dfPlayer.stop();
                   soundFolder = 0;
                   soundFile = 0;
                 }
@@ -861,14 +861,19 @@ void parsing() {
             if (isDfPlayerOk && soundFolder > 0) {
              // $20 5 VV; - установит уровень громкости проигрывания примеров (когда уже играет)
              //    VV - уровень громкости
-             dfPlayer.volume(constrain(intData[2],0,30));
+             maxAlarmVolume = constrain(intData[2],0,30);
+             dfPlayer.volume(maxAlarmVolume);
             }
             break;
         }
-        sendPageParams(8);
-        if (intData[1] == 1 || intData[1] == 2) { // Режимы установки параметров - сохранить
+        if (intData[1] == 0) {
+          sendPageParams(8);
+        } else if (intData[1] == 1 || intData[1] == 2) { // Режимы установки параметров - сохранить
           saveSettings();
-        }
+          sendPageParams(8);
+        } else {
+          sendPageParams(96);
+        }        
         break;
       case 21:
         // Настройки подключения к сети
@@ -880,9 +885,11 @@ void parsing() {
             if (useSoftAP && !ap_connected) 
               startSoftAP();
             else if (!useSoftAP && ap_connected) {
-              ap_connected = false;
-              WiFi.softAPdisconnect(true);
-              Serial.println(F("Точка доступа отключена."));
+              if (wifi_connected) { 
+                ap_connected = false;              
+                WiFi.softAPdisconnect(true);
+                Serial.println(F("Точка доступа отключена."));
+              }
             }      
             break;
         }
@@ -1160,9 +1167,15 @@ void sendPageParams(int page) {
       str+="|MU:" + String(useAlarmSound ? "1" : "0");         // 1 - использовать звук; 0 - MP3 не использовать звук
       str+="|MD:" + String(alarmDuration); 
       str+="|MV:" + String(maxAlarmVolume); 
-      str+="|MA:" + String(alarmSound+2);                      // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
-      str+="|MB:" + String(dawnSound+2);                       // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
-      str+="|MP:" + String(soundFolder) + '.' + String(soundFile+2); 
+      if (soundFolder == 0) {      
+        str+="|MA:" + String(alarmSound+2);                      // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
+        str+="|MB:" + String(dawnSound+2);                       // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
+      } else if (soundFolder == 1) {      
+        str+="|MB:" + String(dawnSound+2);                       // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
+      } else if (soundFolder == 2) {      
+        str+="|MA:" + String(alarmSound+2);                      // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
+      }
+      str+="|MP:" + String(soundFolder) + '~' + String(soundFile+2); 
       str+=";";
       break;
     case 9:  // Настройки подключения
@@ -1172,6 +1185,11 @@ void sendPageParams(int page) {
       str+=String(apPass) + "]|NW:[";
       str+=String(ssid) + "]|NA:[";
       str+=String(pass) + "]";
+      str+=";";
+      break;
+    case 96:  // Ответ демо-режима звука
+      str="$18 MV:" + String(maxAlarmVolume); 
+      str+="|MP:" + String(soundFolder) + '~' + String(soundFile+2); 
       str+=";";
       break;
     case 97:  // Запрос списка эффектов для будильника

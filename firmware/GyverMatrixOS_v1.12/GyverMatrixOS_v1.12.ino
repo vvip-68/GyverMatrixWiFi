@@ -417,10 +417,6 @@ void setup() {
   InitializeDfPlayer1();
      
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
-  WiFi.mode(WIFI_AP_STA);
-
-  // Если задано подключение в режиме точки доступа - создать точку доступа
-  if (useSoftAP) startSoftAP();    
 
   // Подключиться к WiFi сети
   startWiFi();
@@ -428,8 +424,10 @@ void setup() {
   // Если режим точки тоступане используется и к WiFi сети подключиться не удалось- создать точку доступа
   if (!wifi_connected){
     WiFi.mode(WIFI_AP);
-    if (!ap_connected) startSoftAP();
+    startSoftAP();
   }
+
+  if (useSoftAP && !ap_connected) startSoftAP();    
 
   // Сообщить UDP порт, на который ожидаются подключения
   if (wifi_connected || ap_connected) {
@@ -495,7 +493,8 @@ void startWiFi() {
   
   WiFi.disconnect(true);
   wifi_connected = false;
-  
+  WiFi.mode(WIFI_AP_STA);
+ 
   // Пытаемся соединиться с роутером в сети
   if (strlen(ssid) > 0) {
     Serial.print(F("Подключение к "));
