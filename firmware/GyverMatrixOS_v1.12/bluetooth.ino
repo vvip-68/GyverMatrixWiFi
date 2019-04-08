@@ -760,6 +760,10 @@ void parsing() {
             //   HH    - установка времени будильника - часы
             //   MM    - установка времени будильника - минуты
             //   WD    - установка дней пн-вс как битовая маска
+            dfPlayer.stop();
+            soundFolder = 0;
+            soundFile = 0;
+
             alarmOnOff = intData[2] == 1;
             dawnDuration = constrain(intData[3],1,59);
             alarmEffect = mapAlarmToEffect(intData[4]);
@@ -784,6 +788,10 @@ void parsing() {
               //   VV    - максимальная громкость
               //   MA    - номер файла звука будильника
               //   MB    - номер файла звука рассвета
+              dfPlayer.stop();
+              soundFolder = 0;
+              soundFile = 0;
+
               useAlarmSound = intData[2] == 1;
               alarmDuration = constrain(intData[3],1,10);
               maxAlarmVolume = constrain(intData[4],0,30);
@@ -791,54 +799,66 @@ void parsing() {
               dawnSound = intData[6] - 2;   // Индекс от приложения: 0 - нет; 1 - случайно; 2 - 1-й файл; 3 - ... -> -1 - нет; 0 - случайно; 1 - 1-й файл и т.д
               saveAlarmSounds(useAlarmSound, alarmDuration, maxAlarmVolume, alarmSound, dawnSound);
               saveSettings();
+
+              if (!alarmOnOff && isAlarming){
+                stopAlarm();
+              }
             }
             break;
           case 3:
             if (isDfPlayerOk) {
-              // $20 3 NN VV X; - пример звука будильника
+              // $20 3 X NN VV; - пример звука будильника
+              //  X  - 1 играть 0 - остановить
               //  NN - номер файла звука будильника из папки SD:/01
               //  VV - уровень громкости
-              //  X  - 1 играть 0 - остановить
-              if (intData[4] == 0) {
+              if (intData[2] == 0) {
                 dfPlayer.stop();
                 soundFolder = 0;
                 soundFile = 0;
               } else {
-                b_tmp = intData[2];
+                b_tmp = intData[3] - 2;  // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
                 if (b_tmp > 0 && b_tmp <= alarmSoundsCount) {
                   soundFolder = 1;
                   soundFile = b_tmp;
-                  dfPlayer.volume(constrain(intData[3],0,30));
+                  dfPlayer.volume(constrain(intData[4],0,30));
                   dfPlayer.playFolder(soundFolder, soundFile);
                   dfPlayer.enableLoop();
+                } else {
+                  dfPlayer.stop();
+                  soundFolder = 0;
+                  soundFile = 0;
                 }
               }
             }  
             break;
           case 4:
             if (isDfPlayerOk) {
-             // $20 4 NN VV X; - пример звука рассвета
+             // $20 4 X NN VV; - пример звука рассвета
+             //    X  - 1 играть 0 - остановить
              //    NN - номер файла звука рассвета из папки SD:/02
              //    VV - уровень громкости
-             //    X  - 1 играть 0 - остановить
-              if (intData[4] == 0) {
+              if (intData[2] == 0) {
                 dfPlayer.stop();
                 soundFolder = 0;
                 soundFile = 0;
               } else {
-                b_tmp = intData[2];
+                b_tmp = intData[3] - 2; // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
                 if (b_tmp > 0 && b_tmp <= dawnSoundsCount) {
                   soundFolder = 2;
                   soundFile = b_tmp;
-                  dfPlayer.volume(constrain(intData[3],0,30));
+                  dfPlayer.volume(constrain(intData[4],0,30));
                   dfPlayer.playFolder(soundFolder, soundFile);
                   dfPlayer.enableLoop();
+                } else {
+                  dfPlayer.stop();
+                  soundFolder = 0;
+                  soundFile = 0;
                 }
               }
             }
             break;
           case 5:
-            if (isDfPlayerOk) {
+            if (isDfPlayerOk && soundFolder > 0) {
              // $20 5 VV; - установит уровень громкости проигрывания примеров (когда уже играет)
              //    VV - уровень громкости
              dfPlayer.volume(constrain(intData[2],0,30));
@@ -887,7 +907,7 @@ void parsing() {
       if (haveIncomeData) {                
         // read the packet into packetBufffer
         int len = udp.read(incomeBuffer, UDP_TX_PACKET_MAX_SIZE);
-        if (len > 0) {
+        if (len > 0) {          
           incomeBuffer[len] =0;
         }
         bufIdx = 0;
@@ -915,7 +935,7 @@ void parsing() {
       // NTP packet from time server
       if (udp.remotePort() == 123) {
         parseNTP();
-        haveIncomeData = 0;
+        haveIncomeData = false;
       }
     }
 
@@ -1140,9 +1160,9 @@ void sendPageParams(int page) {
       str+="|MU:" + String(useAlarmSound ? "1" : "0");         // 1 - использовать звук; 0 - MP3 не использовать звук
       str+="|MD:" + String(alarmDuration); 
       str+="|MV:" + String(maxAlarmVolume); 
-      str+="|MA:" + String(alarmSound); 
-      str+="|MB:" + String(dawnSound); 
-      str+="|MP:" + String(soundFolder) + '.' + String(soundFile); 
+      str+="|MA:" + String(alarmSound+2);                      // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
+      str+="|MB:" + String(dawnSound+2);                       // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
+      str+="|MP:" + String(soundFolder) + '.' + String(soundFile+2); 
       str+=";";
       break;
     case 9:  // Настройки подключения

@@ -426,7 +426,10 @@ void setup() {
   startWiFi();
 
   // Если режим точки тоступане используется и к WiFi сети подключиться не удалось- создать точку доступа
-  if (!wifi_connected &&  !ap_connected) startSoftAP();
+  if (!wifi_connected){
+    WiFi.mode(WIFI_AP);
+    if (!ap_connected) startSoftAP();
+  }
 
   // Сообщить UDP порт, на который ожидаются подключения
   if (wifi_connected || ap_connected) {
