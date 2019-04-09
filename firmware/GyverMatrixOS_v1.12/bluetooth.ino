@@ -217,8 +217,8 @@ void parsing() {
       idleState = false;      
     }
 
-    // Режимы кроме 14 и 18 сбрасывают спец-режим
-    if (intData[0] != 14 && intData[0] != 18) {
+    // Режимы кроме 4 (яркость), 14 (новый спец-режим) и 18 (запрос параметров страницы) сбрасывают спец-режим
+    if (intData[0] != 4 &&intData[0] != 14 && intData[0] != 18) {
       if (specialMode) {
         idleTimer.setInterval(idleTime);
         idleTimer.reset();
