@@ -93,6 +93,7 @@
 - Резисторы http://ali.ski/UEez2
 - БП 5 Вольт http://ali.ski/3cNyj  http://ali.ski/qSKFK
 - MP3 DFPlayer http://ali.onl/1gY1 http://ali.onl/1gY3
+- Динамики http://ali.onl/1h3u http://ali.onl/1h3v
 
 ## Вам скорее всего пригодится
 * [Всё для пайки (паяльники и примочки)](http://alexgyver.ru/all-for-soldering/)
