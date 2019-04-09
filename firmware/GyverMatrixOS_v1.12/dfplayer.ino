@@ -120,14 +120,15 @@ void PlayAlarmSound() {
   // Установлен корректный звук?
   if (sound > 0) {
     dfPlayer.stop();
-    delay(0);
+    delay(100);                              // Без этих задержек между вызовами функция dfPlayer приложение крашится.
     dfPlayer.volume(constrain(maxAlarmVolume,1,30));
-    delay(0);
+    delay(100);
     dfPlayer.playFolder(1, sound);
-    delay(0);
+    delay(100);
     dfPlayer.enableLoop();
-    delay(0);
+    delay(100);    
     alarmSoundTimer.setInterval(alarmDuration * 60L * 1000L);
+    alarmSoundTimer.reset();
     isPlayAlarmSound = true;
   } else {
     // Звука будильника нет - плавно выключить звук рассвета
@@ -145,13 +146,13 @@ void PlayDawnSound() {
   // Установлен корректный звук?
   if (sound > 0) {
     dfPlayer.stop();
-    delay(0);
+    delay(100);                             // Без этих задержек между вызовами функция dfPlayer приложение крашится.
     dfPlayer.volume(1);
-    delay(0);
+    delay(100);
     dfPlayer.playFolder(2, sound);
-    delay(0);
+    delay(100);
     dfPlayer.enableLoop();
-    delay(0);
+    delay(100);
     // Установить время приращения громкости звука - от 1 до maxAlarmVolume за время продолжительности рассвета realDawnDuration
     fadeSoundDirection = 1;   
     fadeSoundStepCounter = maxAlarmVolume;

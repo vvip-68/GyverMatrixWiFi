@@ -102,28 +102,20 @@ void bluetoothRoutine() {
         // увеличение громкости
         dfPlayer.volumeUp();
         fadeSoundStepCounter--;
-        Serial.print(F("Громкость +1; шаг:"));
-        Serial.println(fadeSoundStepCounter);
         if (fadeSoundStepCounter <= 0) {
           fadeSoundDirection = 0;
           fadeSoundTimer.setInterval(4294967295);
-          Serial.println(F("Изменение громкости закончено."));
         }
-        sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника        
       } else if (fadeSoundDirection < 0) {
         // Уменьшение громкости
         dfPlayer.volumeDown();
         fadeSoundStepCounter--;
-        Serial.print(F("Громкость -1; шаг:"));
-        Serial.println(fadeSoundStepCounter);
         if (fadeSoundStepCounter <= 0) {
           isPlayAlarmSound = false;
           fadeSoundDirection = 0;
           fadeSoundTimer.setInterval(4294967295);
           dfPlayer.stop();          
-          Serial.println(F("Изменение громкости закончено. Звук выключен."));
         }
-        sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника        
       }
     }
         
@@ -1137,7 +1129,7 @@ void sendPageParams(int page) {
       if (BTcontrol)  str+="0|AP:"; else str+="1|AP:";
       if (AUTOPLAY)   str+="1|BR:"; else str+="0|BR:";
       str+=String(globalBrightness) + "|PD:" + String(autoplayTime / 1000) + "|IT:" + String(idleTime / 60 / 1000) +  "|AL:";
-      if (isAlarming && !isAlarmStopped) str+="1"; else str+="0";
+      if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1"; else str+="0";
       str+=";";
       break;
     case 2:  // Рисование. Вернуть: Яркость; Цвет точки;
@@ -1201,7 +1193,7 @@ void sendPageParams(int page) {
       break;
     case 8:  // Настройки будильника
       str="$18 AL:"; 
-      if (isAlarming && !isAlarmStopped) str+="1|AO:"; else str+="0|AO:";
+      if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1|AO:"; else str+="0|AO:";
       if (alarmOnOff) str+="1|AT:"; else str+="0|AT:";
       str+=String(alarmHour)+" "+String(alarmMinute)+"|AD:"+String(dawnDuration)+"|AW:";
       for (int i=0; i<7; i++) {
@@ -1233,14 +1225,14 @@ void sendPageParams(int page) {
       str+=String(pass) + "]";
       str+=";";
       break;
-    case 95:  // Ответ состояния будильника
-      str="$18 AL:"; 
-      if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1"; else str+="0";
-      str+=";";
+    case 95:  // Ответ состояния будильника - сообщение по инициативе сервера
+      str = "$18 AL:"; 
+      if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1;"; else str+="0;";
+      cmd95 = str;
       break;
-    case 96:  // Ответ демо-режима звука
-      str+="$18 MP:" + String(soundFolder) + '~' + String(soundFile+2); 
-      str+=";";
+    case 96:  // Ответ демо-режима звука - сообщение по инициативе сервера
+      str ="$18 MP:" + String(soundFolder) + '~' + String(soundFile+2) + ";"; 
+      cmd96 = str;
       break;
     case 97:  // Запрос списка эффектов для будильника
       str="$18 LA:[" + String(ALARM_LIST) + "];"; 
@@ -1254,13 +1246,13 @@ void sendPageParams(int page) {
   }
   
   if (str.length() > 0) {
-    Serial.println(str);
     // Отправить клиенту запрошенные параметры страницы / режимов
     str.toCharArray(incomeBuffer, str.length()+1);    
     udp.beginPacket(udp.remoteIP(), udp.remotePort());
     udp.write(incomeBuffer);
     udp.endPacket();
     delay(0);
+    Serial.println("Ответ на " + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(incomeBuffer));
   } else {
     sendAcknowledge();
   }
@@ -1268,12 +1260,19 @@ void sendPageParams(int page) {
 
 void sendAcknowledge() {
   // Отправить подтверждение, чтобы клиентский сокет прервал ожидание
-  String reply = "ack" + String(ackCounter++) + ";";
+  String reply = "";
+  bool isCmd = false; 
+  if (cmd95.length() > 0) { reply += cmd95; cmd95 = ""; isCmd = true;}
+  if (cmd96.length() > 0) { reply += cmd96; cmd96 = ""; isCmd = true; }
+  reply += "ack" + String(ackCounter++) + ";";  
   reply.toCharArray(replyBuffer, reply.length()+1);    
   udp.beginPacket(udp.remoteIP(), udp.remotePort());
   udp.write(replyBuffer);
   udp.endPacket();
   delay(0);
+  if (isCmd) {
+    Serial.println("Ответ на " + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(replyBuffer));
+  }
 }
 
 // hex string to uint32_t

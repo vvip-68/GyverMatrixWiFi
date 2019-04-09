@@ -517,7 +517,7 @@ void checkAlarmTime() {
        }
     }
     
-    delay(0);
+    delay(0); // Для предотвращения ESP8266 Watchdog Timer
     
     // При наступлении времени срабатывания будильника, если он еще не выключен пользователем - запустить режим часов и звук будильника
     if (alarmHour == hour() && alarmMinute == minute() && isAlarming) {
@@ -533,10 +533,10 @@ void checkAlarmTime() {
       sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
     }
 
-    delay(0);
+    delay(0); // Для предотвращения ESP8266 Watchdog Timer
 
     // Если рассвет начинался и остановлен пользователем и время начала рассвета уже прошло - сбросить флаги, подготовив их к следующему циклу
-    if (!isAlarming && isAlarmStopped && ((hour() * 60L + minute()) >= (alarmHour * 60L + alarmMinute))) {
+    if (!isAlarming && isAlarmStopped && ((hour() * 60L + minute()) > (alarmHour * 60L + alarmMinute))) {
       isAlarming = false;
       isAlarmStopped = false;
     }
