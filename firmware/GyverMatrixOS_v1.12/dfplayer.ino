@@ -110,3 +110,73 @@ void refreshDfPlayerFiles() {
   dawnSoundsCount = val;
   Serial.println();  
 }
+
+void PlayAlarmSound() {
+  int8_t sound = alarmSound;
+  // Звук будильника - случайный?
+  if (sound == 0) {
+    sound = random(1, alarmSoundsCount);     // -1 - нет звукаж 0 - случайный; 1..alarmSoundsCount - звук
+  }
+  // Установлен корректный звук?
+  if (sound > 0) {
+    dfPlayer.stop();
+    delay(0);
+    dfPlayer.volume(constrain(maxAlarmVolume,1,30));
+    delay(0);
+    dfPlayer.playFolder(1, sound);
+    delay(0);
+    dfPlayer.enableLoop();
+    delay(0);
+    alarmSoundTimer.setInterval(alarmDuration * 60L * 1000L);
+    isPlayAlarmSound = true;
+  } else {
+    // Звука будильника нет - плавно выключить звук рассвета
+    StopSound(5000);
+  }
+}
+
+void PlayDawnSound() {
+  // Звук рассвета отключен?
+  int8_t sound = dawnSound;
+  // Звук рассвета - случайный?
+  if (sound == 0) {
+    sound = random(1, dawnSoundsCount);     // -1 - нет звукаж 0 - случайный; 1..alarmSoundsCount - звук
+  }
+  // Установлен корректный звук?
+  if (sound > 0) {
+    dfPlayer.stop();
+    delay(0);
+    dfPlayer.volume(1);
+    delay(0);
+    dfPlayer.playFolder(2, sound);
+    delay(0);
+    dfPlayer.enableLoop();
+    delay(0);
+    // Установить время приращения громкости звука - от 1 до maxAlarmVolume за время продолжительности рассвета realDawnDuration
+    fadeSoundDirection = 1;   
+    fadeSoundStepCounter = maxAlarmVolume;
+    fadeSoundTimer.setInterval(realDawnDuration * 60L * 1000L / maxAlarmVolume);
+    alarmSoundTimer.setInterval(4294967295);
+  } else {
+    StopSound(5000);
+  }
+}
+
+void StopSound(int duration) {
+  
+  isPlayAlarmSound = false;
+
+  if (duration <= 0) {
+    dfPlayer.stop();
+    return;
+  }
+  
+  // Чтение текущего уровня звука часто глючит и возвращает 0. Тогда использовать maxAlarmVolume
+  fadeSoundStepCounter = dfPlayer.readVolume();
+  if (fadeSoundStepCounter < 0) 
+    fadeSoundStepCounter = maxAlarmVolume;
+    
+  fadeSoundDirection = -1;   
+  fadeSoundTimer.setInterval(duration / fadeSoundStepCounter);
+
+}

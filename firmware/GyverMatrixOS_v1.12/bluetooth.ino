@@ -89,6 +89,44 @@ void bluetoothRoutine() {
       }
     }            
 
+    // Подошло время отключения будильника - выключить
+    if (alarmSoundTimer.isReady()) {
+      alarmSoundTimer.setInterval(4294967295);
+      StopSound(5000);      
+      sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
+    }
+
+    //Плавное изменение громкости будильника
+    if (fadeSoundTimer.isReady()) {
+      if (fadeSoundDirection > 0) {
+        // увеличение громкости
+        dfPlayer.volumeUp();
+        fadeSoundStepCounter--;
+        Serial.print(F("Громкость +1; шаг:"));
+        Serial.println(fadeSoundStepCounter);
+        if (fadeSoundStepCounter <= 0) {
+          fadeSoundDirection = 0;
+          fadeSoundTimer.setInterval(4294967295);
+          Serial.println(F("Изменение громкости закончено."));
+        }
+        sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника        
+      } else if (fadeSoundDirection < 0) {
+        // Уменьшение громкости
+        dfPlayer.volumeDown();
+        fadeSoundStepCounter--;
+        Serial.print(F("Громкость -1; шаг:"));
+        Serial.println(fadeSoundStepCounter);
+        if (fadeSoundStepCounter <= 0) {
+          isPlayAlarmSound = false;
+          fadeSoundDirection = 0;
+          fadeSoundTimer.setInterval(4294967295);
+          dfPlayer.stop();          
+          Serial.println(F("Изменение громкости закончено. Звук выключен."));
+        }
+        sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника        
+      }
+    }
+        
     // Проверить - если долгое время не было ручного управления - переключиться в автоматический режим
     checkIdleState();
   }
@@ -217,8 +255,10 @@ void parsing() {
       idleState = false;      
     }
 
-    // Режимы кроме 4 (яркость), 14 (новый спец-режим) и 18 (запрос параметров страницы) сбрасывают спец-режим
-    if (intData[0] != 4 &&intData[0] != 14 && intData[0] != 18) {
+    // Режимы кроме 4 (яркость), 14 (новый спец-режим) и 18 (запрос параметров страницы),
+    // 19 (настройки часов), 20 (настройки будильника), 21 (настройки сети) сбрасывают спец-режим
+    if (intData[0] != 4 &&intData[0] != 14 && intData[0] != 18 && intData[0] != 19 &&
+        intData[0] != 20 && intData[0] != 21) {
       if (specialMode) {
         idleTimer.setInterval(idleTime);
         idleTimer.reset();
@@ -765,6 +805,8 @@ void parsing() {
             dfPlayer.stop();
             soundFolder = 0;
             soundFile = 0;
+            isAlarming = false;
+            isAlarmStopped = false;
 
             alarmOnOff = intData[2] == 1;
             dawnDuration = constrain(intData[3],1,59);
@@ -793,6 +835,8 @@ void parsing() {
               dfPlayer.stop();
               soundFolder = 0;
               soundFile = 0;
+              isAlarming = false;
+              isAlarmStopped = false;
 
               useAlarmSound = intData[2] == 1;
               alarmDuration = constrain(intData[3],1,10);
@@ -813,13 +857,14 @@ void parsing() {
               //  X  - 1 играть 0 - остановить
               //  NN - номер файла звука будильника из папки SD:/01
               //  VV - уровень громкости
-              dfPlayer.stop();
               if (intData[2] == 0) {
+                StopSound(2500);
                 soundFolder = 0;
                 soundFile = 0;
               } else {
                 b_tmp = intData[3] - 2;  // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
                 if (b_tmp > 0 && b_tmp <= alarmSoundsCount) {
+                  dfPlayer.stop();
                   soundFolder = 1;
                   soundFile = b_tmp;
                   dfPlayer.volume(constrain(intData[4],0,30));
@@ -838,11 +883,12 @@ void parsing() {
              //    X  - 1 играть 0 - остановить
              //    NN - номер файла звука рассвета из папки SD:/02
              //    VV - уровень громкости
-              dfPlayer.stop();
               if (intData[2] == 0) {
+                StopSound(2500);
                 soundFolder = 0;
                 soundFile = 0;
               } else {
+                dfPlayer.stop();
                 b_tmp = intData[3] - 2; // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
                 if (b_tmp > 0 && b_tmp <= dawnSoundsCount) {
                   soundFolder = 2;
@@ -1187,9 +1233,13 @@ void sendPageParams(int page) {
       str+=String(pass) + "]";
       str+=";";
       break;
+    case 95:  // Ответ состояния будильника
+      str="$18 AL:"; 
+      if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1"; else str+="0";
+      str+=";";
+      break;
     case 96:  // Ответ демо-режима звука
-      str="$18 MV:" + String(maxAlarmVolume); 
-      str+="|MP:" + String(soundFolder) + '~' + String(soundFile+2); 
+      str+="$18 MP:" + String(soundFolder) + '~' + String(soundFile+2); 
       str+=";";
       break;
     case 97:  // Запрос списка эффектов для будильника
