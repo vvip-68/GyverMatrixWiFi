@@ -92,7 +92,7 @@ void bluetoothRoutine() {
     // Подошло время отключения будильника - выключить
     if (alarmSoundTimer.isReady()) {
       alarmSoundTimer.setInterval(4294967295);
-      StopSound(5000);      
+      StopSound(2500);      
       sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
     }
 

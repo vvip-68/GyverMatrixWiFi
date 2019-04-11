@@ -556,7 +556,7 @@ void stopAlarm() {
     idleTimer.setInterval(idleTime);
     alarmSoundTimer.setInterval(4294967295);
     FastLED.setBrightness(globalBrightness);
-    StopSound(5000);
+    StopSound(2500);
     sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
   }
 }

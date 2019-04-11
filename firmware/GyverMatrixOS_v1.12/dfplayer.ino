@@ -132,7 +132,7 @@ void PlayAlarmSound() {
     isPlayAlarmSound = true;
   } else {
     // Звука будильника нет - плавно выключить звук рассвета
-    StopSound(5000);
+    StopSound(2500);
   }
 }
 
@@ -159,7 +159,7 @@ void PlayDawnSound() {
     fadeSoundTimer.setInterval(realDawnDuration * 60L * 1000L / maxAlarmVolume);
     alarmSoundTimer.setInterval(4294967295);
   } else {
-    StopSound(5000);
+    StopSound(2500);
   }
 }
 
