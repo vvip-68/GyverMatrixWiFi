@@ -57,10 +57,10 @@
 
 void customRoutine() {
    
-  if (!gamemodeFlag) {
+  if (!gamemodeFlag || isAlarming) {
 
     // Беугщая строка - таймер внутри fillString (runningText.ino)
-    if (thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2) {
+    if (!isAlarming && (thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2)) {
       customModes(thisMode);
       FastLED.show();
     } 
@@ -331,7 +331,7 @@ void modeFader() {
 #endif
 
 void checkIdleState() {
-
+  
 #if (SMOOTH_CHANGE == 1)
   modeFader();
 #endif

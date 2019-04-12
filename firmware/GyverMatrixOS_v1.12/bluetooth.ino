@@ -18,6 +18,7 @@ unsigned long ackCounter = 0;
 String receiveText = "";
 
 void bluetoothRoutine() {  
+  
   parsing();                                    // принимаем данные
 
   // на время принятия данных матрицу не обновляем!
@@ -42,7 +43,7 @@ void bluetoothRoutine() {
 
     if (!BTcontrol && effectsFlag && !isColorEffect(effect)) effectsFlag = false;
 
-    if (runningFlag) {                         // бегущая строка - Running Text
+    if (runningFlag && !isAlarming) {                         // бегущая строка - Running Text
       String text = runningText;
       if (text == "") {
          text = init_time
@@ -58,7 +59,7 @@ void bluetoothRoutine() {
         effects();   
     }
 
-    else if (drawingFlag) {
+    else if (drawingFlag && !isAlarming) {
       // Рисование. Если эффект цветов - применить
       if (effectsFlag && isColorEffect(effect)) {  
          effects();   
@@ -66,7 +67,7 @@ void bluetoothRoutine() {
     }
     
     // Один из режимов игры. На игры эффекты не налагаются
-    else if (gamemodeFlag && (!gamePaused || loadingFlag)) {
+    else if (gamemodeFlag && (!gamePaused || loadingFlag) && !isAlarming) {
       // Для игр отключаем бегущую строку и эффекты
       effectsFlag = false;
       runningFlag = false;
@@ -74,7 +75,7 @@ void bluetoothRoutine() {
     }
 
     // Бегущая строка или Часы в основном режиме и эффект Дыхание или Цвета, Радуга пикс
-    else if ((thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2 || thisMode == DEMO_CLOCK) && effectsFlag && isColorEffect(effect)) { 
+    else if ((thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2 || thisMode == DEMO_CLOCK) && effectsFlag && isColorEffect(effect) && !isAlarming) { 
 
       // Подготовить изображение
       customModes(thisMode);
@@ -82,45 +83,17 @@ void bluetoothRoutine() {
       effects();
     } else {
       // Сформировать и вывести на матрицу текущий демо-режим
-      if (!BTcontrol || effectsFlag) 
+      if (!BTcontrol || effectsFlag || isAlarming) 
         customRoutine();
       else if (BTcontrol && effectsFlag && isColorEffect(effect)) {
         effects();  
       }
     }            
 
-    // Подошло время отключения будильника - выключить
-    if (alarmSoundTimer.isReady()) {
-      alarmSoundTimer.setInterval(4294967295);
-      StopSound(2500);      
-      sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
-    }
+    checkAlarmTime();
 
-    //Плавное изменение громкости будильника
-    if (fadeSoundTimer.isReady()) {
-      if (fadeSoundDirection > 0) {
-        // увеличение громкости
-        dfPlayer.volumeUp();
-        fadeSoundStepCounter--;
-        if (fadeSoundStepCounter <= 0) {
-          fadeSoundDirection = 0;
-          fadeSoundTimer.setInterval(4294967295);
-        }
-      } else if (fadeSoundDirection < 0) {
-        // Уменьшение громкости
-        dfPlayer.volumeDown();
-        fadeSoundStepCounter--;
-        if (fadeSoundStepCounter <= 0) {
-          isPlayAlarmSound = false;
-          fadeSoundDirection = 0;
-          fadeSoundTimer.setInterval(4294967295);
-          dfPlayer.stop();          
-        }
-      }
-    }
-        
     // Проверить - если долгое время не было ручного управления - переключиться в автоматический режим
-    checkIdleState();
+    if (!isAlarming) checkIdleState();
   }
 }
 
@@ -255,6 +228,7 @@ void parsing() {
         idleTimer.setInterval(idleTime);
         idleTimer.reset();
         specialMode = false;
+        isNightClock = false;
       }
     }
 
@@ -312,8 +286,11 @@ void parsing() {
         globalBrightness = intData[1];
         breathBrightness = globalBrightness;
         saveMaxBrightness(globalBrightness);
-        FastLED.setBrightness(globalBrightness);
-        FastLED.show();
+        if (!isNightClock) {          
+          if (specialMode) specialBrightness = globalBrightness;
+          FastLED.setBrightness(globalBrightness);
+          FastLED.show();
+        }
         sendAcknowledge();
         break;
       case 5:
@@ -560,80 +537,7 @@ void parsing() {
         sendAcknowledge();
         break;
       case 14:
-        AUTOPLAY = 0;
-        BTcontrol = true;
-        effectsFlag = true;
-        gamemodeFlag = false;
-        drawingFlag = false;
-        runningFlag = false;
-        loadingFlag = true;
-                
-        tmp_eff = -1;
-        specialBrightness = globalBrightness;
-        
-        switch(intData[1]) {
-          case 0:  // Черный экран (выкл);
-            tmp_eff = EFFECT_FILL_COLOR;
-            specialClock = false;
-            globalColor = 0x000000;
-            specialBrightness = 0;
-            break;
-          case 1:  // Черный экран с часами;  
-            tmp_eff = EFFECT_FILL_COLOR;
-            specialClock = true;
-            globalColor = 0x000000;
-            break;
-          case 2:  // Белый экран (освещение);
-            tmp_eff = EFFECT_FILL_COLOR;
-            specialClock = false;
-            globalColor = 0xffffff;
-            break;
-          case 3:  // Белый экран с часами;
-            tmp_eff = EFFECT_FILL_COLOR;
-            specialClock = true;
-            globalColor = 0xffffff;
-            break;
-          case 4:  // Черный экран с часами минимальной яркости - ночной режим;
-            tmp_eff = EFFECT_FILL_COLOR;
-            specialClock = true;
-            globalColor = 0x000000;
-            COLOR_MODE = 0; // Монохром, т.к все что не белоена миним. яркости черное, белое - красным.
-            specialBrightness = 1;
-            break;
-          case 5:  // Черный экран с эффектом огня и часами (камин);
-            tmp_eff = EFFECT_FIRE;
-            specialClock = true;
-            break;
-          case 6:  // Экран указанного цвета;
-            tmp_eff = EFFECT_FILL_COLOR;
-            str = String(incomeBuffer).substring(6,12); // $14 6 00FFAA;
-            specialClock = false;
-            globalColor = (uint32_t)HEXtoInt(str);
-            break;
-          case 7:  // Экран указанного цвета с часами;
-            tmp_eff = EFFECT_FILL_COLOR;
-            str = String(incomeBuffer).substring(6,12); // $14 6 00FFAA;
-            specialClock = true;
-            globalColor = (uint32_t)HEXtoInt(str);
-            break;
-        }
-
-        if (tmp_eff >=0) {    
-          // Найти соответствие thisMode указанному эффекту. 
-          // Дльнейшее отображение изображения эффекта будет выполняться стандартной процедурой customRoutin()
-          b_tmp = mapEffectToMode(tmp_eff);
-          if (b_tmp != 255) {
-            effect = (byte)tmp_eff;
-            thisMode = b_tmp;
-            specialMode = true;
-            effectSpeed = getEffectSpeed(effect);
-            effectTimer.setInterval(effectSpeed);
-            // Таймер возврата в авторежим отключен    
-            idleTimer.setInterval(4294967295);
-            idleTimer.reset();
-            FastLED.setBrightness(specialBrightness);
-          }
-        }
+        setSpecialMode(intData[1]);
         sendPageParams(1);
         break;
       case 15: 
@@ -784,7 +688,7 @@ void parsing() {
       case 20:
         switch (intData[1]) { 
           case 0:  
-            if (isAlarming) stopAlarm();
+            if (isAlarming) stopAlarm();            
             break;
           case 1:
             //  $20 1 X DD EF HH MM WD;
@@ -1273,6 +1177,87 @@ void sendAcknowledge() {
   if (isCmd) {
     Serial.println("Ответ на " + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(replyBuffer));
   }
+}
+
+void setSpecialMode(int spc_mode) {
+        
+  AUTOPLAY = false;
+  BTcontrol = true;
+  effectsFlag = true;
+  gamemodeFlag = false;
+  drawingFlag = false;
+  runningFlag = false;
+  loadingFlag = true;
+  isNightClock = false;
+
+  String str;
+  byte tmp_eff = -1;
+  specialBrightness = globalBrightness;
+  
+  switch(spc_mode) {
+    case 0:  // Черный экран (выкл);
+      tmp_eff = EFFECT_FILL_COLOR;
+      specialClock = false;
+      globalColor = 0x000000;
+      specialBrightness = 0;
+      break;
+    case 1:  // Черный экран с часами;  
+      tmp_eff = EFFECT_FILL_COLOR;
+      specialClock = true;
+      globalColor = 0x000000;
+      break;
+    case 2:  // Белый экран (освещение);
+      tmp_eff = EFFECT_FILL_COLOR;
+      specialClock = false;
+      globalColor = 0xffffff;
+      break;
+    case 3:  // Белый экран с часами;
+      tmp_eff = EFFECT_FILL_COLOR;
+      specialClock = true;
+      globalColor = 0xffffff;
+      break;
+    case 4:  // Черный экран с часами минимальной яркости - ночной режим;
+      tmp_eff = EFFECT_FILL_COLOR;
+      specialClock = true;
+      globalColor = 0x000000;
+      COLOR_MODE = 0; // Монохром, т.к все что не белоена миним. яркости черное, белое - красным.
+      specialBrightness = 1;
+      isNightClock = true;
+      break;
+    case 5:  // Черный экран с эффектом огня и часами (камин);
+      tmp_eff = EFFECT_FIRE;
+      specialClock = true;
+      break;
+    case 6:  // Экран указанного цвета;
+      tmp_eff = EFFECT_FILL_COLOR;
+      str = String(incomeBuffer).substring(6,12); // $14 6 00FFAA;
+      specialClock = false;
+      globalColor = (uint32_t)HEXtoInt(str);
+      break;
+    case 7:  // Экран указанного цвета с часами;
+      tmp_eff = EFFECT_FILL_COLOR;
+      str = String(incomeBuffer).substring(6,12); // $14 6 00FFAA;
+      specialClock = true;
+      globalColor = (uint32_t)HEXtoInt(str);
+      break;
+  }
+
+  if (tmp_eff >=0) {    
+    // Найти соответствие thisMode указанному эффекту. 
+    // Дльнейшее отображение изображения эффекта будет выполняться стандартной процедурой customRoutin()
+    byte b_tmp = mapEffectToMode(tmp_eff);
+    if (b_tmp != 255) {
+      effect = (byte)tmp_eff;
+      thisMode = b_tmp;
+      specialMode = true;
+      effectSpeed = getEffectSpeed(effect);
+      effectTimer.setInterval(effectSpeed);
+      // Таймер возврата в авторежим отключен    
+      idleTimer.setInterval(4294967295);
+      idleTimer.reset();
+      FastLED.setBrightness(specialBrightness);
+    }
+  }  
 }
 
 // hex string to uint32_t

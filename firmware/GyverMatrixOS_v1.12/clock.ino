@@ -506,7 +506,6 @@ void checkAlarmTime() {
          isAlarming = true;
          isAlarmStopped = false;
          loadingFlag = true;
-         modeBeforeAlarm = thisMode;
          thisMode = DEMO_DAWN_ALARM;
          realDawnDuration = (alarmHour * 60L + alarmMinute) - (dawnHour * 60L + dawnMinute);
          if (realDawnDuration > dawnDuration) realDawnDuration = dawnDuration;
@@ -524,9 +523,7 @@ void checkAlarmTime() {
       Serial.println(String(F("Рассвет Авто-ВЫКЛ в "))+String(hour())+ ":" + String(minute()));
       isAlarming = false;
       isAlarmStopped = false;
-      thisMode = DEMO_CLOCK;    
-      loadingFlag = true;
-      FastLED.setBrightness(globalBrightness);
+      setSpecialMode(1);
       if (useAlarmSound) {
         PlayAlarmSound();
       }
@@ -536,27 +533,57 @@ void checkAlarmTime() {
     delay(0); // Для предотвращения ESP8266 Watchdog Timer
 
     // Если рассвет начинался и остановлен пользователем и время начала рассвета уже прошло - сбросить флаги, подготовив их к следующему циклу
-    if (!isAlarming && isAlarmStopped && ((hour() * 60L + minute()) > (alarmHour * 60L + alarmMinute))) {
+    if (isAlarmStopped && ((hour() * 60L + minute()) > (alarmHour * 60L + alarmMinute))) {
       isAlarming = false;
       isAlarmStopped = false;
     }
+
+    // Подошло время отключения будильника - выключить
+    if (alarmSoundTimer.isReady()) {
+      alarmSoundTimer.setInterval(4294967295);
+      StopSound(2500);      
+      sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
+    }
+
+    delay(0); // Для предотвращения ESP8266 Watchdog Timer
+
+    //Плавное изменение громкости будильника
+    if (fadeSoundTimer.isReady()) {
+      if (fadeSoundDirection > 0) {
+        // увеличение громкости
+        dfPlayer.volumeUp();
+        fadeSoundStepCounter--;
+        if (fadeSoundStepCounter <= 0) {
+          fadeSoundDirection = 0;
+          fadeSoundTimer.setInterval(4294967295);
+        }
+      } else if (fadeSoundDirection < 0) {
+        // Уменьшение громкости
+        dfPlayer.volumeDown();
+        fadeSoundStepCounter--;
+        if (fadeSoundStepCounter <= 0) {
+          isPlayAlarmSound = false;
+          fadeSoundDirection = 0;
+          fadeSoundTimer.setInterval(4294967295);
+          dfPlayer.stop();          
+        }
+      }
+    }
+    delay(0); // Для предотвращения ESP8266 Watchdog Timer    
   }  
 }
 
 void stopAlarm() {
-  if (isAlarming && !isAlarmStopped) {
+  if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) {
     Serial.println(String(F("Рассвет ВЫКЛ в ")) + String(hour())+ ":" + String(minute()));
-    isAlarming = hour() * 60L + minute() >= dawnHour * 60L + dawnMinute; // Если час/мин начала рассвета уже пройден - isAlarming будет false - готово к новому рассвету
-    isAlarmStopped = isAlarming;                                         // Если после провверки обнаружили, что все еще isAlarming - оставить isStopped в true
+    isAlarming = false;
+    isAlarmStopped = true;
     isPlayAlarmSound = false;
-    thisMode = modeBeforeAlarm;
-    loadingFlag = true;
-    specialMode = false;
-    specialClock = false;
-    idleTimer.setInterval(idleTime);
+    cmd95 = "";
     alarmSoundTimer.setInterval(4294967295);
-    FastLED.setBrightness(globalBrightness);
     StopSound(2500);
+    setSpecialMode(1);
+    delay(0);    
     sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
   }
 }

@@ -156,7 +156,8 @@ void PlayDawnSound() {
     // Установить время приращения громкости звука - от 1 до maxAlarmVolume за время продолжительности рассвета realDawnDuration
     fadeSoundDirection = 1;   
     fadeSoundStepCounter = maxAlarmVolume;
-    fadeSoundTimer.setInterval(realDawnDuration * 60L * 1000L / maxAlarmVolume);
+    if (fadeSoundStepCounter <= 0) fadeSoundStepCounter = 1;
+    fadeSoundTimer.setInterval(realDawnDuration * 60L * 1000L / fadeSoundStepCounter);
     alarmSoundTimer.setInterval(4294967295);
   } else {
     StopSound(2500);
@@ -174,8 +175,8 @@ void StopSound(int duration) {
   
   // Чтение текущего уровня звука часто глючит и возвращает 0. Тогда использовать maxAlarmVolume
   fadeSoundStepCounter = dfPlayer.readVolume();
-  if (fadeSoundStepCounter < 0) 
-    fadeSoundStepCounter = maxAlarmVolume;
+  if (fadeSoundStepCounter <= 0) fadeSoundStepCounter = maxAlarmVolume;
+  if (fadeSoundStepCounter <= 0) fadeSoundStepCounter = 1;
     
   fadeSoundDirection = -1;   
   fadeSoundTimer.setInterval(duration / fadeSoundStepCounter);
