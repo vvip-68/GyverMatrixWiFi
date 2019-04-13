@@ -497,11 +497,14 @@ void checkAlarmTime() {
   
   // Будильник включен?
   if (init_time && alarmOnOff) {
-    
+
+    int h = hour();
+    int m = minute();
+
     // Включен ли будильник для текущего дня недели?       
     if ((alarmWeekDay & (1 << (dawnWeekDay - 1))) > 0) {
        // Часы / минуты начала рассвета наступили? Еще не запущен рассвет? Еще не остановлен пользователем?
-       if (!isAlarming && !isAlarmStopped && ((hour() * 60L + minute()) >= (dawnHour * 60L + dawnMinute)) && ((hour() * 60L + minute()) < (alarmHour * 60L + alarmMinute))) {
+       if (!isAlarming && !isAlarmStopped && ((h * 60L + m) >= (dawnHour * 60L + dawnMinute)) && ((h * 60L + m) < (alarmHour * 60L + alarmMinute))) {
          specialMode = false;
          isAlarming = true;
          isAlarmStopped = false;
@@ -512,15 +515,15 @@ void checkAlarmTime() {
          idleTimer.setInterval(4294967295);
          if (useAlarmSound) PlayDawnSound();
          sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
-         Serial.println(String(F("Рассвет ВКЛ в "))+String(hour())+ ":" + String(minute()));
+         Serial.println(String(F("Рассвет ВКЛ в "))+String(h)+ ":" + String(m));
        }
     }
     
     delay(0); // Для предотвращения ESP8266 Watchdog Timer
     
     // При наступлении времени срабатывания будильника, если он еще не выключен пользователем - запустить режим часов и звук будильника
-    if (alarmHour == hour() && alarmMinute == minute() && isAlarming) {
-      Serial.println(String(F("Рассвет Авто-ВЫКЛ в "))+String(hour())+ ":" + String(minute()));
+    if (alarmHour == h && alarmMinute == m && isAlarming) {
+      Serial.println(String(F("Рассвет Авто-ВЫКЛ в "))+String(h)+ ":" + String(m));
       isAlarming = false;
       isAlarmStopped = false;
       setSpecialMode(1);
@@ -533,7 +536,7 @@ void checkAlarmTime() {
     delay(0); // Для предотвращения ESP8266 Watchdog Timer
 
     // Если рассвет начинался и остановлен пользователем и время начала рассвета уже прошло - сбросить флаги, подготовив их к следующему циклу
-    if (isAlarmStopped && ((hour() * 60L + minute()) > (alarmHour * 60L + alarmMinute))) {
+    if (isAlarmStopped && ((h * 60L + m) > (alarmHour * 60L + alarmMinute))) {
       isAlarming = false;
       isAlarmStopped = false;
     }
@@ -569,6 +572,7 @@ void checkAlarmTime() {
         }
       }
     }
+    
     delay(0); // Для предотвращения ESP8266 Watchdog Timer    
   }  
 }
