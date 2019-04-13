@@ -369,8 +369,6 @@ char apPass[9]  = "";                    // Пароль подключения 
 char ssid[25] = "";                      // SSID (имя) вашего роутера (конфигурируется подключением через точку доступа и сохранением в EEPROM)
 char pass[17] = "";                      // пароль роутера
 
-#include "bitmap2.h"                     // файлы с картинками анимации
-
 WiFiUDP udp;
 unsigned int localPort = 2390;           // local port to listen for UDP packets
 
