@@ -394,16 +394,16 @@ timerMinim ntpSyncTimer(1000 * 60 * SYNC_TIME_PERIOD);            // Сверя�
 
 SoftwareSerial mp3Serial(SRX, STX);
 
-#include "DFRobotDFPlayerMini.h"
+#include "DFRobotDFPlayerMini.h"     // Установите в менеджере библиотек стандартную библиотеку DFRobotDFPlayerMini ("DFPlayer - A Mini MP3 Player For Arduino" )
 #define PIN_BUSY D5
 
-DFRobotDFPlayerMini dfPlayer;
+DFRobotDFPlayerMini dfPlayer; 
 bool isDfPlayerOk = false;
-int16_t alarmSoundsCount = 0;  // Кол-во файлов звуков в папке '01' на SD-карте
-int16_t dawnSoundsCount = 0;   // Кол-во файлов звуков в папке '02' на SD-карте
+int16_t alarmSoundsCount = 0;        // Кол-во файлов звуков в папке '01' на SD-карте
+int16_t dawnSoundsCount = 0;         // Кол-во файлов звуков в папке '02' на SD-карте
 byte soundFolder = 0;
 byte soundFile = 0;
-int8_t fadeSoundDirection = 1; // направление изменения громкости звука: 1 - увеличение; -1 - уменьшение
+int8_t fadeSoundDirection = 1;       // направление изменения громкости звука: 1 - увеличение; -1 - уменьшение
 byte fadeSoundStepCounter = 0;       // счетчик шагов изменения громкости, которое осталось сделать
 
 void setup() {
