@@ -506,6 +506,7 @@ void checkAlarmTime() {
        // Часы / минуты начала рассвета наступили? Еще не запущен рассвет? Еще не остановлен пользователем?
        if (!isAlarming && !isAlarmStopped && ((h * 60L + m) >= (dawnHour * 60L + dawnMinute)) && ((h * 60L + m) < (alarmHour * 60L + alarmMinute))) {
          specialMode = false;
+         specialModeId = -1;
          isAlarming = true;
          isAlarmStopped = false;
          loadingFlag = true;

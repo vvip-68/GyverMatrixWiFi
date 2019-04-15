@@ -81,19 +81,131 @@ void bluetoothRoutine() {
       customModes(thisMode);
       // Наложить эффект Дыхание / Цвета и вывести в матрицу
       effects();
+      
     } else {
+      
       // Сформировать и вывести на матрицу текущий демо-режим
       if (!BTcontrol || effectsFlag || isAlarming) 
         customRoutine();
       else if (BTcontrol && effectsFlag && isColorEffect(effect)) {
         effects();  
       }
+      
     }            
 
     checkAlarmTime();
 
+    butt.tick();  // обязательная функция отработки. Должна постоянно опрашиваться
+    byte clicks = 0;
+
+    // Один клик
+    if (butt.isSingle()) clicks = 1;    
+    // Двойной клик
+    if (butt.isDouble()) clicks = 2;
+    // Тройной клик
+    if (butt.isTriple()) clicks = 3;
+    // Четверной и более клик
+    if (butt.hasClicks()) clicks = butt.getClicks();
+    
+    if (butt.isHolded()) {
+      // Нажатие и удержание
+      isButtonHold = true;
+      hold_start_time = millis();
+      Serial.println("Hold");
+    }
+    
+    if (butt.isPress()) {
+      // Состояние - кнопку нажали  
+    }
+    
+    if (butt.isRelease()) {
+      // Состояние - кнопку отпустили
+      isButtonHold = false;
+      hold_start_time = 0;
+    }
+
+    // Обработка нажатий кнопки
+    if (isButtonHold) {
+      
+      // Если работает будильник - любое количество нажатий или удержание прерывает будильник и включает часы на черном фоне     
+      if ((isAlarming || isPlayAlarmSound)) stopAlarm();
+
+      // Если с момента нажатия и удержания прошло более HOLD_TIMEOUT милисекунд...
+      if (hold_start_time != 0 && (millis() - hold_start_time) > HOLD_TIMEOUT) {
+        isButtonHold = false;
+        if (isTurnedOff)
+          // Если выключен - включить часы        
+          setSpecialMode(1);
+        else 
+          // Если включен - выключить (включить спец-режим черный экран)
+          setSpecialMode(0);
+      }      
+      
+    } else if (!isTurnedOff) {
+    
+      // Прочие клики работают только если не выключено
+      
+      // Был одинарный клик
+      if (clicks == 1) {
+        if (specialMode) {
+          // Если в спецрежиме - и белый экран - вкл.выкл часы на белом экране
+          if (specialModeId == 2 || specialModeId == 3) {
+             if (specialModeId == 2) setSpecialMode(3);
+             else setSpecialMode(2);
+          } else {
+            // переключение по кругу между обычными (1) и ночными (4) часами и часами с огнем (5)
+            if (specialModeId == 4) setSpecialMode(1);
+            else if (specialModeId == 1) setSpecialMode(5);
+            else setSpecialMode(4);              
+          }
+        } else {
+          // Если в режиме демо - следующий режим
+          nextMode();
+        }        
+      }
+
+      // Был двойной клик
+      if (clicks == 2) { 
+        if (specialModeId < 0) {
+          // Из любого режима - включить часы
+          setSpecialMode(1);
+        } else {
+          // Если ярко-белый включен (лампа) - вернуться в часы
+          if (specialModeId == 2 || specialModeId == 3) 
+            // Включить обычные часы
+            setSpecialMode(1);
+          else  
+            // Включить ярко белый экран (лампа)
+            setSpecialMode(2);
+        }
+      }
+
+      // Тройное нажатие      
+      if (clicks == 3) {
+        // Включить демо-режим
+        idleTimer.setInterval(idleTime);
+        idleTimer.reset();
+
+        specialMode = false;
+        isNightClock = false;
+        isTurnedOff = false;
+        specialModeId = -1;
+
+        BTcontrol = false;
+        AUTOPLAY = true;
+        nextMode();
+      }
+
+      // Четверное нажатие
+      if (clicks == 4) {
+        
+      }
+      
+      // ... и т.д.
+    }
+
     // Проверить - если долгое время не было ручного управления - переключиться в автоматический режим
-    if (!isAlarming) checkIdleState();
+    if (!(isAlarming || isPlayAlarmSound)) checkIdleState();
   }
 }
 
@@ -229,6 +341,8 @@ void parsing() {
         idleTimer.reset();
         specialMode = false;
         isNightClock = false;
+        isTurnedOff = false;
+        specialModeId = -1;
       }
     }
 
@@ -688,7 +802,7 @@ void parsing() {
       case 20:
         switch (intData[1]) { 
           case 0:  
-            if (isAlarming) stopAlarm();            
+            if (isAlarming || isPlayAlarmSound) stopAlarm();            
             break;
           case 1:
             //  $20 1 X DD EF HH MM WD;
@@ -1189,6 +1303,8 @@ void setSpecialMode(int spc_mode) {
   runningFlag = false;
   loadingFlag = true;
   isNightClock = false;
+  isTurnedOff = false;
+  specialModeId = -1;
 
   String str;
   byte tmp_eff = -1;
@@ -1200,6 +1316,7 @@ void setSpecialMode(int spc_mode) {
       specialClock = false;
       globalColor = 0x000000;
       specialBrightness = 0;
+      isTurnedOff = true;
       break;
     case 1:  // Черный экран с часами;  
       tmp_eff = EFFECT_FILL_COLOR;
@@ -1256,6 +1373,7 @@ void setSpecialMode(int spc_mode) {
       idleTimer.setInterval(4294967295);
       idleTimer.reset();
       FastLED.setBrightness(specialBrightness);
+      specialModeId = spc_mode;
     }
   }  
 }

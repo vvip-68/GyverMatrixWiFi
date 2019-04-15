@@ -281,6 +281,8 @@ bool specialMode = false;          // Спец.режим, включенный 
 bool specialClock = false;         // Спец.режим использует overlay часов
 byte specialBrightness = false;    // Яркость в спец.режиме
 bool isNightClock = false;         // Включен режим ночных часов с минимальной яркостью 
+bool isTurnedOff = false;          // Включен черный экран (т.е всё выключено) 
+int8_t specialModeId = -1;         // Номер текущего спецрежима
 
 bool isAlarming = false;           // Сработал будильник "рассвет"
 bool isPlayAlarmSound = false;     // Сработал настоящий будильник - играется звук будильника
@@ -406,6 +408,14 @@ byte soundFile = 0;
 int8_t fadeSoundDirection = 1;       // направление изменения громкости звука: 1 - увеличение; -1 - уменьшение
 byte fadeSoundStepCounter = 0;       // счетчик шагов изменения громкости, которое осталось сделать
 
+#define PIN D6                       // кнопка подключена сюда (PIN --- КНОПКА --- GND)
+#include "GyverButton.h"
+GButton butt(PIN);
+
+#define HOLD_TIMEOUT 2000            // Время удержания кнопки перед выполнением действия ( + debounce time) суммарно - около 3 сек
+bool isButtonHold = false;           // Кнопка нажата и удерживается
+long hold_start_time = 0;            // Время обнаружения состояния "Конпка нажата и удерживается"
+
 void setup() {
   
   pinMode(PIN_BUSY, INPUT);
@@ -467,6 +477,13 @@ void setup() {
   if (CLOCK_X < 0) CLOCK_X = 0;
   if (CLOCK_Y < 0) CLOCK_Y = 0;  
 
+  /*
+  butt.setDebounce(50);        // настройка антидребезга (по умолчанию 80 мс)
+  butt.setTimeout(300);        // настройка таймаута на удержание (по умолчанию 500 мс)
+  butt.setIncrStep(2);         // настройка инкремента, может быть отрицательным (по умолчанию 1)
+  butt.setIncrTimeout(500);    // настрйока интервала инкремента (по умолчанию 800 мс)
+  */
+  
   // Рассчитать время начала рассвета
   calculateDawnTime();
 }
