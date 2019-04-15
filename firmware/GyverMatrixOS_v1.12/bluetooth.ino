@@ -124,8 +124,11 @@ void bluetoothRoutine() {
       hold_start_time = 0;
     }
 
+    // Любое нажатие кнопки останавливает будильник
+    if ((isAlarming || isPlayAlarmSound) && (isButtonHold || clicks > 0)) stopAlarm();
+            
     // Обработка нажатий кнопки
-    if (isButtonHold) {
+    else if (isButtonHold) {
       
       // Если работает будильник - любое количество нажатий или удержание прерывает будильник и включает часы на черном фоне     
       if ((isAlarming || isPlayAlarmSound)) stopAlarm();
