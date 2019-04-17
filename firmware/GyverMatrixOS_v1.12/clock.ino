@@ -54,7 +54,7 @@ CRGB clockLED[5] = {HOUR_COLOR, HOUR_COLOR, DOT_COLOR, MIN_COLOR, MIN_COLOR};
 
 void parseNTP() {
     Serial.println(F("Разбор пакета NTP"));
-    ntp_t = 0; ntp_cnt = 0; init_time = true;
+    ntp_t = 0; ntp_cnt = 0; init_time = true; refresh_time = false;
     //udp.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
     unsigned long highWord = word(incomeBuffer[40], incomeBuffer[41]);
     unsigned long lowWord = word(incomeBuffer[42], incomeBuffer[43]);
@@ -541,41 +541,42 @@ void checkAlarmTime() {
       isAlarming = false;
       isAlarmStopped = false;
     }
+  }
+  
+  // Подошло время отключения будильника - выключить
+  if (alarmSoundTimer.isReady()) {
+    alarmSoundTimer.setInterval(4294967295);
+    StopSound(2500);      
+    sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
+  }
 
-    // Подошло время отключения будильника - выключить
-    if (alarmSoundTimer.isReady()) {
-      alarmSoundTimer.setInterval(4294967295);
-      StopSound(2500);      
-      sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
-    }
+  delay(0); // Для предотвращения ESP8266 Watchdog Timer
 
-    delay(0); // Для предотвращения ESP8266 Watchdog Timer
-
-    //Плавное изменение громкости будильника
-    if (fadeSoundTimer.isReady()) {
-      if (fadeSoundDirection > 0) {
-        // увеличение громкости
-        dfPlayer.volumeUp();
-        fadeSoundStepCounter--;
-        if (fadeSoundStepCounter <= 0) {
-          fadeSoundDirection = 0;
-          fadeSoundTimer.setInterval(4294967295);
-        }
-      } else if (fadeSoundDirection < 0) {
-        // Уменьшение громкости
-        dfPlayer.volumeDown();
-        fadeSoundStepCounter--;
-        if (fadeSoundStepCounter <= 0) {
-          isPlayAlarmSound = false;
-          fadeSoundDirection = 0;
-          fadeSoundTimer.setInterval(4294967295);
-          dfPlayer.stop();          
-        }
+  //Плавное изменение громкости будильника
+  if (fadeSoundTimer.isReady()) {
+    if (fadeSoundDirection > 0) {
+      // увеличение громкости
+      dfPlayer.volumeUp();
+      fadeSoundStepCounter--;
+      if (fadeSoundStepCounter <= 0) {
+        fadeSoundDirection = 0;
+        fadeSoundTimer.setInterval(4294967295);
+      }
+    } else if (fadeSoundDirection < 0) {
+      // Уменьшение громкости
+      dfPlayer.volumeDown();
+      fadeSoundStepCounter--;
+      if (fadeSoundStepCounter <= 0) {
+        isPlayAlarmSound = false;
+        fadeSoundDirection = 0;
+        fadeSoundTimer.setInterval(4294967295);
+        StopSound(0);
+        dfPlayer.reset();
       }
     }
-    
-    delay(0); // Для предотвращения ESP8266 Watchdog Timer    
-  }  
+  }
+  
+  delay(0); // Для предотвращения ESP8266 Watchdog Timer    
 }
 
 void stopAlarm() {

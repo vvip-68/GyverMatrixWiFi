@@ -383,6 +383,7 @@ int8_t timeZoneOffset = 7;               // смещение часового п
 long ntp_t = 0;                          // Время, прошедшее с запроса данных с NTP-сервера (таймаут)
 byte ntp_cnt = 0;                        // Счетчик попыток получить данные от сервера
 bool init_time = false;                  // Флаг false - время не инициализировано; true - время инициализировано
+bool refresh_time = true;                // Флаг true - пришло время выполнить синхронизацию часов с сервером NTP
 bool useNtp = true;                      // Использовать синхронизацию времени с NTP-сервером
 char ntpServerName[31] = "";             // Используемый сервер NTP
 
@@ -415,6 +416,10 @@ GButton butt(PIN);
 #define HOLD_TIMEOUT 2000            // Время удержания кнопки перед выполнением действия ( + debounce time) суммарно - около 3 сек
 bool isButtonHold = false;           // Кнопка нажата и удерживается
 long hold_start_time = 0;            // Время обнаружения состояния "Конпка нажата и удерживается"
+
+String TEXT_1 = "";
+String TEXT_2 = "";
+String TEXT_3 = "";
 
 void setup() {
   
@@ -483,6 +488,10 @@ void setup() {
   butt.setIncrStep(2);         // настройка инкремента, может быть отрицательным (по умолчанию 1)
   butt.setIncrTimeout(500);    // настрйока интервала инкремента (по умолчанию 800 мс)
   */
+  
+  TEXT_1 = String(F("Матрица"));
+  TEXT_2 = String(F("на адресных"));
+  TEXT_3 = String(F("светодиодах"));
   
   // Рассчитать время начала рассвета
   calculateDawnTime();

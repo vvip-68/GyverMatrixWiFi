@@ -130,15 +130,15 @@ void customModes(byte aMode) {
   
   switch (aMode) {    
     case DEMO_TEXT_0: 
-      text = runningText == "" ? "Gyver Matrix" : runningText;
+      text = runningText == "" ? TEXT_1 : runningText; 
       fillString(text, CRGB::RoyalBlue);
       break;
     case DEMO_TEXT_1: 
-      text = runningText == "" ? "РАДУГА" : runningText;
+      text = runningText == "" ? TEXT_2 : runningText;
       fillString(text, 1);
       break;
     case DEMO_TEXT_2: 
-      text = runningText == "" ? "RGB LED" : runningText;
+      text = runningText == "" ? TEXT_3 : runningText;
       fillString(text, 2);
       break;
     case DEMO_NOISE_MADNESS:       madnessNoise(); break;

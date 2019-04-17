@@ -2,7 +2,7 @@
 #define header '$'              // стартовый символ
 #define divider ' '             // разделительный символ
 #define ending ';'              // завершающий символ
-
+ 
 int16_t intData[PARSE_AMOUNT];  // массив численных значений после парсинга - для WiFi часы время синхр м.б отрицательным + 
                                 // период синхронизации м.б больше 255 мин - нужен тип int16_t
 uint32_t prevColor;
@@ -27,16 +27,16 @@ void bluetoothRoutine() {
     if (wifi_connected && useNtp) {
       if (ntp_t > 0 && millis() - ntp_t > 3000) {
         Serial.println(F("Таймаут NTP запроса!"));
-        init_time = false;
         ntp_t = 0;
         ntp_cnt++;
         if (ntp_cnt >= 10) {
           Serial.println(F("Не удалось установить соединение с NTP сервером."));  
+          refresh_time = false;
         }
       }
       bool timeToSync = ntpSyncTimer.isReady();
-      if (timeToSync) ntp_cnt = 0;
-      if (timeToSync || (!init_time && ntp_t == 0 && ntp_cnt < 10)) {
+      if (timeToSync) { ntp_cnt = 0; refresh_time = true; }
+      if (timeToSync || (refresh_time && ntp_t == 0 && ntp_cnt < 10)) {
         getNTP();
       }
     }
@@ -48,7 +48,7 @@ void bluetoothRoutine() {
       if (text == "") {
          text = init_time
            ? clockCurrentText() + " " + dateCurrentTextLong()  // + dateCurrentTextShort()
-           : clockCurrentText();
+           : TEXT_1; 
       }
       fillString(text, globalColor); 
       // Включенная бегущая строка только формирует строку в массиве точек матрицы, но не отображает ее
@@ -754,7 +754,7 @@ void parsing() {
              useNtp = intData[2] == 1;
              saveUseNtp(useNtp);
              if (wifi_connected) {
-               init_time = false; ntp_t = 0; ntp_cnt = 0;
+               refresh_time = true; ntp_t = 0; ntp_cnt = 0;
              }
              break;
            case 3:               // $19 3 N Z; - Период синхронизации часов NTP и Часовой пояс
@@ -764,7 +764,9 @@ void parsing() {
              saveNtpSyncTime(SYNC_TIME_PERIOD);
              saveTimeZone(timeZoneOffset);
              ntpSyncTimer.setInterval(1000 * 60 * SYNC_TIME_PERIOD);
-             init_time = false; ntp_t = 0; ntp_cnt = 0;
+             if (wifi_connected) {
+               refresh_time = true; ntp_t = 0; ntp_cnt = 0;
+             }
              break;
            case 4:               // $19 4 X; - Ориентация часов  X: 0 - горизонтально, 1 - вертикально
              CLOCK_ORIENT = intData[2] == 1 ? 1  : 0;
@@ -797,7 +799,7 @@ void parsing() {
              break;
            case 8:               // $19 8 YYYY MM DD HH MM; - Установить текущее время YYYY.MM.DD HH:MM
              setTime(intData[5],intData[6],0,intData[4],intData[3],intData[2]);
-             init_time = true; ntp_cnt = 0;
+             init_time = true; refresh_time = false; ntp_cnt = 0;
              break;
         }
         sendAcknowledge();
