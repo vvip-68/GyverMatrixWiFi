@@ -38,7 +38,9 @@ void loadSettings() {
   //   28 - Будильник, Номер мелодии рассвета (из папки 02 на SD карте) 
   //   29 - Будильник, Максимальная громкость будильника
   //   30 - Использовать режим точки доступа
-  //   26 - зарезервировано
+  //   31 - Использовать авторегулировку яркости
+  //   32 - Минимальное значение яркости при автоматической регулировке
+  //   33 - зарезервировано
   //  ... - зарезервировано  
   //  48-63   - имя точки доступа    - 16 байт
   //  64-79   - пароль точки доступа - 16 байт
@@ -98,6 +100,8 @@ void loadSettings() {
     if (strlen(apPass) == 0) strcpy(apPass, DEFAULT_AP_PASS);
     if (strlen(ntpServerName) == 0) strcpy(ntpServerName, DEFAULT_NTP_SERVER);
 
+    useAutoBrightness = getUseAutoBrightness();
+    autoBrightnessMin = getAutoBrightnessMin();
 
   } else {
     globalBrightness = BRIGHTNESS;
@@ -128,6 +132,8 @@ void loadSettings() {
     alarmSound = 1;
     dawnSound = 1;
     maxAlarmVolume = 30;
+    useAutoBrightness = false;
+    autoBrightnessMin = 0;
     
     strcpy(apName, DEFAULT_AP_NAME);
     strcpy(apPass, DEFAULT_AP_PASS);
@@ -175,6 +181,9 @@ void saveDefaults() {
 
   EEPROMwrite(15, 1);    // Использовать бегущий текст в демо-режиме: 0 - нет; 1 - да
   EEPROMwrite(30, 0);    // Использовать режим точки доступа: 0 - нет; 1 - да
+
+  EEPROMwrite(31, 0);    // Авторегулирование яркости отключено.
+  EEPROMwrite(32, 1);    // Минимальная яркость: 1
 
   // Настройки по умолчанию для эффектов
   int addr = EFFECT_EEPROM;
@@ -634,6 +643,28 @@ String getNtpServer() {
 void setNtpServer(String server) {
   if (server != getNtpServer()) {
     EEPROM_string_write(120, server);
+    eepromModified = true;
+  }
+}
+
+bool getUseAutoBrightness() {
+  return EEPROMread(31) == 1;
+}
+
+void setUseAutoBrightness(boolean use) {  
+  if (use != getUseAutoBrightness()) {
+    EEPROMwrite(31, use ? 1 : 0);
+    eepromModified = true;
+  }
+}
+
+byte getAutoBrightnessMin() {
+  return EEPROMread(32);
+}
+
+void setAutoBrightnessMin(byte brightness) {
+  if (brightness != getAutoBrightnessMin()) {
+    EEPROMwrite(32, brightness);
     eepromModified = true;
   }
 }

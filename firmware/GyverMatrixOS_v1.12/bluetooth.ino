@@ -10,7 +10,6 @@ boolean recievedFlag;
 byte lastMode = 0;
 boolean parseStarted;
 String pictureLine;
-
 char incomeBuffer[UDP_TX_PACKET_MAX_SIZE];        // Буфер для приема строки команды из wifi udp сокета
 char replyBuffer[7];                              // ответ клиенту - подтверждения получения команды: "ack;/r/n/0"
 
@@ -29,7 +28,7 @@ void bluetoothRoutine() {
         Serial.println(F("Таймаут NTP запроса!"));
         ntp_t = 0;
         ntp_cnt++;
-        if (ntp_cnt >= 10) {
+        if (init_time && ntp_cnt >= 10) {
           Serial.println(F("Не удалось установить соединение с NTP сервером."));  
           refresh_time = false;
         }
@@ -41,6 +40,21 @@ void bluetoothRoutine() {
       }
     }
 
+    if (useAutoBrightness && autoBrightnessTimer.isReady()) {
+      // Во время работы будильника-рассвет, ночных часов, если матрица "выключена" или один из режимов "лампы" - освещения
+      // авторегулировки яркости нет.    
+      if (!(isAlarming || isNightClock || isTurnedOff || specialModeId == 2 || specialModeId == 3 || specialModeId == 6 || specialModeId == 7)) {
+        byte val = (byte)brightness_filter.filtered((int16_t)map(analogRead(PHOTO_PIN),0,1023,0,255));
+        if (val < autoBrightnessMin) val = autoBrightnessMin;
+        if (specialMode) {
+           specialBrightness = val;
+        } else {
+           globalBrightness = val;
+        }        
+        FastLED.setBrightness(val);
+      }
+    }
+    
     if (!BTcontrol && effectsFlag && !isColorEffect(effect)) effectsFlag = false;
 
     if (runningFlag && !isAlarming) {                         // бегущая строка - Running Text
@@ -207,6 +221,27 @@ void bluetoothRoutine() {
       // ... и т.д.
     }
 
+    // Есть ли изменение статуса MP3-плеера?
+    if (dfPlayer.available()) {
+
+      // Вывести детали об изменении статуса в лог
+      byte msg_type = dfPlayer.readType();      
+      printDetail(msg_type, dfPlayer.read());
+
+      // Действия, которые нужно выполнить при изменении некоторых статусов:
+      if (msg_type == DFPlayerCardRemoved) {
+        // Карточка "отвалилась" - делаем недоступным все что связано с MP3 плеером
+        isDfPlayerOk = false;
+        alarmSoundsCount = 0;
+        dawnSoundsCount = 0;
+        Serial.println(F("MP3 плеер недоступен."));
+      } else if (msg_type == DFPlayerCardOnline || msg_type == DFPlayerCardInserted) {
+        // Плеер распознал карту - переинициализировать стадию 2
+        InitializeDfPlayer2();
+        if (!isDfPlayerOk) Serial.println(F("MP3 плеер недоступен."));
+      }
+    }
+
     // Проверить - если долгое время не было ручного управления - переключиться в автоматический режим
     if (!(isAlarming || isPlayAlarmSound)) checkIdleState();
   }
@@ -259,9 +294,12 @@ void parsing() {
     1 - отправка координат точки $1 X Y;
     2 - заливка - $2;
     3 - очистка - $3;
-    4 - яркость - $4 value;
+    4 - яркость - 
+      $4 0 value   установить текущий уровень яркости
+      $4 1 U V     установить режим авторегулировки яркости и мин. яркости впри авторегулировке, 
+                   где U: 0 - выкл 1 - вкл; М - значение яркости - 1..255
     5 - картинка построчно $5 Y colorHEX X|colorHEX X|...|colorHEX X;
-    6 - текст $6 N|some text, где N - назначение текстаЖ
+    6 - текст $6 N|some text, где N - назначение текста;
         0 - текст бегущей строки
         1 - имя сервера NTP
         2 - SSID сети подключения
@@ -400,13 +438,22 @@ void parsing() {
         sendAcknowledge();
         break;
       case 4:
-        globalBrightness = intData[1];
-        breathBrightness = globalBrightness;
-        saveMaxBrightness(globalBrightness);
-        if (!isNightClock) {          
-          if (specialMode) specialBrightness = globalBrightness;
-          FastLED.setBrightness(globalBrightness);
-          FastLED.show();
+        if (intData[1] == 0) {
+          globalBrightness = intData[2];
+          breathBrightness = globalBrightness;
+          saveMaxBrightness(globalBrightness);
+          if (!isNightClock) {          
+            if (specialMode) specialBrightness = globalBrightness;
+            FastLED.setBrightness(globalBrightness);
+            FastLED.show();
+          }
+        }
+        if (intData[1] == 1) {
+          useAutoBrightness = intData[2] == 1;
+          autoBrightnessMin = intData[3];
+          if (autoBrightnessMin < 1) autoBrightnessMin = 1;
+          setUseAutoBrightness(useAutoBrightness);
+          setAutoBrightnessMin(autoBrightnessMin);
         }
         sendAcknowledge();
         break;
@@ -1143,6 +1190,9 @@ void sendPageParams(int page) {
   // MA:число    номер файла звука будильника из SD:/01
   // MB:число    номер файла звука рассвета из SD:/02
   // MP:папка.файл  номер папки и файла звука который проигрывается
+  // BU:X        использовать авторегулировку яркости 0-нет, 1-да
+  // BY:число    минимальное значений япкости при авторегулировке
+  
   String str = "", color, text;
   boolean allowed;
   byte b_tmp;
@@ -1153,15 +1203,23 @@ void sendPageParams(int page) {
       if (AUTOPLAY)   str+="1|BR:"; else str+="0|BR:";
       str+=String(globalBrightness) + "|PD:" + String(autoplayTime / 1000) + "|IT:" + String(idleTime / 60 / 1000) +  "|AL:";
       if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1"; else str+="0";
+      str+="|BU:" + String(useAutoBrightness ? "1" : "0");    
+      str+="|BY:" + String(autoBrightnessMin);       
       str+=";";
       break;
     case 2:  // Рисование. Вернуть: Яркость; Цвет точки;
       color = ("000000" + String(globalColor, HEX));
       color = color.substring(color.length() - 6); // FFFFFF             
-      str="$18 BR:"+String(globalBrightness) + "|CL:" + color + ";";
+      str="$18 BR:"+String(globalBrightness) + "|CL:" + color;
+      str+="|BU:" + String(useAutoBrightness ? "1" : "0");    
+      str+="|BY:" + String(autoBrightnessMin);       
+      str+=";";
       break;
     case 3:  // Картинка. Вернуть: Яркость;
-      str="$18 BR:"+String(globalBrightness) + ";";
+      str="$18 BR:"+String(globalBrightness);
+      str+="|BU:" + String(useAutoBrightness ? "1" : "0");    
+      str+="|BY:" + String(autoBrightnessMin);       
+      str+=";";
       break;
     case 4:  // Текст. Вернуть: Яркость; Скорость текста; Вкл/Выкл; Текст; Использовать в демо
       text = runningText;
@@ -1169,7 +1227,10 @@ void sendPageParams(int page) {
       str="$18 BR:"+String(globalBrightness) + "|ST:" + String(constrain(map(scrollSpeed, D_TEXT_SPEED_MIN,D_TEXT_SPEED_MAX, 0, 255), 0,255)) + "|TS:";
       if (runningFlag)  str+="1|TX:["; else str+="0|TX:[";
       str += text + "]" + "|UT:";
-      if (getUseTextInDemo())  str+="1;"; else str+="0;";
+      if (getUseTextInDemo())  str+="1"; else str+="0";
+      str+="|BU:" + String(useAutoBrightness ? "1" : "0");    
+      str+="|BY:" + String(autoBrightnessMin);       
+      str+=";";
       break;
     case 5:  // Эффекты. Вернуть: Номер эффекта, Остановлен или играет; Яркость; Скорость эффекта; Оверлей часов; Использовать в демо 
       allowed = false;
@@ -1185,6 +1246,8 @@ void sendPageParams(int page) {
       str="$18 EF:"+String(effect+1) + "|ES:";
       if (effectsFlag)  str+="1|BR:"; else str+="0|BR:";
       str+=String(globalBrightness) + "|SE:" + String(constrain(map(effectSpeed, D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0, 255), 0,255));
+      str+="|BU:" + String(useAutoBrightness ? "1" : "0");    
+      str+="|BY:" + String(autoBrightnessMin);       
       if (isColorEffect(effect) || !allowed || effect == EFFECT_CLOCK) 
           str+="|EC:X";  // X - параметр не используется (неприменим)
       else    
@@ -1201,8 +1264,9 @@ void sendPageParams(int page) {
       str="$18 GM:"+String(game+1) + "|GS:";
       if (gamemodeFlag && !gamePaused)  str+="1|BR:"; else str+="0|BR:";
       str+=String(globalBrightness) + "|SG:" + String(constrain(map(gameSpeed, D_GAME_SPEED_MIN,D_GAME_SPEED_MAX, 0, 255), 0,255)); 
-      str+="|UG:";
-      if (getGameUsage(game)) str+="1"; else str+="0";
+      str+="|BU:" + String(useAutoBrightness ? "1" : "0");    
+      str+="|BY:" + String(autoBrightnessMin);       
+      str+="|UG:" + String(getGameUsage(game) ? "1" : "0");    
       str+=";";
       break;
     case 7:  // Настройки часов. Вернуть: Оверлей вкл/выкл
