@@ -58,13 +58,18 @@ void bluetoothRoutine() {
     if (!BTcontrol && effectsFlag && !isColorEffect(effect)) effectsFlag = false;
 
     if (runningFlag && !isAlarming) {                         // бегущая строка - Running Text
-      String text = runningText;
-      if (text == "") {
+      String txt = runningText;
+      uint32_t txtColor = globalColor;
+      if (wifi_print_ip && (wifi_current_ip.length() > 0)) {
+        txt = wifi_current_ip;     
+        txtColor = 0xffffff;
+      }
+      if (txt == "") {
          text = init_time
            ? clockCurrentText() + " " + dateCurrentTextLong()  // + dateCurrentTextShort()
            : TEXT_1; 
-      }
-      fillString(text, globalColor); 
+      }      
+      fillString(txt, txtColor); 
       // Включенная бегущая строка только формирует строку в массиве точек матрицы, но не отображает ее
       // Если эффекты выключены - нужно принудительно вызывать отображение матрицы
       if (!effectsFlag) 
@@ -103,8 +108,7 @@ void bluetoothRoutine() {
         customRoutine();
       else if (BTcontrol && effectsFlag && isColorEffect(effect)) {
         effects();  
-      }
-      
+      }      
     }            
 
     checkAlarmTime();
@@ -164,6 +168,12 @@ void bluetoothRoutine() {
       
       // Был одинарный клик
       if (clicks == 1) {
+        if (wifi_print_ip) {
+          wifi_print_ip = false;
+          wifi_current_ip = "";
+          runningFlag = false;
+          effectsFlag = true;
+        }
         if (specialMode) {
           // Если в спецрежиме - и белый экран - вкл.выкл часы на белом экране
           if (specialModeId == 2 || specialModeId == 3) {
@@ -183,6 +193,12 @@ void bluetoothRoutine() {
 
       // Был двойной клик
       if (clicks == 2) { 
+        if (wifi_print_ip) {
+          wifi_print_ip = false;
+          wifi_current_ip = "";
+          runningFlag = false;
+          effectsFlag = true;
+        }
         if (specialModeId < 0) {
           // Из любого режима - включить часы
           setSpecialMode(1);
@@ -202,6 +218,13 @@ void bluetoothRoutine() {
         // Включить демо-режим
         idleTimer.setInterval(idleTime);
         idleTimer.reset();
+        
+        if (wifi_print_ip) {
+          wifi_print_ip = false;
+          wifi_current_ip = "";
+          runningFlag = false;
+          effectsFlag = true;
+        }
 
         specialMode = false;
         isNightClock = false;
@@ -213,9 +236,25 @@ void bluetoothRoutine() {
         nextMode();
       }
 
-      // Четверное нажатие
+      // Четверное нажатие - показать текущий IP WiFi-соединения
       if (clicks == 4) {
-        
+        if (wifi_connected) {
+          runningFlag = true;
+          effectsFlag = false;
+          gamemodeFlag = false;
+          drawingFlag = false;
+  
+          specialMode = false;
+          isNightClock = false;
+          isTurnedOff = false;
+          specialModeId = -1;
+  
+          BTcontrol = false;
+          AUTOPLAY = true;
+          
+          wifi_print_ip = true;
+          wifi_current_ip = WiFi.localIP().toString();
+        }
       }
       
       // ... и т.д.
@@ -388,7 +427,11 @@ void parsing() {
     }
 
     // Режимы кроме 18 останавливают будильник, если он работает (идет рассвет)
-    if (intData[0] != 18) stopAlarm();
+    if (intData[0] != 18) {
+      wifi_print_ip = false;
+      wifi_current_ip = "";
+      stopAlarm();
+    }
     
     switch (intData[0]) {
       case 0:
@@ -1192,6 +1235,7 @@ void sendPageParams(int page) {
   // MP:папка.файл  номер папки и файла звука который проигрывается
   // BU:X        использовать авторегулировку яркости 0-нет, 1-да
   // BY:число    минимальное значений япкости при авторегулировке
+  // IP:xx.xx.xx.xx Текущий IP адрес WiFi соединения в сети
   
   String str = "", color, text;
   boolean allowed;
@@ -1309,7 +1353,9 @@ void sendPageParams(int page) {
       str+=String(apName) + "]|AA:[";
       str+=String(apPass) + "]|NW:[";
       str+=String(ssid) + "]|NA:[";
-      str+=String(pass) + "]";
+      str+=String(pass) + "]|IP:";
+      if (wifi_connected) str += WiFi.localIP().toString(); 
+      else                str += String(F("нет подключения"));
       str+=";";
       break;
     case 95:  // Ответ состояния будильника - сообщение по инициативе сервера

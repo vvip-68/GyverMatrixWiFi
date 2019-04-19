@@ -15,7 +15,7 @@
 #include "FastLED.h"
 
 #define BRIGHTNESS 32         // стандартная маскимальная яркость (0-255)
-#define CURRENT_LIMIT 10000   // лимит по току в миллиамперах, автоматически управляет яркостью (пожалей свой блок питания!) 0 - выключить лимит
+#define CURRENT_LIMIT 0       // лимит по току в миллиамперах, автоматически управляет яркостью (пожалей свой блок питания!) 0 - выключить лимит
 
 #define WIDTH 16              // ширина матрицы
 #define HEIGHT 16             // высота матрицы
@@ -27,8 +27,8 @@
 #define MATRIX_TYPE 0         // тип матрицы: 0 - зигзаг, 1 - параллельная
 #define CONNECTION_ANGLE 0    // угол подключения: 0 - левый нижний, 1 - левый верхний, 2 - правый верхний, 3 - правый нижний
 #define STRIP_DIRECTION 0     // направление ленты из угла: 0 - вправо, 1 - вверх, 2 - влево, 3 - вниз
-// при неправильной настрйоке матрицы вы получите предупреждение "Wrong matrix parameters! Set to default"
-// шпаргалка по настройке матрицы здесь! https://alexgyver.ru/matrix_guide/
+                              // при неправильной настрйоке матрицы вы получите предупреждение "Wrong matrix parameters! Set to default"
+                              // шпаргалка по настройке матрицы здесь! https://alexgyver.ru/matrix_guide/
 
 // ******************** ЭФФЕКТЫ И РЕЖИМЫ ********************
 #define D_TEXT_SPEED 100      // скорость бегущего текста по умолчанию (мс)
@@ -266,6 +266,8 @@ const byte ALARM_LIST_IDX[] PROGMEM = {EFFECT_SNOW, EFFECT_BALL, EFFECT_RAINBOW,
 bool useSoftAP = false;            // использовать режим точки доступа
 bool wifi_connected = false;       // true - подключение к wifi сети выполнена  
 bool ap_connected = false;         // true - работаем в режиме точки доступа;
+bool wifi_print_ip = false;        // В качестве бегущей строки отображается текущий IP WiFi соединения
+String wifi_current_ip = "";
 
 #include <TimeLib.h>
 boolean showDateInClock = true;    // Показывать дату при отображении часов
