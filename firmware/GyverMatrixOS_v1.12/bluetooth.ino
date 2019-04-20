@@ -238,23 +238,21 @@ void bluetoothRoutine() {
 
       // Четверное нажатие - показать текущий IP WiFi-соединения
       if (clicks == 4) {
-        if (wifi_connected) {
-          runningFlag = true;
-          effectsFlag = false;
-          gamemodeFlag = false;
-          drawingFlag = false;
-  
-          specialMode = false;
-          isNightClock = false;
-          isTurnedOff = false;
-          specialModeId = -1;
-  
-          BTcontrol = false;
-          AUTOPLAY = true;
-          
-          wifi_print_ip = true;
-          wifi_current_ip = WiFi.localIP().toString();
-        }
+        runningFlag = true;
+        effectsFlag = false;
+        gamemodeFlag = false;
+        drawingFlag = false;
+
+        specialMode = false;
+        isNightClock = false;
+        isTurnedOff = false;
+        specialModeId = -1;
+
+        BTcontrol = false;
+        AUTOPLAY = true;
+        
+        wifi_print_ip = true;
+        wifi_current_ip = wifi_connected ? WiFi.localIP().toString() : String(F("Нет подключения к сети WiFi"));
       }
       
       // ... и т.д.
