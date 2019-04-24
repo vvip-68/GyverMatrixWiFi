@@ -571,7 +571,6 @@ void checkAlarmTime() {
         fadeSoundDirection = 0;
         fadeSoundTimer.setInterval(4294967295);
         StopSound(0);
-        dfPlayer.reset();
       }
     }
   }
