@@ -43,7 +43,7 @@ void bluetoothRoutine() {
     if (useAutoBrightness && autoBrightnessTimer.isReady()) {
       // Во время работы будильника-рассвет, ночных часов, если матрица "выключена" или один из режимов "лампы" - освещения
       // авторегулировки яркости нет.    
-      if (!(isAlarming || isNightClock || isTurnedOff || specialModeId == 2 || specialModeId == 3 || specialModeId == 6 || specialModeId == 7)) {
+      if (!(isAlarming || isNightClock || isTurnedOff || specialModeId == 2 || specialModeId == 3 || specialModeId == 6 || specialModeId == 7 || thisMode == DEMO_DAWN_ALARM)) {
         byte val = (byte)brightness_filter.filtered((int16_t)map(analogRead(PHOTO_PIN),0,1023,0,255));
         if (val < autoBrightnessMin) val = autoBrightnessMin;
         if (specialMode) {
@@ -238,21 +238,23 @@ void bluetoothRoutine() {
 
       // Четверное нажатие - показать текущий IP WiFi-соединения
       if (clicks == 4) {
-        runningFlag = true;
-        effectsFlag = false;
-        gamemodeFlag = false;
-        drawingFlag = false;
-
-        specialMode = false;
-        isNightClock = false;
-        isTurnedOff = false;
-        specialModeId = -1;
-
-        BTcontrol = false;
-        AUTOPLAY = true;
-        
-        wifi_print_ip = true;
-        wifi_current_ip = wifi_connected ? WiFi.localIP().toString() : String(F("Нет подключения к сети WiFi"));
+        if (wifi_connected) {
+          runningFlag = true;
+          effectsFlag = false;
+          gamemodeFlag = false;
+          drawingFlag = false;
+  
+          specialMode = false;
+          isNightClock = false;
+          isTurnedOff = false;
+          specialModeId = -1;
+  
+          BTcontrol = false;
+          AUTOPLAY = true;
+          
+          wifi_print_ip = true;
+          wifi_current_ip = WiFi.localIP().toString();
+        }
       }
       
       // ... и т.д.
@@ -483,7 +485,7 @@ void parsing() {
           globalBrightness = intData[2];
           breathBrightness = globalBrightness;
           saveMaxBrightness(globalBrightness);
-          if (!isNightClock) {          
+          if (!(isNightClock || useAutoBrightness)) {          
             if (specialMode) specialBrightness = globalBrightness;
             FastLED.setBrightness(globalBrightness);
             FastLED.show();
@@ -617,7 +619,8 @@ void parsing() {
             if (!isColorEffect(effect)) {
               effectsFlag = false;
             }
-            FastLED.setBrightness(globalBrightness);    
+            if (!useAutoBrightness)
+              FastLED.setBrightness(globalBrightness);    
           }
         }
         else if (intData[1] == 2 || intData[1] == 3) {
@@ -654,7 +657,8 @@ void parsing() {
           }
 
           breathBrightness = globalBrightness;
-          FastLED.setBrightness(globalBrightness);    
+          if (!useAutoBrightness)
+            FastLED.setBrightness(globalBrightness);    
           
         } else if (intData[1] == 2) {
           // Вкл/выкл использование эффекта в демо-режиме
@@ -695,6 +699,7 @@ void parsing() {
           if (b_tmp != 255) thisMode = b_tmp;
           
           gamePaused = intData[1] == 0 || (intData[1] == 1 && intData[3] == 0);  
+          if (!useAutoBrightness)
           FastLED.setBrightness(globalBrightness);    
 
         } else if (intData[1] == 2) {
