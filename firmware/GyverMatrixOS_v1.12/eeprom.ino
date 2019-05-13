@@ -1,9 +1,6 @@
 #define EEPROM_OK 0xA5                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
 #define EFFECT_EEPROM 150                  // начальная ячейка eeprom с параметрами эффектов
 #define GAME_EEPROM 230                    // начальная ячейка eeprom с параметрами игр
-#define DEFAULT_AP_NAME "MatrixAP"         // Имя точки доступа по умолчанию 
-#define DEFAULT_AP_PASS "12341234"         // Пароль точки доступа по умолчанию
-#define DEFAULT_NTP_SERVER "time.nist.gov" // NTP сервер по умолчанию
 
 void loadSettings() {
 
@@ -137,8 +134,9 @@ void loadSettings() {
     
     strcpy(apName, DEFAULT_AP_NAME);
     strcpy(apPass, DEFAULT_AP_PASS);
-    strcpy(ssid, "");
-    strcpy(pass, "");
+    strcpy(ssid, NETWORK_SSID);
+    strcpy(pass, NETWORK_PASS);
+
     strcpy(ntpServerName, DEFAULT_NTP_SERVER);
   }
 

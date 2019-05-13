@@ -361,7 +361,7 @@ uint32_t autoplayTimer;
 #include "timerMinim.h"
 timerMinim effectTimer(D_EFFECT_SPEED);  // Таймер скорости эффекта (шага выполнения эффекта)
 timerMinim gameTimer(DEMO_GAME_SPEED);   // Таймер скорости игры (шага выполнения игры)
-timerMinim scrollTimer(D_TEXT_SPEED);    // Таймерпрокрутки текста эффекта бегущей строки
+timerMinim scrollTimer(D_TEXT_SPEED);    // Таймер прокрутки текста эффекта бегущей строки
 timerMinim changeTimer(70);              // Таймер шага плавной смены режима - Fade
 timerMinim halfsecTimer(500);            // Полусекундный таймер точек часов
 timerMinim idleTimer(idleTime);          // Таймер бездействия ручного управлениядля автоперехода а демо-режим 
@@ -370,7 +370,14 @@ timerMinim alarmSoundTimer(4294967295);  // Таймер выключения з
 timerMinim fadeSoundTimer(4294967295);   // Таймер плавного включения / выключения звука
 timerMinim autoBrightnessTimer(500);     // Таймер отслеживания показаний датчика света при включенной авторегулировки яркости матрицы
 
-                                         // к длине +1 байт на \0 - терминальный символ
+#define DEFAULT_NTP_SERVER "time.nist.gov" // NTP сервер по умолчанию
+
+#define DEFAULT_AP_NAME "MatrixAP"       // Имя точки доступа по умолчанию 
+#define DEFAULT_AP_PASS "12341234"       // Пароль точки доступа по умолчанию
+#define NETWORK_SSID ""                  // Имя WiFi сети
+#define NETWORK_PASS ""                  // Пароль для подключения к WiFi сети
+
+                                         // к длине +1 байт на \0 - терминальный символ. Это буферы для загрузки имен/пароля из EEPROM. Значения задаются в defiine выше
 char apName[17] = "";                    // Имя сети в режиме точки доступа
 char apPass[9]  = "";                    // Пароль подключения к точке доступа
 char ssid[25] = "";                      // SSID (имя) вашего роутера (конфигурируется подключением через точку доступа и сохранением в EEPROM)
