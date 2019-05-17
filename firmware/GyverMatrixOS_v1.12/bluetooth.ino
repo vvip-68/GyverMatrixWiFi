@@ -64,8 +64,8 @@ void bluetoothRoutine() {
         txt = wifi_current_ip;     
         txtColor = 0xffffff;
       }
-      if (txt == "") {
-         text = init_time
+      if (txt.length() == 0) {
+         txt = init_time
            ? clockCurrentText() + " " + dateCurrentTextLong()  // + dateCurrentTextShort()
            : TEXT_1; 
       }      
@@ -613,12 +613,15 @@ void parsing() {
         if (intData[1] == 0 || intData[1] == 1) {
           if (intData[1] == 1) runningFlag = true;
           if (intData[1] == 0) runningFlag = false;
+          
           if (runningFlag) {
             gamemodeFlag = false;
             drawingFlag = false;
             if (!isColorEffect(effect)) {
               effectsFlag = false;
             }
+            // Если при включении режима "Бегущая строка" цвет текста - черный -- включить белый, т.к черный на черном не видно
+            if (globalColor == 0x000000) globalColor = 0xffffff;
             if (!useAutoBrightness)
               FastLED.setBrightness(globalBrightness);    
           }
