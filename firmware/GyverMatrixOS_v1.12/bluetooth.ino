@@ -112,6 +112,8 @@ void bluetoothRoutine() {
     }            
 
     checkAlarmTime();
+    checkAutoMode1Time();
+    checkAutoMode2Time();
 
     butt.tick();  // обязательная функция отработки. Должна постоянно опрашиваться
     byte clicks = 0;
@@ -632,37 +634,16 @@ void parsing() {
         }
         sendAcknowledge();
         break;
-      case 8:
-        effect = intData[2];
+      case 8:      
+        effect = intData[2];        
         // intData[1] : дейстие -> 0 - выбор эффекта;  1 - старт/стоп; 2 - вкл/выкл "использовать в демо-режиме"
         // intData[2] : номер эффекта
         // intData[3] : действие = 1: 0 - стоп 1 - старт; действие = 2: 0 - выкл; 1 - вкл;
-        if (intData[1] == 0 || intData[1] == 1) {
-          gamemodeFlag = false;
+        if (intData[1] == 0 || intData[1] == 1) {          
+          setEffect(effect);
+          if (!BTcontrol) BTcontrol = !isColorEffect(effect);                    // При установке эффекта дыхание / цвета / радуга пикс - переключаться в управление по BT не нужно
           loadingFlag = intData[1] == 0 && !isColorEffect(effect);
-          effectsFlag = true;
-          if (!BTcontrol) BTcontrol = !isColorEffect(effect);     // При установке эффекта дыхание / цвета / радуга пикс - переключаться в управление по BT не нужно
-          if (!isColorEffect(effect)) {
-            drawingFlag = false;
-            runningFlag = false;
-          }
-          
-          effectSpeed = getEffectSpeed(effect);
-          effectTimer.setInterval(effectSpeed);
-
-          effectsFlag = intData[1] == 0 || (intData[1] == 1 && intData[3] == 1); // выбор эффекта - сразу запускать
-  
-          // Найти соответствие thisMode указанному эффекту. 
-          // Дльнейшее отображение изображения эффекта будет выполняться стандартной процедурой customRoutin()
-          if (!isColorEffect(effect)) {            
-            b_tmp = mapEffectToMode(effect);           
-            if (b_tmp != 255) thisMode = b_tmp;
-          }
-
-          breathBrightness = globalBrightness;
-          if (!useAutoBrightness)
-            FastLED.setBrightness(globalBrightness);    
-          
+          effectsFlag = intData[1] == 0 || (intData[1] == 1 && intData[3] == 1); // выбор эффекта - сразу запускать           
         } else if (intData[1] == 2) {
           // Вкл/выкл использование эффекта в демо-режиме
           saveEffectUsage(effect, intData[3] == 1); 
@@ -681,30 +662,15 @@ void parsing() {
         // intData[2] : номер игры
         // intData[3] : действие = 1: 0 - стоп 1 - старт; действие = 2: 0 - выкл; 1 - вкл;
         if (intData[1] == 0 || intData[1] == 1) {
-          BTcontrol = true;        
-          if (intData[1] == 0 && (!drawingFlag || (drawingFlag && game != 0) || runningFlag)) {  // начать новую игру при переходе со всех режимов кроме рисования
-            loadingFlag = true;                                                                  // если игра в паузе змейка (game==0) - продолжить, иначе начать  новую игру 
-            FastLED.clear(); 
-            FastLED.show(); 
-          }
-          effectsFlag = false;
-          drawingFlag = false;
-          runningFlag = false;
-          controlFlag = false;                                                    // После начала игры пока не трогаем кнопки - игра автоматическая 
-          gamemodeFlag = true;
-  
-          gameSpeed = getGameSpeed(game);
-          gameTimer.setInterval(gameSpeed);        
-          
-          // Найти соответствие thisMode указанной игре. 
-          // Дльнейшее отображение изображения эффекта будет выполняться стандартной процедурой customRoutin()
-          b_tmp = mapGameToMode(game);
-          if (b_tmp != 255) thisMode = b_tmp;
-          
-          gamePaused = intData[1] == 0 || (intData[1] == 1 && intData[3] == 0);  
-          if (!useAutoBrightness)
-          FastLED.setBrightness(globalBrightness);    
+          BTcontrol = true; 
 
+          // начать новую игру при переходе со всех режимов кроме рисования
+          // если игра в паузе змейка (game==0) - продолжить, иначе начать  новую игру 
+          startGame(game, 
+                    intData[1] == 0 && (!drawingFlag || (drawingFlag && game != GAME_SNAKE) || runningFlag), // new Game ?
+                    intData[1] == 0 || (intData[1] == 1 && intData[3] == 0)                                  // is Paused ?
+          );
+          
         } else if (intData[1] == 2) {
           // Вкл/выкл использование игры в демо-режиме
           saveGameUsage(game, intData[3] == 1); 
@@ -1499,20 +1465,73 @@ void setSpecialMode(int spc_mode) {
   }  
 }
 
-// hex string to uint32_t
-uint32_t HEXtoInt(String hexValue) {
-  byte tens, ones, number1, number2, number3;
-  tens = (hexValue[0] < '9') ? hexValue[0] - '0' : hexValue[0] - '7';
-  ones = (hexValue[1] < '9') ? hexValue[1] - '0' : hexValue[1] - '7';
-  number1 = (16 * tens) + ones;
+void resetModes() {
+  // Отключение спец-режима перед включением других
+  specialMode = false;
+  isNightClock = false;
+  isTurnedOff = false;
+  specialModeId = -1;
 
-  tens = (hexValue[2] < '9') ? hexValue[2] - '0' : hexValue[2] - '7';
-  ones = (hexValue[3] < '9') ? hexValue[3] - '0' : hexValue[3] - '7';
-  number2 = (16 * tens) + ones;
+  // Отключение ВСЕХ режимов: рисование/текст/эффекты/игры  
+  effectsFlag = false;        
+  runningFlag = false;
+  gamemodeFlag = false;
+  drawingFlag = false;
+  loadingFlag = false;
+  controlFlag = false;
 
-  tens = (hexValue[4] < '9') ? hexValue[4] - '0' : hexValue[4] - '7';
-  ones = (hexValue[5] < '9') ? hexValue[5] - '0' : hexValue[5] - '7';
-  number3 = (16 * tens) + ones;
+  breathBrightness = globalBrightness;
+}
 
-  return ((uint32_t)number1 << 16 | (uint32_t)number2 << 8 | number3 << 0);
+void setEffect(byte eff) {
+
+  effect = eff;
+  
+  // Эффект динамического цвета не отключает текущий режим
+  if (!isColorEffect(effect)) resetModes();
+
+  loadingFlag = !isColorEffect(effect);
+  effectsFlag = true;
+    
+  effectSpeed = getEffectSpeed(effect);
+  effectTimer.setInterval(effectSpeed);
+
+  // Найти соответствие thisMode указанному эффекту. 
+  if (!isColorEffect(effect)) {            
+    byte b_tmp = mapEffectToMode(effect);           
+    if (b_tmp != 255) {
+      thisMode = b_tmp;
+      if (!useAutoBrightness) {
+        FastLED.setBrightness(globalBrightness);      
+      }  
+    }
+  }
+}
+
+void startGame(byte game, bool newGame, bool paused) {
+  
+  // Найти соответствие thisMode указанной игре. 
+  byte b_tmp = mapGameToMode(game);
+  
+  if (b_tmp != 255) {
+    resetModes();
+      
+    gamemodeFlag = true;
+    gamePaused = paused;  
+  
+    gameSpeed = getGameSpeed(game);
+    gameTimer.setInterval(gameSpeed);        
+    
+    thisMode = b_tmp;
+    if (!useAutoBrightness) {
+      FastLED.setBrightness(globalBrightness);      
+    }
+  
+    if (newGame) {  
+      loadingFlag = true;                                                                  
+      FastLED.clear(); 
+      FastLED.show(); 
+    }
+    
+  }  
 }

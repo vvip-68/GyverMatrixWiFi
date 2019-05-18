@@ -37,7 +37,13 @@ void loadSettings() {
   //   30 - Использовать режим точки доступа
   //   31 - Использовать авторегулировку яркости
   //   32 - Минимальное значение яркости при автоматической регулировке
-  //   33 - зарезервировано
+  //   33 - Режим 1 по времени - часы
+  //   34 - Режим 1 по времени - минуты
+  //   35 - Режим 1 по времени - ID эффекта или -1 - выключено; 0 - случайный;
+  //   36 - Режим 2 по времени - часы
+  //   37 - Режим 2 по тайвременимеру - минуты
+  //   38 - Режим 2 по времени - ID эффекта или -1 - выключено; 0 - случайный;
+  //   39 - зарезервировано
   //  ... - зарезервировано  
   //  48-63   - имя точки доступа    - 16 байт
   //  64-79   - пароль точки доступа - 16 байт
@@ -100,6 +106,13 @@ void loadSettings() {
     useAutoBrightness = getUseAutoBrightness();
     autoBrightnessMin = getAutoBrightnessMin();
 
+    AM1_hour = getAM1hour();
+    AM1_minute = getAM1minute();
+    AM1_effect_id = getAM1effect();
+    AM2_hour = getAM2hour();
+    AM2_minute = getAM2minute();
+    AM2_effect_id = getAM2effect();
+
   } else {
     globalBrightness = BRIGHTNESS;
     scrollSpeed = D_TEXT_SPEED;
@@ -131,6 +144,13 @@ void loadSettings() {
     maxAlarmVolume = 30;
     useAutoBrightness = false;
     autoBrightnessMin = 0;
+
+    AM1_hour = 0;
+    AM1_minute = 0;
+    AM1_effect_id = -1;
+    AM2_hour = 0;
+    AM2_minute = 0;
+    AM2_effect_id = -1;
     
     strcpy(apName, DEFAULT_AP_NAME);
     strcpy(apPass, DEFAULT_AP_PASS);
@@ -183,6 +203,13 @@ void saveDefaults() {
   EEPROMwrite(31, 0);    // Авторегулирование яркости отключено.
   EEPROMwrite(32, 1);    // Минимальная яркость: 1
 
+  EEPROMwrite(33, AM1_hour);            // Режим 1 по времени - часы
+  EEPROMwrite(34, AM1_minute);          // Режим 1 по времени - минуты
+  EEPROMwrite(35, (byte)AM1_effect_id); // Режим 1 по времени - минуты
+  EEPROMwrite(36, AM2_hour);            // Режим 2 по времени - часы
+  EEPROMwrite(37, AM2_minute);          // Режим 2 по времени - минуты
+  EEPROMwrite(38, (byte)AM2_effect_id); // Режим 2 по времени - минуты
+  
   // Настройки по умолчанию для эффектов
   int addr = EFFECT_EEPROM;
   for (int i = 0; i < MAX_EFFECT; i++) {
@@ -663,6 +690,72 @@ byte getAutoBrightnessMin() {
 void setAutoBrightnessMin(byte brightness) {
   if (brightness != getAutoBrightnessMin()) {
     EEPROMwrite(32, brightness);
+    eepromModified = true;
+  }
+}
+
+byte getAM1hour() { 
+  return EEPROMread(33);
+}
+
+void setAM1hour(byte hour) {
+  if (hour != getAM1hour()) {
+    EEPROMwrite(33, hour);
+    eepromModified = true;
+  }
+}
+
+byte getAM1minute() {
+  return EEPROMread(34);
+}
+
+void setAM1minute(byte minute) {
+  if (minute != getAM1minute()) {
+    EEPROMwrite(34, minute);
+    eepromModified = true;
+  }
+}
+
+int8_t getAM1effect() {
+  return (int8_t)EEPROMread(35);
+}
+
+void setAM1effect(int8_t effect) {
+  if (effect != getAM1minute()) {
+    EEPROMwrite(35, (byte)effect);
+    eepromModified = true;
+  }
+}
+
+byte getAM2hour() { 
+  return EEPROMread(36);
+}
+
+void setAM2hour(byte hour) {
+  if (hour != getAM2hour()) {
+    EEPROMwrite(36, hour);
+    eepromModified = true;
+  }
+}
+
+byte getAM2minute() {
+  return EEPROMread(37);
+}
+
+void setAM2minute(byte minute) {
+  if (minute != getAM2minute()) {
+    EEPROMwrite(37, minute);
+    eepromModified = true;
+  }
+}
+
+int8_t getAM2effect() {
+  return (int8_t)EEPROMread(38);
+}
+
+void setAM2effect(int8_t effect) {
+  if (effect != getAM2minute()) {
+    EEPROMwrite(38, (byte)effect);
     eepromModified = true;
   }
 }

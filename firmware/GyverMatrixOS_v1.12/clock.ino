@@ -592,3 +592,85 @@ void stopAlarm() {
     sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
   }
 }
+
+void checkAutoMode1Time() {
+  if (AM1_effect_id == -2 || !init_time) return;
+  
+  hrs = hour();
+  mins = minute();
+
+  // Режим по времени включен (enable) и настало врема активации режима - активировать
+  if (!AM1_running && AM1_hour == hrs && AM1_minute == mins) {
+    AM1_running = true;
+    SetAutoMode(1);
+  }
+
+  // Режим активирован и время срабатывания режима прошло - сбросить флаг для подготовки к следующему циклу
+  if (AM1_running && (AM1_hour != hrs || AM1_minute != mins)) {
+    AM1_running = false;
+  }
+}
+
+void checkAutoMode2Time() {
+  if (AM2_effect_id == -2 || !init_time) return;
+
+  hrs = hour();
+  mins = minute();
+
+  // Режим по времени включен (enable) и настало врема активации режима - активировать
+  if (!AM2_running && AM2_hour == hrs && AM2_minute == mins) {
+    AM2_running = true;
+    SetAutoMode(2);
+  }
+
+  // Режим активирован и время срабатывания режима прошло - сбросить флаг для подготовки к следующему циклу
+  if (AM2_running && (AM2_hour != hrs || AM2_minute != mins)) {
+    AM2_running = false;
+  }
+}
+
+void SetAutoMode(byte amode) {
+  Serial.print(F("Авторежим "));
+  Serial.print(amode);
+  Serial.print(F(" ["));
+  Serial.print(amode == 1 ? AM1_hour : AM2_hour);
+  Serial.print(":");
+  Serial.print(amode == 1 ? AM1_minute : AM2_minute);
+  Serial.print(F("] - "));
+
+  byte ef = amode == 1 ? AM1_effect_id : AM2_effect_id;
+  
+  // включить указанный режим
+  if (ef == -1) {
+
+    // Выключить матрицу (черный экран)
+    Serial.print(F("выключение матрицы"));
+    setSpecialMode(0);
+    
+  } else {
+    Serial.print(F("включение матрицы"));
+
+    // Если режим включения == 0 - случайный режим и автосмена по кругу
+    AUTOPLAY = ef == 0;
+    if (!AUTOPLAY) {
+      // Таймер возврата в авторежим отключен    
+      idleTimer.setInterval(4294967295);
+      idleTimer.reset();
+    }
+      
+    if (ef == 0) {
+      // "Случайный режим и далее автосмена
+      nextModeHandler();
+    } else {  
+      // Для применения доступен список эффектов из ALARM_LIST; 
+      // Эффекты в списке ALARM_LIST начинаются c 0; Значение ef может быть -2 (выключено); -1 - выключать матрицу; 0 - случайный и длее с 1 - указанный
+      // Ножно привести номер указанного эффекта ef к индексу в ALARM_LIST, и дальше к номеру используемого эффекта, поэтому mapAlarmToEffect(ef - 1);
+      byte tmp = mapAlarmToEffect(ef - 1);   
+      // Если не опознали что за эффект - включаем "следующий" режим
+      if (tmp != 255) setEffect(ef);
+      else            nextModeHandler(); 
+    }
+  }
+  
+  Serial.println();
+}
