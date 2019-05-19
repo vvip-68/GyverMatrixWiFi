@@ -694,6 +694,12 @@ void setAutoBrightnessMin(byte brightness) {
   }
 }
 
+void setAM1params(byte hour, byte minute, int8_t effect) { 
+  setAM1hour(hour);
+  setAM1minute(minute);
+  setAM1effect(effect);
+}
+
 byte getAM1hour() { 
   return EEPROMread(33);
 }
@@ -725,6 +731,12 @@ void setAM1effect(int8_t effect) {
     EEPROMwrite(35, (byte)effect);
     eepromModified = true;
   }
+}
+
+void setAM2params(byte hour, byte minute, int8_t effect) { 
+  setAM2hour(hour);
+  setAM2minute(minute);
+  setAM2effect(effect);
 }
 
 byte getAM2hour() { 

@@ -44,14 +44,19 @@ void bluetoothRoutine() {
       // Во время работы будильника-рассвет, ночных часов, если матрица "выключена" или один из режимов "лампы" - освещения
       // авторегулировки яркости нет.    
       if (!(isAlarming || isNightClock || isTurnedOff || specialModeId == 2 || specialModeId == 3 || specialModeId == 6 || specialModeId == 7 || thisMode == DEMO_DAWN_ALARM)) {
-        byte val = (byte)brightness_filter.filtered((int16_t)map(analogRead(PHOTO_PIN),0,1023,0,255));
+        // 300 - это при макс. освещении, чтобы макс возможный 255 наступал не на грани порога чувствительности ФР, а немного раньше  
+        int16_t val = (byte)brightness_filter.filtered((int16_t)map(analogRead(PHOTO_PIN),0,1023,0,300)); 
         if (val < autoBrightnessMin) val = autoBrightnessMin;
+        if (val > 255) val = 255;
         if (specialMode) {
            specialBrightness = val;
         } else {
            globalBrightness = val;
         }        
         FastLED.setBrightness(val);
+        // В режиме рисования нужно принудительно обновлять экран,
+        // т.к статическое изображение не обновляется автоматически 
+        if (drawingFlag) FastLED.show();
       }
     }
     
@@ -404,6 +409,12 @@ void parsing() {
        - $20 5 VV; - установит уровень громкости проигрывания примеров (когда уже играет)
            VV - уровень громкости
     21 - настройки подключения к сети . точке доступа
+    22 - настройки включения режимов матрицы в указанное время
+       - $22 X HH MM NN
+           X  - номер режима 1 или 2
+           HH - час срабатывания
+           MM - минуты срабатывания
+           NN - эффект: -2 - выключено; -1 - выключить матрицу; 0 - случайный режим и далее по кругу; 1 и далее - список режимов ALARM_LIST 
   */  
   if (recievedFlag) {      // если получены данные
     recievedFlag = false;
@@ -516,7 +527,7 @@ void parsing() {
         loadingFlag = false;
 
         // Разбираем СТРОКУ из принятого буфера формата 'Y colorHEX X|colorHEX X|...|colorHEX X'
-        // Получить номер строки (Y) для которой получили строку с данными 
+        // Получить номер строки (Y) для которой получили строку с данными (номер строки - сверху вниз, в то время как матрица - индекс строки снизу вверх)
         b_tmp = pictureLine.indexOf(" ");
         str = pictureLine.substring(0, b_tmp);
         pntY = str.toInt();
@@ -539,12 +550,12 @@ void parsing() {
           pntX=atoi(strtok(NULL," "));
 
           // начало картинки - очистить матрицу
-          if ((pntX == 0) && (pntY == HEIGHT - 1)) {
+          if (pntX == 0 && pntY == 0) {
             FastLED.clear(); 
             FastLED.show();
           }
           
-          drawPixelXY(pntX, pntY, gammaCorrection(pntColor));
+          drawPixelXY(pntX, HEIGHT - pntY - 1, gammaCorrection(pntColor));
         }
 
         // Выводить построчно для ускорения вывода на экран
@@ -644,6 +655,7 @@ void parsing() {
           if (!BTcontrol) BTcontrol = !isColorEffect(effect);                    // При установке эффекта дыхание / цвета / радуга пикс - переключаться в управление по BT не нужно
           loadingFlag = intData[1] == 0 && !isColorEffect(effect);
           effectsFlag = intData[1] == 0 || (intData[1] == 1 && intData[3] == 1); // выбор эффекта - сразу запускать           
+          if (effect == EFFECT_FILL_COLOR && globalColor == 0x000000) globalColor = 0xffffff;
         } else if (intData[1] == 2) {
           // Вкл/выкл использование эффекта в демо-режиме
           saveEffectUsage(effect, intData[3] == 1); 
@@ -1019,6 +1031,41 @@ void parsing() {
         sendPageParams(9);
         saveSettings();      // Если были изменения параметров, сохраняемых в EEPROM - сохранить
         break;
+      case 22:
+      /*  22 - настройки включения режимов матрицы в указанное время
+       - $22 X HH MM NN
+           X  - номер режима 1 или 2
+           HH - час срабатывания
+           MM - минуты срабатывания
+           NN - эффект: -2 - выключено; -1 - выключить матрицу; 0 - случайный режим и далее по кругу; 1 и далее - список режимов ALARM_LIST 
+      */    
+        switch (intData[1]) { 
+          case 1:   // Режим 1
+            AM1_hour = intData[2];
+            AM1_minute = intData[3];
+            AM1_effect_id = intData[4];
+            if (AM1_hour < 0) AM1_hour = 0;
+            if (AM1_hour > 23) AM1_hour = 23;
+            if (AM1_minute < 0) AM1_minute = 0;
+            if (AM1_minute > 59) AM1_minute = 58;
+            if (AM1_effect_id < -2) AM1_minute = -2;
+            setAM1params(AM1_hour, AM1_minute, AM1_effect_id);
+            break;
+          case 2:   // Режим 2
+            AM2_hour = intData[2];
+            AM2_minute = intData[3];
+            AM2_effect_id = intData[4];
+            if (AM2_hour < 0) AM2_hour = 0;
+            if (AM2_hour > 23) AM2_hour = 23;
+            if (AM2_minute < 0) AM2_minute = 0;
+            if (AM2_minute > 59) AM2_minute = 58;
+            if (AM2_effect_id < -2) AM2_minute = -2;
+            setAM2params(AM2_hour, AM2_minute, AM2_effect_id);
+            break;
+        }
+        sendPageParams(10);
+        saveSettings(); 
+        break;
     }
     lastMode = intData[0];  // запомнить предыдущий режим
   }
@@ -1208,6 +1255,12 @@ void sendPageParams(int page) {
   // BU:X        использовать авторегулировку яркости 0-нет, 1-да
   // BY:число    минимальное значений япкости при авторегулировке
   // IP:xx.xx.xx.xx Текущий IP адрес WiFi соединения в сети
+  // AM1H:HH     час включения режима 1     00..23
+  // AM1M:MM     минуты включения режима 1  00..59
+  // AM1E:NN     номер эффекта режима 1:   -2 - не используется; -1 - выключить матрицу; 0 - включить случайный с автосменой; 1 - номер режима из спписка ALARM_LIST
+  // AM2H:HH     час включения режима 2     00..23
+  // AM2M:MM     минуты включения режима 2  00..59
+  // AM2E:NN     номер эффекта режима 1:   -2 - не используется; -1 - выключить матрицу; 0 - включить случайный с автосменой; 1 - номер режима из спписка ALARM_LIST
   
   String str = "", color, text;
   boolean allowed;
@@ -1328,6 +1381,11 @@ void sendPageParams(int page) {
       str+=String(pass) + "]|IP:";
       if (wifi_connected) str += WiFi.localIP().toString(); 
       else                str += String(F("нет подключения"));
+      str+=";";
+      break;
+    case 10:  // Настройки режимов автовключения по времени
+      str="$18 AM1H:"+String(AM1_hour)+"|AM1M"+String(AM1_minute)+"|AM1E"+String(AM1_effect_id)+
+             "|AM2H:"+String(AM2_hour)+"|AM2M"+String(AM2_minute)+"|AM2E"+String(AM2_effect_id); 
       str+=";";
       break;
     case 95:  // Ответ состояния будильника - сообщение по инициативе сервера
