@@ -1384,8 +1384,8 @@ void sendPageParams(int page) {
       str+=";";
       break;
     case 10:  // Настройки режимов автовключения по времени
-      str="$18 AM1H:"+String(AM1_hour)+"|AM1M"+String(AM1_minute)+"|AM1E"+String(AM1_effect_id)+
-             "|AM2H:"+String(AM2_hour)+"|AM2M"+String(AM2_minute)+"|AM2E"+String(AM2_effect_id); 
+      str="$18 AM1T:"+String(AM1_hour)+" "+String(AM1_minute)+"|AM1A:"+String(AM1_effect_id)+
+             "|AM2T:"+String(AM2_hour)+" "+String(AM2_minute)+"|AM2A:"+String(AM2_effect_id); 
       str+=";";
       break;
     case 95:  // Ответ состояния будильника - сообщение по инициативе сервера
