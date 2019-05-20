@@ -595,7 +595,7 @@ void stopAlarm() {
 
 // Проверка необходимости включения режима 1 по установленному времени
 void checkAutoMode1Time() {
-  if (AM1_effect_id == -2 || !init_time) return;
+  if (AM1_effect_id == -5 || !init_time) return;
   
   hrs = hour();
   mins = minute();
@@ -633,6 +633,7 @@ void checkAutoMode2Time() {
 
 // Выполнение включения режима 1 или 2 (amode) по установленному времени
 void SetAutoMode(byte amode) {
+  
   Serial.print(F("Авторежим "));
   Serial.print(amode);
   Serial.print(F(" ["));
@@ -641,18 +642,48 @@ void SetAutoMode(byte amode) {
   Serial.print(amode == 1 ? AM1_minute : AM2_minute);
   Serial.print(F("] - "));
 
-  byte ef = amode == 1 ? AM1_effect_id : AM2_effect_id;
-  
+  int8_t ef = (amode == 1 ? AM1_effect_id : AM2_effect_id);
+
+  //ef: -5 - нет действия; 
+  //    -4 - выключить матрицу (черный экран); 
+  //    -3 - ночные часы, 
+  //    -2 - камин с часами, 
+  //    -1 - бегущая строка, 
+  //     0 - случайный,
+  //     1 и далее - эффект из ALARM_LIST по списку
+
   // включить указанный режим
-  if (ef == -1) {
+  if (ef == -4) {
 
     // Выключить матрицу (черный экран)
     Serial.print(F("выключение матрицы"));
     setSpecialMode(0);
     
-  } else {
-    Serial.print(F("включение матрицы"));
+  } else if (ef == -3) {
 
+    // Ночные часы
+    Serial.print(F("включение режима "));    
+    Serial.print(F("ночные часы"));
+    setSpecialMode(4);
+    
+  } else if (ef == -2) {
+
+    // Камин с часами
+    Serial.print(F("включение режима "));    
+    Serial.print(F("камин с часами"));
+    setSpecialMode(5);
+    
+  } else if (ef == -1) {
+
+    // Бегущая строка
+    Serial.print(F("включение режима "));    
+    Serial.print(F("бегущая строка"));
+
+    resetModes();  
+    startRunningText();
+    
+  } else {
+    Serial.print(F("включение режима "));    
     // Если режим включения == 0 - случайный режим и автосмена по кругу
     AUTOPLAY = ef == 0;
     if (!AUTOPLAY) {
@@ -660,20 +691,30 @@ void SetAutoMode(byte amode) {
       idleTimer.setInterval(4294967295);
       idleTimer.reset();
     }
-      
+    
+    resetModes();  
+
+    String s_tmp = String(ALARM_LIST);
+    
     if (ef == 0) {
       // "Случайный" режим и далее автосмена
-      nextModeHandler();
-    } else {  
-      // Включить указанный режим из списка доступных эффектов без дальнейшей смены
-      // Для применения доступен список эффектов из ALARM_LIST; 
-      // Эффекты в списке ALARM_LIST начинаются c 0; Значение ef может быть -2 (выключено); -1 - выключать матрицу; 0 - случайный и длее с 1 - указанный
-      // Ножно привести номер указанного эффекта ef к индексу в ALARM_LIST, и дальше к номеру используемого эффекта, поэтому mapAlarmToEffect(ef - 1);
-      byte tmp = mapAlarmToEffect(ef - 1);   
-      // Если не опознали что за эффект - включаем "следующий" режим
-      if (tmp != 255) setEffect(ef);
-      else            nextModeHandler(); 
+      Serial.print(F(" демонcтрации эффектов:"));
+      uint32_t cnt = CountTokens(s_tmp, ','); 
+      ef = random(0, cnt - 1); 
+    } else {
+      ef -= 1; // Приведение номера эффекта (номер с 1) к индексу в массиве ALARM_LIST (индекс c 0)
     }
+
+    s_tmp = GetToken(s_tmp, ef+1, ',');
+    Serial.print(F(" эффект "));
+    Serial.print("'" + s_tmp + "'");
+    
+    // Включить указанный режим из списка доступных эффектов без дальнейшей смены
+    // Значение ef может быть 0..N-1 - указанный режим из списка ALARM_LIST (приведенное к индексу с 0)      
+    byte tmp = mapAlarmToEffect(ef);   
+    // Если не опознали что за эффект - включаем режим "Камин"
+    if (tmp != 255) setEffect(tmp);
+    else            setEffect(EFFECT_FIRE); 
   }
   
   Serial.println();

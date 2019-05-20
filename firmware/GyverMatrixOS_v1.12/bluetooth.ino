@@ -625,18 +625,9 @@ void parsing() {
         BTcontrol = true;
         if (intData[1] == 0 || intData[1] == 1) {
           if (intData[1] == 1) runningFlag = true;
-          if (intData[1] == 0) runningFlag = false;
-          
+          if (intData[1] == 0) runningFlag = false;          
           if (runningFlag) {
-            gamemodeFlag = false;
-            drawingFlag = false;
-            if (!isColorEffect(effect)) {
-              effectsFlag = false;
-            }
-            // Если при включении режима "Бегущая строка" цвет текста - черный -- включить белый, т.к черный на черном не видно
-            if (globalColor == 0x000000) globalColor = 0xffffff;
-            if (!useAutoBrightness)
-              FastLED.setBrightness(globalBrightness);    
+            startRunningText();
           }
         }
         else if (intData[1] == 2 || intData[1] == 3) {
@@ -1047,8 +1038,8 @@ void parsing() {
             if (AM1_hour < 0) AM1_hour = 0;
             if (AM1_hour > 23) AM1_hour = 23;
             if (AM1_minute < 0) AM1_minute = 0;
-            if (AM1_minute > 59) AM1_minute = 58;
-            if (AM1_effect_id < -2) AM1_minute = -2;
+            if (AM1_minute > 59) AM1_minute = 59;
+            if (AM1_effect_id < -5) AM1_minute = -5;
             setAM1params(AM1_hour, AM1_minute, AM1_effect_id);
             break;
           case 2:   // Режим 2
@@ -1058,8 +1049,8 @@ void parsing() {
             if (AM2_hour < 0) AM2_hour = 0;
             if (AM2_hour > 23) AM2_hour = 23;
             if (AM2_minute < 0) AM2_minute = 0;
-            if (AM2_minute > 59) AM2_minute = 58;
-            if (AM2_effect_id < -2) AM2_minute = -2;
+            if (AM2_minute > 59) AM2_minute = 59;
+            if (AM2_effect_id < -5) AM2_minute = -5;
             setAM2params(AM2_hour, AM2_minute, AM2_effect_id);
             break;
         }
@@ -1454,7 +1445,7 @@ void setSpecialMode(int spc_mode) {
   String str;
   byte tmp_eff = -1;
   specialBrightness = globalBrightness;
-  
+
   switch(spc_mode) {
     case 0:  // Черный экран (выкл);
       tmp_eff = EFFECT_FILL_COLOR;
@@ -1589,7 +1580,17 @@ void startGame(byte game, bool newGame, bool paused) {
       loadingFlag = true;                                                                  
       FastLED.clear(); 
       FastLED.show(); 
-    }
-    
+    }    
   }  
+}
+
+void startRunningText() {
+  runningFlag = true;
+  if (!isColorEffect(effect)) {
+    effectsFlag = false;
+  }
+  // Если при включении режима "Бегущая строка" цвет текста - черный -- включить белый, т.к черный на черном не видно
+  if (globalColor == 0x000000) globalColor = 0xffffff;
+  if (!useAutoBrightness)
+    FastLED.setBrightness(globalBrightness);    
 }

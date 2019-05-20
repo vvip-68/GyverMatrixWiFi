@@ -273,6 +273,7 @@ uint16_t getPixelNumber(int8_t x, int8_t y) {
     return (THIS_Y * _WIDTH + _WIDTH - THIS_X - 1);
   }
 }
+
 // hex string to uint32_t
 uint32_t HEXtoInt(String hexValue) {
   byte tens, ones, number1, number2, number3;
@@ -289,4 +290,44 @@ uint32_t HEXtoInt(String hexValue) {
   number3 = (16 * tens) + ones;
 
   return ((uint32_t)number1 << 16 | (uint32_t)number2 << 8 | number3 << 0);
+}
+
+uint32_t CountTokens(String str, char separator) {
+
+  uint32_t count = 0;
+  int pos = 0;
+  String l_str = str;
+
+  l_str.trim();
+  if (l_str.length() <= 0) return 0;
+  pos = l_str.indexOf(separator);
+  while (pos >= 0) {
+    count++;
+    pos = l_str.indexOf(separator, pos + 1);
+  }
+  return ++count;
+}
+
+String GetToken(String str, uint32_t index, char separator) {
+
+  uint32_t count = CountTokens(str, separator);
+
+  if (count <= 1 || index < 1 || index > count) return str;
+
+  uint32_t pos_start = 0;
+  uint32_t pos_end = str.length();
+
+  count = 0;
+  for (uint32_t i = 0; i < pos_end; i++) {
+    if (str.charAt(i) == separator) {
+      count++;
+      if (count == index) {
+        pos_end = i;
+        break;
+      } else {
+        pos_start = i + 1;
+      }
+    }
+  }
+  return str.substring(pos_start, pos_end);
 }

@@ -147,10 +147,10 @@ void loadSettings() {
 
     AM1_hour = 0;
     AM1_minute = 0;
-    AM1_effect_id = -1;
+    AM1_effect_id = -5;
     AM2_hour = 0;
     AM2_minute = 0;
-    AM2_effect_id = -1;
+    AM2_effect_id = -5;
     
     strcpy(apName, DEFAULT_AP_NAME);
     strcpy(apPass, DEFAULT_AP_PASS);
@@ -205,10 +205,10 @@ void saveDefaults() {
 
   EEPROMwrite(33, AM1_hour);            // Режим 1 по времени - часы
   EEPROMwrite(34, AM1_minute);          // Режим 1 по времени - минуты
-  EEPROMwrite(35, (byte)AM1_effect_id); // Режим 1 по времени - минуты
+  EEPROMwrite(35, (byte)AM1_effect_id); // Режим 1 по времени - действие: -5 - выключено; -4 - выключить матрицу (черный экран); -3 - ночные часы, -2 - камин с часами, -1 - бегущая строка, 0 - случайныйб 1 и далее - эффект ALARM_LIST
   EEPROMwrite(36, AM2_hour);            // Режим 2 по времени - часы
   EEPROMwrite(37, AM2_minute);          // Режим 2 по времени - минуты
-  EEPROMwrite(38, (byte)AM2_effect_id); // Режим 2 по времени - минуты
+  EEPROMwrite(38, (byte)AM2_effect_id); // Режим 2 по времени - действие: -5 - выключено; -4 - выключить матрицу (черный экран); -3 - ночные часы, -2 - камин с часами, -1 - бегущая строка, 0 - случайныйб 1 и далее - эффект ALARM_LIST
   
   // Настройки по умолчанию для эффектов
   int addr = EFFECT_EEPROM;
@@ -701,7 +701,9 @@ void setAM1params(byte hour, byte minute, int8_t effect) {
 }
 
 byte getAM1hour() { 
-  return EEPROMread(33);
+  byte hour = EEPROMread(33);
+  if (hour>23) hour = 0;
+  return hour;
 }
 
 void setAM1hour(byte hour) {
@@ -712,7 +714,9 @@ void setAM1hour(byte hour) {
 }
 
 byte getAM1minute() {
-  return EEPROMread(34);
+  byte minute = EEPROMread(34);
+  if (minute > 59) minute = 0;
+  return minute;
 }
 
 void setAM1minute(byte minute) {
@@ -740,7 +744,9 @@ void setAM2params(byte hour, byte minute, int8_t effect) {
 }
 
 byte getAM2hour() { 
-  return EEPROMread(36);
+  byte hour = EEPROMread(36);
+  if (hour>23) hour = 0;
+  return hour;
 }
 
 void setAM2hour(byte hour) {
@@ -751,7 +757,9 @@ void setAM2hour(byte hour) {
 }
 
 byte getAM2minute() {
-  return EEPROMread(37);
+  byte minute = EEPROMread(37);
+  if (minute > 59) minute = 0;
+  return minute;
 }
 
 void setAM2minute(byte minute) {
