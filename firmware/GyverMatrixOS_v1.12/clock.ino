@@ -614,7 +614,12 @@ void checkAutoMode1Time() {
 
 // Проверка необходимости включения режима 2 по установленному времени
 void checkAutoMode2Time() {
-  if (AM2_effect_id == -2 || !init_time) return;
+
+  // Действие отличается от "Нет действия" и время установлено?
+  if (AM2_effect_id == -5 || !init_time) return;
+
+  // Если сработал будильник - рассвет - режим не переключать - остаемся в режими обработки будильника
+  if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) return;
 
   hrs = hour();
   mins = minute();
