@@ -62,7 +62,14 @@ void bluetoothRoutine() {
     
     if (!BTcontrol && effectsFlag && !isColorEffect(effect)) effectsFlag = false;
 
-    if (runningFlag && !isAlarming) {                         // бегущая строка - Running Text
+    // При яркости = 1 остаются гореть только красные светодиоды и все эффекты теряют вид.
+    // поэтому отображать эффект "ночные часы"
+    byte br = specialMode ? specialBrightness : globalBrightness;
+    if (br == 1) {
+      doEffectWithOverlay(DEMO_CLOCK);    
+    } 
+    
+    else if (runningFlag && !isAlarming) {                         // бегущая строка - Running Text
       String txt = runningText;
       uint32_t txtColor = globalColor;
       if (wifi_print_ip && (wifi_current_ip.length() > 0)) {
@@ -95,7 +102,7 @@ void bluetoothRoutine() {
       // Для игр отключаем бегущую строку и эффекты
       effectsFlag = false;
       runningFlag = false;
-      customRoutine();        
+      customRoutine();
     }
 
     // Бегущая строка или Часы в основном режиме и эффект Дыхание или Цвета, Радуга пикс
