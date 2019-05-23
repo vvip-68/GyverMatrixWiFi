@@ -436,6 +436,7 @@ void setOverlayColors() {
       case MC_NOISE_RAINBOW_STRIP: 
       case MC_RAINBOW:
       case MC_RAINBOW_DIAG: 
+      case MC_NOISE_PLASMA:
         contrastClock();
         break;
       case MC_SNOW:
@@ -446,7 +447,6 @@ void setOverlayColors() {
       case MC_NOISE_OCEAN: 
         contrastClockA();
         break;
-      case MC_NOISE_PLASMA:
       case MC_NOISE_LAVA:
         contrastClockB();
         break;
