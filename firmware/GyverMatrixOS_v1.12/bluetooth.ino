@@ -123,6 +123,13 @@ void bluetoothRoutine() {
       }      
     }            
 
+    // Была команда остановки воспроизведения музыки, но плеер ее "не услышал" / проигнорировал 
+    // и продолжает играть - отправить команду останова воспроизведения повторно
+    bool isPlaying = (soundFolder != 0 && soundFile != 0) || isAlarming || isPlayAlarmSound || fadeSoundStepCounter > 0;
+    if (!isPlaying && isPlayerBusy()) {
+       dfPlayer.stop();      
+    }
+
     checkAlarmTime();
     checkAutoMode1Time();
     checkAutoMode2Time();
@@ -945,7 +952,7 @@ void parsing() {
               //  NN - номер файла звука будильника из папки SD:/01
               //  VV - уровень громкости
               if (intData[2] == 0) {
-                StopSound(2500);
+                StopSound(0);
                 soundFolder = 0;
                 soundFile = 0;
               } else {
@@ -971,7 +978,7 @@ void parsing() {
              //    NN - номер файла звука рассвета из папки SD:/02
              //    VV - уровень громкости
               if (intData[2] == 0) {
-                StopSound(2500);
+                StopSound(0);
                 soundFolder = 0;
                 soundFile = 0;
               } else {

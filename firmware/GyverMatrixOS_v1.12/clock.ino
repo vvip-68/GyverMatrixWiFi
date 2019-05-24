@@ -546,7 +546,7 @@ void checkAlarmTime() {
   // Подошло время отключения будильника - выключить
   if (alarmSoundTimer.isReady()) {
     alarmSoundTimer.setInterval(4294967295);
-    StopSound(2500);      
+    StopSound(1500);      
     sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
   }
 
@@ -586,7 +586,7 @@ void stopAlarm() {
     isPlayAlarmSound = false;
     cmd95 = "";
     alarmSoundTimer.setInterval(4294967295);
-    StopSound(2500);
+    StopSound(1500);
     setSpecialMode(1);
     delay(0);    
     sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
