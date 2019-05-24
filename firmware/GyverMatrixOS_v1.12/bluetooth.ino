@@ -65,7 +65,7 @@ void bluetoothRoutine() {
     // При яркости = 1 остаются гореть только красные светодиоды и все эффекты теряют вид.
     // поэтому отображать эффект "ночные часы"
     byte br = specialMode ? specialBrightness : globalBrightness;
-    if (br == 1) {
+    if (br == 1 && !loadingFlag) {
       doEffectWithOverlay(DEMO_CLOCK);    
     } 
     

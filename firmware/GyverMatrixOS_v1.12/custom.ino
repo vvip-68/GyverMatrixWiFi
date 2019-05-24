@@ -122,8 +122,8 @@ void doEffectWithOverlay(byte aMode) {
     }
     loadingFlag = false;
 #endif
-        FastLED.show();
-      }
+    FastLED.show();
+  }
 }
 
 void customModes(byte aMode) {
