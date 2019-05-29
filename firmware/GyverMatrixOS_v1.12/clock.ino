@@ -543,10 +543,27 @@ void checkAlarmTime() {
     }
   }
   
-  // Подошло время отключения будильника - выключить
+  // Подошло время отключения будильника - выключить, включить демо-режим
   if (alarmSoundTimer.isReady()) {
     alarmSoundTimer.setInterval(4294967295);
-    StopSound(1500);      
+    StopSound(1500);   
+
+    resetModes();  
+
+    BTcontrol = false;
+    AUTOPLAY = true;
+
+    String s_tmp = String(ALARM_LIST);    
+    uint32_t cnt = CountTokens(s_tmp, ','); 
+    byte ef = random(0, cnt - 1); 
+            
+    // Включить указанный режим из списка доступных эффектов без дальнейшей смены
+    // Значение ef может быть 0..N-1 - указанный режим из списка ALARM_LIST (приведенное к индексу с 0)      
+    byte tmp = mapAlarmToEffect(ef);   
+    // Если не опознали что за эффект - включаем режим "Камин"
+    if (tmp != 255) setEffect(tmp);
+    else            setEffect(EFFECT_FIRE); 
+       
     sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
   }
 
@@ -579,6 +596,7 @@ void checkAlarmTime() {
 }
 
 void stopAlarm() {
+  
   if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) {
     Serial.println(String(F("Рассвет ВЫКЛ в ")) + String(hour())+ ":" + String(minute()));
     isAlarming = false;
@@ -587,7 +605,23 @@ void stopAlarm() {
     cmd95 = "";
     alarmSoundTimer.setInterval(4294967295);
     StopSound(1500);
-    setSpecialMode(1);
+
+    resetModes();  
+
+    BTcontrol = false;
+    AUTOPLAY = false;
+
+    String s_tmp = String(ALARM_LIST);    
+    uint32_t cnt = CountTokens(s_tmp, ','); 
+    byte ef = random(0, cnt - 1); 
+            
+    // Включить указанный режим из списка доступных эффектов без дальнейшей смены
+    // Значение ef может быть 0..N-1 - указанный режим из списка ALARM_LIST (приведенное к индексу с 0)      
+    byte tmp = mapAlarmToEffect(ef);   
+    // Если не опознали что за эффект - включаем режим "Камин"
+    if (tmp != 255) setEffect(tmp);
+    else            setEffect(EFFECT_FIRE); 
+
     delay(0);    
     sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
   }
