@@ -56,7 +56,9 @@ void fillString(String text, uint32_t color) {
 
 void drawLetter(uint8_t index, uint8_t letter, int16_t offset, uint32_t color) {
   int8_t start_pos = 0, finish_pos = LET_WIDTH;
-  int8_t offset_y = (HEIGHT - LET_HEIGHT) / 2;     // по центру матрицы по высоте
+  int8_t LH = LET_HEIGHT;
+  if (LH > HEIGHT) LH = HEIGHT;
+  int8_t offset_y = (HEIGHT - LH) / 2;     // по центру матрицы по высоте
   
   CRGB letterColor;
   if (color == 1) letterColor = CHSV(byte(offset * 10), 255, 255);
@@ -72,11 +74,11 @@ void drawLetter(uint8_t index, uint8_t letter, int16_t offset, uint32_t color) {
     if (MIRR_V) thisByte = getFont((byte)letter, LET_WIDTH - 1 - i);
     else thisByte = getFont((byte)letter, i);
 
-    for (byte j = 0; j < LET_HEIGHT; j++) {
+    for (byte j = 0; j < LH; j++) {
       boolean thisBit;
 
       if (MIRR_H) thisBit = thisByte & (1 << j);
-      else thisBit = thisByte & (1 << (LET_HEIGHT - 1 - j));
+      else thisBit = thisByte & (1 << (LH - 1 - j));
 
       // рисуем столбец (i - горизонтальная позиция, j - вертикальная)
       if (thisBit) leds[getPixelNumber(offset + i, offset_y + TEXT_HEIGHT + j)] = letterColor;
