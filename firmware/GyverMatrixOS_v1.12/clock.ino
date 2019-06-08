@@ -479,6 +479,15 @@ void calculateDawnTime() {
   if (dawnWeekDay == 0) dawnWeekDay = 7;             // Sunday is day 7, Monday is day 1;
   if (dawnHour * 60L + dawnMinute <= hour() * 60 + minute()) dawnWeekDay++;             // Если час рассвета меньше текущего - это "завтра"
   if (dawnWeekDay == 8) dawnWeekDay = 1;             // Если переход через вс (7) - это пн (1)
+  if (dawnMinute>=60) {
+    dawnMinute = 0;
+    dawnHour++;
+    if (dawnHour>=24) {
+      dawnHour = 0;
+      dawnWeekDay++;
+      if (dawnWeekDay == 8) dawnWeekDay = 1;
+    }
+  }
 
   Serial.print(String(F("Следующий рассвет в "))+String(dawnHour)+ F(":") + String(dawnMinute));
   switch(dawnWeekDay) {
