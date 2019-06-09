@@ -1122,7 +1122,7 @@ void parsing() {
       }
 
       // NTP packet from time server
-      if (udp.remotePort() == 123) {
+      if (haveIncomeData && udp.remotePort() == 123) {
         parseNTP();
         haveIncomeData = false;
       }
