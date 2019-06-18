@@ -15,6 +15,11 @@
 #define HUE_GAP 30          // шаг цвета между цифрами в режиме радужной смены
 
 // ****************** ДЛЯ РАЗРАБОТЧИКОВ ****************
+bool saveSpecialMode;
+bool saveRunningFlag;
+int8_t saveSpecialModeId;
+byte saveThisMode;
+
 byte clockHue;
 
 #if (OVERLAY_CLOCK == 1)
@@ -514,6 +519,10 @@ void checkAlarmTime() {
     if ((alarmWeekDay & (1 << (dawnWeekDay - 1))) > 0) {
        // Часы / минуты начала рассвета наступили? Еще не запущен рассвет? Еще не остановлен пользователем?
        if (!isAlarming && !isAlarmStopped && ((h * 60L + m) >= (dawnHour * 60L + dawnMinute)) && ((h * 60L + m) < (alarmHour * 60L + alarmMinute))) {
+         saveSpecialMode = specialMode;
+         saveSpecialModeId = specialModeId;
+         saveThisMode = thisMode;
+         saveRunningFlag = runningFlag;
          specialMode = false;
          specialModeId = -1;
          isAlarming = true;
@@ -562,16 +571,13 @@ void checkAlarmTime() {
     BTcontrol = false;
     AUTOPLAY = true;
 
-    String s_tmp = String(ALARM_LIST);    
-    uint32_t cnt = CountTokens(s_tmp, ','); 
-    byte ef = random(0, cnt - 1); 
-            
-    // Включить указанный режим из списка доступных эффектов без дальнейшей смены
-    // Значение ef может быть 0..N-1 - указанный режим из списка ALARM_LIST (приведенное к индексу с 0)      
-    byte tmp = mapAlarmToEffect(ef);   
-    // Если не опознали что за эффект - включаем режим "Камин"
-    if (tmp != 255) setEffect(tmp);
-    else            setEffect(EFFECT_FIRE); 
+    if (saveSpecialMode){
+       setSpecialMode(saveSpecialModeId);
+    } else {
+       setModeByModeId(saveThisMode);
+    }
+
+    // setRandomMode();
        
     sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
   }
@@ -620,6 +626,43 @@ void stopAlarm() {
     BTcontrol = false;
     AUTOPLAY = false;
 
+    if (saveSpecialMode){
+       setSpecialMode(saveSpecialModeId);
+    } else {
+       setModeByModeId(saveThisMode);
+    }
+    
+    // setRandomMode();
+
+    delay(0);    
+    sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
+  }
+}
+
+void setModeByModeId(byte saveThisMode) {
+
+  if (saveRunningFlag) {
+    thisMode = saveThisMode;
+    startRunningText();
+  } else {
+    byte tmp = mapModeToEffect(saveThisMode);
+    if (tmp <= MAX_EFFECT) {
+      setEffect(tmp);      
+    } else {  
+      tmp = mapModeToGame(saveThisMode);
+      if (tmp <= MAX_GAME) {
+        startGame(tmp, true, false);
+      } else if (saveThisMode == DEMO_TEXT_0 || saveThisMode == DEMO_TEXT_1 || saveThisMode == DEMO_TEXT_2) {
+        thisMode = saveThisMode;
+        loadingFlag = true;
+      }
+    }
+  }
+  FastLED.setBrightness(globalBrightness);
+  setTimersForMode(thisMode);
+}
+
+void setRandomMode() {
     String s_tmp = String(ALARM_LIST);    
     uint32_t cnt = CountTokens(s_tmp, ','); 
     byte ef = random(0, cnt - 1); 
@@ -629,11 +672,7 @@ void stopAlarm() {
     byte tmp = mapAlarmToEffect(ef);   
     // Если не опознали что за эффект - включаем режим "Камин"
     if (tmp != 255) setEffect(tmp);
-    else            setEffect(EFFECT_FIRE); 
-
-    delay(0);    
-    sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
-  }
+    else            setEffect(EFFECT_FIRE);   
 }
 
 // Проверка необходимости включения режима 1 по установленному времени

@@ -1,4 +1,3 @@
-
 // Скетч к проекту "Адресная матрица"
 // Гайд по постройке матрицы: https://alexgyver.ru/matrix_guide/
 // Страница базового проекта (схемы, описания): https://alexgyver.ru/GyverMatrixBT/
