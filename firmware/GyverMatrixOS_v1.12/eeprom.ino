@@ -23,9 +23,9 @@ void loadSettings() {
   //   16 - Отображать с часами текущую дату 
   //   17 - Кол-во секунд отображения даты
   //   18 - Кол-во секунд отображения часов
-  //   19 - Будильник вкал/выкл 1 - вкл; 0 -выкл
-  //   20 - Будильник, время: часы
-  //   21 - Будильник, время: минуты
+  //   19 - зарезервировано
+  //   20 - зарезервировано
+  //   21 - зарезервировано
   //   22 - Будильник, дни недели
   //   23 - Будильник, продолжительность "рассвета"
   //   24 - Будильник, эффект "рассвета"
@@ -44,14 +44,26 @@ void loadSettings() {
   //   37 - Режим 2 по тайвременимеру - минуты
   //   38 - Режим 2 по времени - ID эффекта или -1 - выключено; 0 - случайный;
   //   39 - зарезервировано
+  //   40 - Будильник, время: понедельник : часы
+  //   41 - Будильник, время: понедельник : минуты
+  //   42 - Будильник, время: вторник : часы
+  //   43 - Будильник, время: вторник : минуты
+  //   44 - Будильник, время: среда : часы
+  //   45 - Будильник, время: среда : минуты
+  //   46 - Будильник, время: четверг : часы
+  //   47 - Будильник, время: четверг : минуты
+  //   48 - Будильник, время: пятница : часы
+  //   49 - Будильник, время: пятница : минуты
+  //   50 - Будильник, время: суббота : часы
+  //   51 - Будильник, время: суббота : минуты
+  //   52 - Будильник, время: воскресенье : часы
+  //   53 - Будильник, время: воскресенье : минуты
   //  ... - зарезервировано  
-  //  48-63   - имя точки доступа    - 16 байт
+  //  54-63   - имя точки доступа    - 10 байт
   //  64-79   - пароль точки доступа - 16 байт
   //  80-103  - имя сети  WiFi       - 24 байта
   //  104-119 - пароль сети  WiFi    - 16 байт
   //  120-149 - имя NTP сервера      - 30 байт
-  //  ... - зарезервировано
-  //  149 - зарезервировано
   //  150 - 150+(Nэфф*3)   - скорость эффекта
   //  151 - 150+(Nэфф*3)+1 - 1 - оверлей часов разрешен; 0 - нет оверлея часов
   //  152 - 150+(Nэфф*3)+2 - эффект в авторежиме: 1 - использовать; 0 - не использовать
@@ -79,13 +91,15 @@ void loadSettings() {
     showDateInClock = getShowDateInClock();  
     showDateDuration = getShowDateDuration();
     showDateInterval = getShowDateInterval();
-    alarmOnOff = getAlarmOnOff(); 
     
-    alarmHour = getAlarmHour();
-    alarmMinute = getAlarmMinute();
     alarmWeekDay = getAlarmWeekDay();
     alarmEffect = getAlarmEffect();
     alarmDuration = getAlarmDuration();
+
+    for (byte i=0; i<7; i++) {
+      alarmHour[i] = getAlarmHour(i+1);
+      alarmMinute[i] = getAlarmMinute(i+1);
+    }
 
     dawnDuration = getDawnDuration();
     useAlarmSound = getUseAlarmSound();    
@@ -94,7 +108,7 @@ void loadSettings() {
     maxAlarmVolume = getMaxAlarmVolume();
 
     useSoftAP = getUseSoftAP();
-    getSoftAPName().toCharArray(apName, 17);        //  48-63   - имя точки доступа    (16 байта макс) + 1 байт '\0'
+    getSoftAPName().toCharArray(apName, 10);        //  54-63   - имя точки доступа    ( 9 байт макс) + 1 байт '\0'
     getSoftAPPass().toCharArray(apPass, 17);        //  64-79   - пароль точки доступа (16 байт макс) + 1 байт '\0'
     getSsid().toCharArray(ssid, 25);                //  80-103  - имя сети  WiFi       (24 байта макс) + 1 байт '\0'
     getPass().toCharArray(pass, 17);                //  104-119 - пароль сети  WiFi    (16 байт макс) + 1 байт '\0'
@@ -130,9 +144,6 @@ void loadSettings() {
     showDateInClock = true;  
     showDateDuration = 5;
     showDateInterval = 20;
-    alarmOnOff = false;
-    alarmHour = 0;
-    alarmMinute = 0;
     alarmWeekDay = 0;
     dawnDuration = 20;
     alarmEffect = EFFECT_DAWN_ALARM;
@@ -143,7 +154,7 @@ void loadSettings() {
     dawnSound = 1;
     maxAlarmVolume = 30;
     useAutoBrightness = false;
-    autoBrightnessMin = 0;
+    autoBrightnessMin = 1;
 
     AM1_hour = 0;
     AM1_minute = 0;
@@ -195,7 +206,10 @@ void saveDefaults() {
   EEPROMwrite(17, showDateDuration);
   EEPROMwrite(18, showDateInterval);
   
-  saveAlarmParams(alarmOnOff,alarmHour,alarmMinute,alarmWeekDay,dawnDuration,alarmEffect);
+  saveAlarmParams(alarmWeekDay,dawnDuration,alarmEffect);
+  for (byte i=0; i<7; i++) {
+      setAlarmTime(i+1, alarmHour[i], alarmMinute[i]);
+  }
 
   EEPROMwrite(15, 1);    // Использовать бегущий текст в демо-режиме: 0 - нет; 1 - да
   EEPROMwrite(30, 0);    // Использовать режим точки доступа: 0 - нет; 1 - да
@@ -486,25 +500,25 @@ void setShowDateInterval(byte Interval) {
   }
 }
 
-void saveAlarmParams(boolean alarmOnOff, byte alarmHour, byte alarmMinute, byte alarmWeekDay, byte dawnDuration, byte alarmEffect) {
-  //   19 - Будильник вкл/выкл 1 - вкл; 0 -выкл
-  //   20 - Будильник, время: часы
-  //   21 - Будильник, время: минуты
+void saveAlarmParams(byte alarmWeekDay, byte dawnDuration, byte alarmEffect) {
   //   22 - Будильник, дни недели
   //   23 - Будильник, продолжительность "рассвета"
   //   24 - Будильник, эффект "рассвета"
-  if (alarmOnOff != getAlarmOnOff()) {
-    EEPROMwrite(19, alarmOnOff ? 1 : 0);
-    eepromModified = true;
-  }
-  if (alarmHour != getAlarmHour()) {
-    EEPROMwrite(20, alarmHour);
-    eepromModified = true;
-  }
-  if (alarmMinute != getAlarmMinute()) {
-    EEPROMwrite(21, alarmMinute);
-    eepromModified = true;
-  }
+  //   40 - Будильник, время: часы, понедельник
+  //   41 - Будильник, время: минуты, понедельник
+  //   42 - Будильник, время: часы, понедельник
+  //   43 - Будильник, время: минуты, понедельник
+  //   44 - Будильник, время: часы, понедельник
+  //   45 - Будильник, время: минуты, понедельник
+  //   46 - Будильник, время: часы, понедельник
+  //   47 - Будильник, время: минуты, понедельник
+  //   48 - Будильник, время: часы, понедельник
+  //   49 - Будильник, время: минуты, понедельник
+  //   50 - Будильник, время: часы, понедельник
+  //   51 - Будильник, время: минуты, понедельник
+  //   52 - Будильник, время: часы, понедельник
+  //   53 - Будильник, время: минуты, понедельник
+  
   if (alarmWeekDay != getAlarmWeekDay()) {
     EEPROMwrite(22, alarmWeekDay);
     eepromModified = true;
@@ -519,17 +533,23 @@ void saveAlarmParams(boolean alarmOnOff, byte alarmHour, byte alarmMinute, byte 
   }
 }
 
-bool getAlarmOnOff() { 
-  return EEPROMread(19) == 1;
+byte getAlarmHour(byte day) { 
+  return constrain(EEPROMread(40 + 2 * (day - 1)), 0, 23);
 }
 
-byte getAlarmHour() { 
-  return constrain(EEPROMread(20), 0, 23);
+byte getAlarmMinute(byte day) { 
+  return constrain(EEPROMread(40 + 2 * (day - 1) + 1), 0, 59);
 }
 
-
-byte getAlarmMinute() { 
-  return constrain(EEPROMread(21), 0, 59);
+void setAlarmTime(byte day, byte hour, byte minute) { 
+  if (hour != getAlarmHour(day)) {
+    EEPROMwrite(40 + 2 * (day - 1), constrain(hour, 0, 23));
+    eepromModified = true;
+  }
+  if (hour != minute != getAlarmMinute(day)) {
+    EEPROMwrite(40 + 2 * (day - 1) + 1, constrain(minute, 0, 59));
+    eepromModified = true;
+  }
 }
 
 byte getAlarmWeekDay() { 
@@ -618,12 +638,12 @@ void setUseSoftAP(boolean use) {
 }
 
 String getSoftAPName() {
-  return EEPROM_string_read(48, 16);
+  return EEPROM_string_read(54, 10);
 }
 
 void setSoftAPName(String SoftAPName) {
   if (SoftAPName != getSoftAPName()) {
-    EEPROM_string_write(48, SoftAPName);
+    EEPROM_string_write(54, SoftAPName);
     eepromModified = true;
   }
 }

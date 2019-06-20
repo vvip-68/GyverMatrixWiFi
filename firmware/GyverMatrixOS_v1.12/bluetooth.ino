@@ -150,7 +150,6 @@ void bluetoothRoutine() {
       // Нажатие и удержание
       isButtonHold = true;
       hold_start_time = millis();
-      Serial.println("Hold");
     }
     
     if (butt.isPress()) {
@@ -267,19 +266,12 @@ void bluetoothRoutine() {
       // Четверное нажатие - показать текущий IP WiFi-соединения
       if (clicks == 4) {
         if (wifi_connected) {
-          runningFlag = true;
-          effectsFlag = false;
-          gamemodeFlag = false;
-          drawingFlag = false;
-  
-          specialMode = false;
-          isNightClock = false;
-          isTurnedOff = false;
-          specialModeId = -1;
-  
+          resetModes();
+          
+          runningFlag = true;  
           BTcontrol = false;
           AUTOPLAY = true;
-          
+
           wifi_print_ip = true;
           wifi_current_ip = WiFi.localIP().toString();
         }
@@ -355,6 +347,10 @@ void parsing() {
   byte b_tmp;
   int8_t tmp_eff;
 
+  byte alarmDay;
+  byte alarmHourVal;
+  byte alarmMinuteVal;
+
   /*
     Протокол связи, посылка начинается с режима. Режимы:
     0 - отправка цвета $0 colorHEX;
@@ -406,12 +402,9 @@ void parsing() {
     19 - работа с настройками часов
     20 - настройки и управление будильников
        - $20 0;       - отключение будильника (сброс состояния isAlarming)
-       - $20 1 X DD EF HH MM WD;
-            X    - вкл/выкл будильника X=0 - выключено, X=1 - включено 
+       - $20 1 DD EF WD;
            DD    - установка продолжительности рассвета (рассвет начинается за DD минут до установленного времени будильника)
            EF    - установка эффекта, который будет использован в качестве рассвета
-           HH    - установка времени будильника - часы
-           MM    - установка времени будильника - минуты
            WD    - установка дней пн-вс как битовая маска
        - $20 2 X DD VV MA MB;
             X    - исп звук будильника X=0 - нет, X=1 - да 
@@ -429,6 +422,10 @@ void parsing() {
            X  - 1 играть 0 - остановить
        - $20 5 VV; - установит уровень громкости проигрывания примеров (когда уже играет)
            VV - уровень громкости
+       - $20 6 D HH MM; - установит время будильника для указанного дня недели
+           D  - день недели
+           HH - час времени будильника
+           MM - минуты времени будильника
     21 - настройки подключения к сети . точке доступа
     22 - настройки включения режимов матрицы в указанное время
        - $22 X HH MM NN
@@ -627,7 +624,7 @@ void parsing() {
               startWiFi();
               break;
             case 4:
-              str.toCharArray(apName, 16);
+              str.toCharArray(apName, 10);
               setSoftAPName(str);
               break;
             case 5:
@@ -896,12 +893,9 @@ void parsing() {
             if (isAlarming || isPlayAlarmSound) stopAlarm();            
             break;
           case 1:
-            //  $20 1 X DD EF HH MM WD;
-            //    X    - вкл/выкл будильника X=0 - выключено, X=1 - включено 
+            //  $20 1 DD EF WD;
             //   DD    - установка продолжительности рассвета (рассвет начинается за DD минут до установленного времени будильника)
             //   EF    - установка эффекта, который будет использован в качестве рассвета
-            //   HH    - установка времени будильника - часы
-            //   MM    - установка времени будильника - минуты
             //   WD    - установка дней пн-вс как битовая маска
             dfPlayer.stop();
             soundFolder = 0;
@@ -909,21 +903,13 @@ void parsing() {
             isAlarming = false;
             isAlarmStopped = false;
 
-            alarmOnOff = intData[2] == 1;
-            dawnDuration = constrain(intData[3],1,59);
-            alarmEffect = mapAlarmToEffect(intData[4]);
-            alarmHour = constrain(intData[5], 0, 23);
-            alarmMinute = constrain(intData[6], 0, 59);
-            alarmWeekDay = intData[7];
-            saveAlarmParams(alarmOnOff,alarmHour,alarmMinute,alarmWeekDay,dawnDuration,alarmEffect);
-            saveSettings();
+            dawnDuration = constrain(intData[2],1,59);
+            alarmEffect = mapAlarmToEffect(intData[3]);
+            alarmWeekDay = intData[4];
+            saveAlarmParams(alarmWeekDay,dawnDuration,alarmEffect);
             
             // Рассчитать время начала рассвета будильника
-            calculateDawnTime();
-
-            if (!alarmOnOff && isAlarming){
-              stopAlarm();
-            }
+            calculateDawnTime();            
             break;
           case 2:
             if (isDfPlayerOk) {
@@ -946,10 +932,6 @@ void parsing() {
               dawnSound = intData[6] - 2;   // Индекс от приложения: 0 - нет; 1 - случайно; 2 - 1-й файл; 3 - ... -> -1 - нет; 0 - случайно; 1 - 1-й файл и т.д
               saveAlarmSounds(useAlarmSound, alarmDuration, maxAlarmVolume, alarmSound, dawnSound);
               saveSettings();
-
-              if (!alarmOnOff && isAlarming){
-                stopAlarm();
-              }
             }
             break;
           case 3:
@@ -1012,12 +994,34 @@ void parsing() {
              dfPlayer.volume(maxAlarmVolume);
             }
             break;
+          case 6:
+            //  $20 6 DD HH MM;
+            //   DD    - день установки времени будильник 1 - пн.. 7- вс
+            //   HH    - установка времени будильника - часы
+            //   MM    - установка времени будильника - минуты
+            alarmDay = constrain(intData[2], 1, 7);
+            alarmHourVal = constrain(intData[3], 0, 23);
+            alarmMinuteVal = constrain(intData[4], 0, 59);
+            alarmHour[alarmDay - 1] = alarmHourVal;
+            alarmMinute[alarmDay - 1] = alarmMinuteVal;
+            setAlarmTime(alarmDay,alarmHourVal,alarmMinuteVal);
+            // Рассчитать время начала рассвета будильника
+            calculateDawnTime();
+            break;
+          case 7:
+            // Фиксировать настройки
+            saveSettings();
+            // Рассчитать время начала рассвета будильника
+            calculateDawnTime();            
+            break;
         }
         if (intData[1] == 0) {
           sendPageParams(8);
-        } else if (intData[1] == 1 || intData[1] == 2) { // Режимы установки параметров - сохранить
+        } else if (intData[1] == 1 || intData[1] == 2 || intData[1] == 7) { // Режимы установки параметров - сохранить
           saveSettings();
           sendPageParams(8);
+        } else if (intData[1] == 6) {
+          sendAcknowledge();
         } else {
           sendPageParams(96);
         }        
@@ -1045,36 +1049,30 @@ void parsing() {
         break;
       case 22:
       /*  22 - настройки включения режимов матрицы в указанное время
-       - $22 X HH MM NN
-           X  - номер режима 1 или 2
-           HH - час срабатывания
-           MM - минуты срабатывания
-           NN - эффект: -2 - выключено; -1 - выключить матрицу; 0 - случайный режим и далее по кругу; 1 и далее - список режимов ALARM_LIST 
+       - $22 HH1 MM1 NN1 HH2 MM2 NN2
+           HHn - час срабатывания
+           MMn - минуты срабатывания
+           NNn - эффект: -2 - выключено; -1 - выключить матрицу; 0 - случайный режим и далее по кругу; 1 и далее - список режимов ALARM_LIST 
       */    
-        switch (intData[1]) { 
-          case 1:   // Режим 1
-            AM1_hour = intData[2];
-            AM1_minute = intData[3];
-            AM1_effect_id = intData[4];
-            if (AM1_hour < 0) AM1_hour = 0;
-            if (AM1_hour > 23) AM1_hour = 23;
-            if (AM1_minute < 0) AM1_minute = 0;
-            if (AM1_minute > 59) AM1_minute = 59;
-            if (AM1_effect_id < -5) AM1_minute = -5;
-            setAM1params(AM1_hour, AM1_minute, AM1_effect_id);
-            break;
-          case 2:   // Режим 2
-            AM2_hour = intData[2];
-            AM2_minute = intData[3];
-            AM2_effect_id = intData[4];
-            if (AM2_hour < 0) AM2_hour = 0;
-            if (AM2_hour > 23) AM2_hour = 23;
-            if (AM2_minute < 0) AM2_minute = 0;
-            if (AM2_minute > 59) AM2_minute = 59;
-            if (AM2_effect_id < -5) AM2_minute = -5;
-            setAM2params(AM2_hour, AM2_minute, AM2_effect_id);
-            break;
-        }
+          AM1_hour = intData[1];
+          AM1_minute = intData[2];
+          AM1_effect_id = intData[3];
+          if (AM1_hour < 0) AM1_hour = 0;
+          if (AM1_hour > 23) AM1_hour = 23;
+          if (AM1_minute < 0) AM1_minute = 0;
+          if (AM1_minute > 59) AM1_minute = 59;
+          if (AM1_effect_id < -5) AM1_minute = -5;
+          setAM1params(AM1_hour, AM1_minute, AM1_effect_id);
+          AM2_hour = intData[4];
+          AM2_minute = intData[5];
+          AM2_effect_id = intData[6];
+          if (AM2_hour < 0) AM2_hour = 0;
+          if (AM2_hour > 23) AM2_hour = 23;
+          if (AM2_minute < 0) AM2_minute = 0;
+          if (AM2_minute > 59) AM2_minute = 59;
+          if (AM2_effect_id < -5) AM2_minute = -5;
+          setAM2params(AM2_hour, AM2_minute, AM2_effect_id);
+
         sendPageParams(10);
         saveSettings(); 
         break;
@@ -1361,12 +1359,14 @@ void sendPageParams(int page) {
       break;
     case 8:  // Настройки будильника
       str="$18 AL:"; 
-      if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1|AO:"; else str+="0|AO:";
-      if (alarmOnOff) str+="1|AT:"; else str+="0|AT:";
-      str+=String(alarmHour)+" "+String(alarmMinute)+"|AD:"+String(dawnDuration)+"|AW:";
+      if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1|AD:"; else str+="0|AD:";
+      str+=String(dawnDuration)+"|AW:";
       for (int i=0; i<7; i++) {
          if (((alarmWeekDay>>i) & 0x01) == 1) str+="1"; else str+="0";  
          if (i<6) str+='.';
+      }
+      for (int i=0; i<7; i++) {      
+            str+="|AT:"+String(i+1)+" "+String(alarmHour[i])+" "+String(alarmMinute[i]);
       }
       str+="|AE:" + String(mapEffectToAlarm(alarmEffect) + 1); // Индекс в списке в приложении смартфона начинается с 1
       str+="|MX:" + String(isDfPlayerOk ? "1" : "0");          // 1 - MP3 доступен; 0 - MP3 не доступен

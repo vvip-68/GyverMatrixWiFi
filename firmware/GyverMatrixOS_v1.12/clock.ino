@@ -467,31 +467,53 @@ void setOverlayColors() {
 
 // расчет времени начала рассвета
 void calculateDawnTime() {
+
+  byte alrmHour;
+  byte alrmMinute;
   
-  if (!init_time) return;
+  dawnWeekDay = 0;
+  if (!init_time || alarmWeekDay == 0) return;       // Время инициализировано? Хотя бы на один день будильник включен?
+
+  int8_t alrmWeekDay = weekday()-1;                  // day of the week, Sunday is day 0   
+  if (alrmWeekDay == 0) alrmWeekDay = 7;             // Sunday is day 7, Monday is day 1;
+
+  byte h = hour();
+  byte m = minute();
+  byte w = weekday()-1;
+  if (w == 0) w = 7;
+
+  while (true) {
+    while ((alarmWeekDay & (1 << (alrmWeekDay - 1))) == 0) {
+      alrmWeekDay++;
+      if (alrmWeekDay == 8) alrmWeekDay = 1;
+    }
+    
+    alrmHour = alarmHour[alrmWeekDay-1];
+    alrmMinute = alarmMinute[alrmWeekDay-1];
   
-  // расчёт времени рассвета
-  if (alarmMinute > dawnDuration) {                 // если минут во времени будильника больше продолжительности рассвета
-    dawnHour = alarmHour;                            // час рассвета равен часу будильника
-    dawnMinute = alarmMinute - dawnDuration;        // минуты рассвета = минуты будильника - продолж. рассвета
-  } else {                                           // если минут во времени будильника меньше продолжительности рассвета
-    dawnHour = alarmHour - 1;                        // значит рассвет будет часом раньше
-    if (dawnHour < 0) dawnHour = 23;                 // защита от совсем поехавших
-    dawnMinute = 60 - (dawnDuration - alarmMinute); // находим минуту рассвета в новом часе
+    if ((alrmWeekDay * 1000L + alrmHour * 60L + alrmMinute) < (w * 1000L + h * 60L + m)) {
+      alrmWeekDay++;
+      if (alrmWeekDay == 8) alrmWeekDay = 1;
+      continue;
+    }
+    
+    break;
   }
   
-  dawnWeekDay = weekday()-1;                         // day of the week, Sunday is day 0 
-  if (dawnWeekDay == 0) dawnWeekDay = 7;             // Sunday is day 7, Monday is day 1;
-  if (dawnHour * 60L + dawnMinute <= hour() * 60 + minute()) dawnWeekDay++;             // Если час рассвета меньше текущего - это "завтра"
-  if (dawnWeekDay == 8) dawnWeekDay = 1;             // Если переход через вс (7) - это пн (1)
-  if (dawnMinute>=60) {
-    dawnMinute = 0;
-    dawnHour++;
-    if (dawnHour>=24) {
-      dawnHour = 0;
-      dawnWeekDay++;
-      if (dawnWeekDay == 8) dawnWeekDay = 1;
+  // расчёт времени рассвета
+  if (alrmMinute > dawnDuration) {                  // если минут во времени будильника больше продолжительности рассвета
+    dawnHour = alrmHour;                            // час рассвета равен часу будильника
+    dawnMinute = alrmMinute - dawnDuration;         // минуты рассвета = минуты будильника - продолж. рассвета
+    dawnWeekDay = alrmWeekDay;
+  } else {                                          // если минут во времени будильника меньше продолжительности рассвета
+    dawnWeekDay = alrmWeekDay;
+    dawnHour = alrmHour - 1;                        // значит рассвет будет часом раньше
+    if (dawnHour < 0) {
+      dawnHour = 23;     
+      dawnWeekDay--;
+      if (dawnWeekDay == 0) dawnWeekDay = 7;                           
     }
+    dawnMinute = 60 - (dawnDuration - alrmMinute);  // находим минуту рассвета в новом часе
   }
 
   Serial.print(String(F("Следующий рассвет в "))+String(dawnHour)+ F(":") + String(dawnMinute));
@@ -503,6 +525,7 @@ void calculateDawnTime() {
     case 5: Serial.println(F(", пятница")); break;
     case 6: Serial.println(F(", суббота")); break;
     case 7: Serial.println(F(", воскресенье")); break;
+    default: Serial.println(); break;
   }  
 }
 
@@ -510,27 +533,47 @@ void calculateDawnTime() {
 void checkAlarmTime() {
   
   // Будильник включен?
-  if (init_time && alarmOnOff) {
+  if (init_time && dawnWeekDay > 0) {
 
-    int h = hour();
-    int m = minute();
+    byte h = hour();
+    byte m = minute();
+    byte w = weekday()-1;
+    if (w == 0) w = 7;
 
-    // Включен ли будильник для текущего дня недели?       
-    if ((alarmWeekDay & (1 << (dawnWeekDay - 1))) > 0) {
+    // Время срабатывания будильника после завершения рассвета
+    byte alrmWeekDay = dawnWeekDay;
+    byte alrmHour = dawnHour;
+    byte alrmMinute = dawnMinute + dawnDuration;
+    if (alrmMinute >= 60) {
+      alrmMinute = 60 - alrmMinute;
+      alrmHour++;
+    }
+    if (alrmHour > 23) {
+      alrmHour = 24 - alrmHour;
+      alrmWeekDay++;
+    }
+    if (alrmWeekDay > 7) alrmWeekDay = 1;
+
+    // Текущий день недели совпадает с вычисленным днём недели рассвета?
+    if (w == dawnWeekDay) {
        // Часы / минуты начала рассвета наступили? Еще не запущен рассвет? Еще не остановлен пользователем?
-       if (!isAlarming && !isAlarmStopped && ((h * 60L + m) >= (dawnHour * 60L + dawnMinute)) && ((h * 60L + m) < (alarmHour * 60L + alarmMinute))) {
+       if (!isAlarming && !isAlarmStopped && ((w * 1000L + h * 60L + m) >= (dawnWeekDay * 1000L + dawnHour * 60L + dawnMinute)) && ((w * 1000L + h * 60L + m) < (alrmWeekDay * 1000L + alrmHour * 60L + alrmMinute))) {
+         // Сохранить параметры текущего режима для восстановления после завершения работы будильника
          saveSpecialMode = specialMode;
          saveSpecialModeId = specialModeId;
          saveThisMode = thisMode;
          saveRunningFlag = runningFlag;
+         // Включить будильник
          specialMode = false;
          specialModeId = -1;
          isAlarming = true;
          isAlarmStopped = false;
-         loadingFlag = true;
+         loadingFlag = true;         
          thisMode = DEMO_DAWN_ALARM;
-         realDawnDuration = (alarmHour * 60L + alarmMinute) - (dawnHour * 60L + dawnMinute);
+         // Реальная продолжительность рассвета
+         realDawnDuration = (alrmHour * 60L + alrmMinute) - (dawnHour * 60L + dawnMinute);
          if (realDawnDuration > dawnDuration) realDawnDuration = dawnDuration;
+         // Отключмить таймер автоперехода в демо-режим
          idleTimer.setInterval(4294967295);
          if (useAlarmSound) PlayDawnSound();
          sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
@@ -541,7 +584,7 @@ void checkAlarmTime() {
     delay(0); // Для предотвращения ESP8266 Watchdog Timer
     
     // При наступлении времени срабатывания будильника, если он еще не выключен пользователем - запустить режим часов и звук будильника
-    if (alarmHour == h && alarmMinute == m && isAlarming) {
+    if (alrmWeekDay == w && alrmHour == h && alrmMinute == m && isAlarming) {
       Serial.println(String(F("Рассвет Авто-ВЫКЛ в "))+String(h)+ ":" + String(m));
       isAlarming = false;
       isAlarmStopped = false;
@@ -555,7 +598,7 @@ void checkAlarmTime() {
     delay(0); // Для предотвращения ESP8266 Watchdog Timer
 
     // Если рассвет начинался и остановлен пользователем и время начала рассвета уже прошло - сбросить флаги, подготовив их к следующему циклу
-    if (isAlarmStopped && ((h * 60L + m) > (alarmHour * 60L + alarmMinute))) {
+    if (isAlarmStopped && ((w * 1000L + h * 60L + m) > (alrmWeekDay * 1000L + alrmHour * 60L + alrmMinute))) {
       isAlarming = false;
       isAlarmStopped = false;
     }
