@@ -265,16 +265,7 @@ void bluetoothRoutine() {
 
       // Четверное нажатие - показать текущий IP WiFi-соединения
       if (clicks == 4) {
-        if (wifi_connected) {
-          resetModes();
-          
-          runningFlag = true;  
-          BTcontrol = false;
-          AUTOPLAY = true;
-
-          wifi_print_ip = true;
-          wifi_current_ip = WiFi.localIP().toString();
-        }
+        showCurrentIP();
       }
       
       // ... и т.д.
@@ -623,9 +614,6 @@ void parsing() {
             case 3:
               str.toCharArray(pass, 16);
               setPass(str);
-              // Передается в одном пакете - ssid и pass
-              // После получения пароля - перезапустить подключение к сети WiFi
-              startWiFi();
               break;
             case 4:
               str.toCharArray(apName, 10);
@@ -1015,8 +1003,6 @@ void parsing() {
             alarmHour[alarmDay - 1] = alarmHourVal;
             alarmMinute[alarmDay - 1] = alarmMinuteVal;
             setAlarmTime(alarmDay,alarmHourVal,alarmMinuteVal);
-            // Рассчитать время начала рассвета будильника
-            calculateDawnTime();
             break;
           case 7:
             // Рассчитать время начала рассвета будильника
@@ -1053,8 +1039,24 @@ void parsing() {
             }      
             saveSettingsTimer.reset();
             break;
+          case 1:  
+            // $21 1 IP1 IP2 IP3 IP4 - установить статический IP адрес подключения к локальной WiFi сети, пример: $21 1 192 168 0 106
+            saveStaticIP(intData[2], intData[3], intData[4], intData[5]);
+            saveSettingsTimer.reset();
+            break;
+          case 2:  
+            // $21 2; Выполнить переподключение к сети WiFi
+            FastLED.clear();
+            FastLED.show();
+            startWiFi();
+            showCurrentIP();
+            break;
         }
-        sendPageParams(9);
+        if (intData[1] == 0 || intData[1] == 1) {
+          sendAcknowledge();
+        } else {
+          sendPageParams(9);
+        }
         break;
       case 22:
       /*  22 - настройки включения режимов матрицы в указанное время
@@ -1623,4 +1625,13 @@ void startRunningText() {
   if (globalColor == 0x000000) globalColor = 0xffffff;
   if (!useAutoBrightness)
     FastLED.setBrightness(globalBrightness);    
+}
+
+void showCurrentIP() {
+  resetModes();          
+  runningFlag = true;  
+  BTcontrol = false;
+  AUTOPLAY = true;
+  wifi_print_ip = true;
+  wifi_current_ip = wifi_connected ? WiFi.localIP().toString() : String(F("Нет подключения к сети WiFi"));
 }

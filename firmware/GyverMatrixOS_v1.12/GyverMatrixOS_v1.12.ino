@@ -388,6 +388,7 @@ char pass[17] = "";                      // пароль роутера
 
 WiFiUDP udp;
 unsigned int localPort = 2390;           // local port to listen for UDP packets
+byte IP_STA[] = {192, 168, 0, 106};      // Статический адрес в локальной сети WiFi
 
 IPAddress timeServerIP;
 #define NTP_PACKET_SIZE 48               // NTP время в первых 48 байтах сообщения
@@ -544,7 +545,12 @@ void startWiFi() {
   if (strlen(ssid) > 0) {
     Serial.print(F("Подключение к "));
     Serial.print(ssid);
-        
+
+    if (IP_STA[0] + IP_STA[1] + IP_STA[2] + IP_STA[3] > 0) {
+      WiFi.config(IPAddress(IP_STA[0], IP_STA[1], IP_STA[2], IP_STA[3]),  // 192.168.0.106
+                  IPAddress(IP_STA[0], IP_STA[1], IP_STA[2], 1),          // 192.168.0.1
+                  IPAddress(255, 255, 255, 0));
+    }              
     WiFi.begin(ssid, pass);
   
     // Проверка соединения (таймаут 10 секунд)

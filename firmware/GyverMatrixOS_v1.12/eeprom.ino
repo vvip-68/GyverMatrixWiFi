@@ -1,4 +1,4 @@
-#define EEPROM_OK 0xA5                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
+#define EEPROM_OK 0x5A                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
 #define EFFECT_EEPROM 150                  // начальная ячейка eeprom с параметрами эффектов
 #define GAME_EEPROM 230                    // начальная ячейка eeprom с параметрами игр
 
@@ -23,9 +23,9 @@ void loadSettings() {
   //   16 - Отображать с часами текущую дату 
   //   17 - Кол-во секунд отображения даты
   //   18 - Кол-во секунд отображения часов
-  //   19 - зарезервировано
-  //   20 - зарезервировано
-  //   21 - зарезервировано
+  //   19 - IP[0]
+  //   20 - IP[1]
+  //   21 - IP[2]
   //   22 - Будильник, дни недели
   //   23 - Будильник, продолжительность "рассвета"
   //   24 - Будильник, эффект "рассвета"
@@ -43,7 +43,7 @@ void loadSettings() {
   //   36 - Режим 2 по времени - часы
   //   37 - Режим 2 по тайвременимеру - минуты
   //   38 - Режим 2 по времени - ID эффекта или -1 - выключено; 0 - случайный;
-  //   39 - зарезервировано
+  //   39 - IP[3]
   //   40 - Будильник, время: понедельник : часы
   //   41 - Будильник, время: понедельник : минуты
   //   42 - Будильник, время: вторник : часы
@@ -58,7 +58,6 @@ void loadSettings() {
   //   51 - Будильник, время: суббота : минуты
   //   52 - Будильник, время: воскресенье : часы
   //   53 - Будильник, время: воскресенье : минуты
-  //  ... - зарезервировано  
   //  54-63   - имя точки доступа    - 10 байт
   //  64-79   - пароль точки доступа - 16 байт
   //  80-103  - имя сети  WiFi       - 24 байта
@@ -127,6 +126,8 @@ void loadSettings() {
     AM2_minute = getAM2minute();
     AM2_effect_id = getAM2effect();
 
+    loadStaticIP();
+    
   } else {
     globalBrightness = BRIGHTNESS;
     scrollSpeed = D_TEXT_SPEED;
@@ -168,7 +169,7 @@ void loadSettings() {
     strcpy(ssid, NETWORK_SSID);
     strcpy(pass, NETWORK_PASS);
 
-    strcpy(ntpServerName, DEFAULT_NTP_SERVER);
+    strcpy(ntpServerName, DEFAULT_NTP_SERVER);    
   }
 
   scrollTimer.setInterval(scrollSpeed);
@@ -243,7 +244,12 @@ void saveDefaults() {
   
   strcpy(ntpServerName, DEFAULT_NTP_SERVER);
   setNtpServer(String(ntpServerName));
-      
+
+  EEPROMwrite(19, IP_STA[0]);
+  EEPROMwrite(20, IP_STA[1]);
+  EEPROMwrite(21, IP_STA[2]);
+  EEPROMwrite(39, IP_STA[3]);
+
   eepromModified = true;
 }
 
@@ -797,6 +803,27 @@ void setAM2effect(int8_t effect) {
   if (effect != getAM2minute()) {
     EEPROMwrite(38, (byte)effect);
     eepromModified = true;
+  }
+}
+
+void loadStaticIP() {
+  IP_STA[0] = EEPROMread(19);
+  IP_STA[1] = EEPROMread(20);
+  IP_STA[2] = EEPROMread(21);
+  IP_STA[3] = EEPROMread(39);
+}
+
+void saveStaticIP(byte p1, byte p2, byte p3, byte p4) {
+  if (IP_STA[0] != p1 || IP_STA[1] != p2 || IP_STA[2] != p3 || IP_STA[3] != p4) {
+    IP_STA[0] = p1;
+    IP_STA[1] = p2;
+    IP_STA[2] = p3;
+    IP_STA[3] = p4;
+    EEPROMwrite(19, p1);
+    EEPROMwrite(20, p2);
+    EEPROMwrite(21, p3);
+    EEPROMwrite(39, p4);
+    eepromModified = true;  
   }
 }
 
