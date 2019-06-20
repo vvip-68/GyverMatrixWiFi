@@ -303,6 +303,11 @@ void bluetoothRoutine() {
 
     // Проверить - если долгое время не было ручного управления - переключиться в автоматический режим
     if (!(isAlarming || isPlayAlarmSound)) checkIdleState();
+
+    // Если есть несохраненные в EEPROM данные - сохранить их
+    if (saveSettingsTimer.isReady()) {
+      saveSettings();
+    }
   }
 }
 
@@ -529,6 +534,7 @@ void parsing() {
           setUseAutoBrightness(useAutoBrightness);
           setAutoBrightnessMin(autoBrightnessMin);
         }
+        saveSettingsTimer.reset();
         sendAcknowledge();
         break;
       case 5:
@@ -609,7 +615,6 @@ void parsing() {
             case 1:
               str.toCharArray(ntpServerName, 30);
               setNtpServer(str);
-              saveSettings(); // Если были изменения параметров, сохраняемых в EEPROM - сохранить
               break;
             case 2:
               str.toCharArray(ssid, 24);
@@ -620,7 +625,6 @@ void parsing() {
               setPass(str);
               // Передается в одном пакете - ssid и pass
               // После получения пароля - перезапустить подключение к сети WiFi
-              saveSettings(); // Если были изменения параметров, сохраняемых в EEPROM - сохранить
               startWiFi();
               break;
             case 4:
@@ -632,11 +636,11 @@ void parsing() {
               setSoftAPPass(str);
               // Передается в одном пакете - использовать SoftAP, имя точки и пароль
               // После получения пароля - перезапустить создание точки доступа
-              saveSettings(); // Если были изменения параметров, сохраняемых в EEPROM - сохранить
               if (useSoftAP) startSoftAP();
               break;
            }
         }
+        saveSettingsTimer.reset();
         sendAcknowledge();
         break;
       case 7:
@@ -652,6 +656,7 @@ void parsing() {
           // Вкл/Выкл "Использовать в демо-режиме": 2 - вкл; 3 - выкл;
           setUseTextInDemo(intData[1] == 2);
         }
+        saveSettingsTimer.reset();
         sendAcknowledge();
         break;
       case 8:      
@@ -669,7 +674,7 @@ void parsing() {
           // Вкл/выкл использование эффекта в демо-режиме
           saveEffectUsage(effect, intData[3] == 1); 
         }
-                
+        saveSettingsTimer.reset();                
         // Для "0" и "2" - отправляются параметры, подтверждение отправлять не нужно. Для остальных - нужно
         if (intData[1] == 0 || intData[1] == 2) {
           sendPageParams(5);
@@ -690,13 +695,13 @@ void parsing() {
           startGame(game, 
                     intData[1] == 0 && (!drawingFlag || (drawingFlag && game != GAME_SNAKE) || runningFlag), // new Game ?
                     intData[1] == 0 || (intData[1] == 1 && intData[3] == 0)                                  // is Paused ?
-          );
-          
+          );          
         } else if (intData[1] == 2) {
           // Вкл/выкл использование игры в демо-режиме
           saveGameUsage(game, intData[3] == 1); 
         }
-                
+        saveSettingsTimer.reset();
+
         // Для "0" и "2" - отправляются параметры, подтверждение отправлять не нужно. Для остальных - нужно
         if (intData[1] == 0 || intData[1] == 2) {
           sendPageParams(6);
@@ -754,6 +759,7 @@ void parsing() {
           saveGameSpeed(game, gameSpeed);
           gameTimer.setInterval(gameSpeed);
         }
+        saveSettingsTimer.reset();
         sendAcknowledge();
         break;
       case 16:
@@ -789,6 +795,8 @@ void parsing() {
           }
         }
 
+        saveSettingsTimer.reset();
+
         if (!BTcontrol && AUTOPLAY) {
           sendPageParams(1);
         } else {        
@@ -815,13 +823,13 @@ void parsing() {
             idleTimer.setInterval(idleTime);
           idleTimer.reset();
         }
+        saveSettingsTimer.reset();
         sendAcknowledge();
         break;
       case 18: 
         if (intData[1] == 0) { // ping
           sendAcknowledge();
         } else {               // запрос параметров страницы приложения
-          saveSettings();      // Если были изменения параметров, сохраняемых в EEPROM - сохранить
           sendPageParams(intData[1]);
         }
         break;
@@ -885,6 +893,7 @@ void parsing() {
              init_time = true; refresh_time = false; ntp_cnt = 0;
              break;
         }
+        saveSettingsTimer.reset();
         sendAcknowledge();
         break;
       case 20:
@@ -910,6 +919,7 @@ void parsing() {
             
             // Рассчитать время начала рассвета будильника
             calculateDawnTime();            
+            saveSettingsTimer.reset();
             break;
           case 2:
             if (isDfPlayerOk) {
@@ -931,7 +941,7 @@ void parsing() {
               alarmSound = intData[5] - 2;  // Индекс от приложения: 0 - нет; 1 - случайно; 2 - 1-й файл; 3 - ... -> -1 - нет; 0 - случайно; 1 - 1-й файл и т.д
               dawnSound = intData[6] - 2;   // Индекс от приложения: 0 - нет; 1 - случайно; 2 - 1-й файл; 3 - ... -> -1 - нет; 0 - случайно; 1 - 1-й файл и т.д
               saveAlarmSounds(useAlarmSound, alarmDuration, maxAlarmVolume, alarmSound, dawnSound);
-              saveSettings();
+              saveSettingsTimer.reset();
             }
             break;
           case 3:
@@ -1009,16 +1019,15 @@ void parsing() {
             calculateDawnTime();
             break;
           case 7:
-            // Фиксировать настройки
-            saveSettings();
             // Рассчитать время начала рассвета будильника
+            saveSettingsTimer.reset();
             calculateDawnTime();            
             break;
         }
         if (intData[1] == 0) {
           sendPageParams(8);
         } else if (intData[1] == 1 || intData[1] == 2 || intData[1] == 7) { // Режимы установки параметров - сохранить
-          saveSettings();
+          // saveSettings();
           sendPageParams(8);
         } else if (intData[1] == 6) {
           sendAcknowledge();
@@ -1042,10 +1051,10 @@ void parsing() {
                 Serial.println(F("Точка доступа отключена."));
               }
             }      
+            saveSettingsTimer.reset();
             break;
         }
         sendPageParams(9);
-        saveSettings();      // Если были изменения параметров, сохраняемых в EEPROM - сохранить
         break;
       case 22:
       /*  22 - настройки включения режимов матрицы в указанное время
@@ -1054,27 +1063,27 @@ void parsing() {
            MMn - минуты срабатывания
            NNn - эффект: -2 - выключено; -1 - выключить матрицу; 0 - случайный режим и далее по кругу; 1 и далее - список режимов ALARM_LIST 
       */    
-          AM1_hour = intData[1];
-          AM1_minute = intData[2];
-          AM1_effect_id = intData[3];
-          if (AM1_hour < 0) AM1_hour = 0;
-          if (AM1_hour > 23) AM1_hour = 23;
-          if (AM1_minute < 0) AM1_minute = 0;
-          if (AM1_minute > 59) AM1_minute = 59;
-          if (AM1_effect_id < -5) AM1_minute = -5;
-          setAM1params(AM1_hour, AM1_minute, AM1_effect_id);
-          AM2_hour = intData[4];
-          AM2_minute = intData[5];
-          AM2_effect_id = intData[6];
-          if (AM2_hour < 0) AM2_hour = 0;
-          if (AM2_hour > 23) AM2_hour = 23;
-          if (AM2_minute < 0) AM2_minute = 0;
-          if (AM2_minute > 59) AM2_minute = 59;
-          if (AM2_effect_id < -5) AM2_minute = -5;
-          setAM2params(AM2_hour, AM2_minute, AM2_effect_id);
+        AM1_hour = intData[1];
+        AM1_minute = intData[2];
+        AM1_effect_id = intData[3];
+        if (AM1_hour < 0) AM1_hour = 0;
+        if (AM1_hour > 23) AM1_hour = 23;
+        if (AM1_minute < 0) AM1_minute = 0;
+        if (AM1_minute > 59) AM1_minute = 59;
+        if (AM1_effect_id < -5) AM1_minute = -5;
+        setAM1params(AM1_hour, AM1_minute, AM1_effect_id);
+        AM2_hour = intData[4];
+        AM2_minute = intData[5];
+        AM2_effect_id = intData[6];
+        if (AM2_hour < 0) AM2_hour = 0;
+        if (AM2_hour > 23) AM2_hour = 23;
+        if (AM2_minute < 0) AM2_minute = 0;
+        if (AM2_minute > 59) AM2_minute = 59;
+        if (AM2_effect_id < -5) AM2_minute = -5;
+        setAM2params(AM2_hour, AM2_minute, AM2_effect_id);
 
+        saveSettingsTimer.reset();
         sendPageParams(10);
-        saveSettings(); 
         break;
     }
     lastMode = intData[0];  // запомнить предыдущий режим
