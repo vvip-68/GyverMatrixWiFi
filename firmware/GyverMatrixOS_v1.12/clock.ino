@@ -482,23 +482,13 @@ void calculateDawnTime() {
   byte w = weekday()-1;
   if (w == 0) w = 7;
 
-  while (true) {
-    while ((alarmWeekDay & (1 << (alrmWeekDay - 1))) == 0) {
-      alrmWeekDay++;
-      if (alrmWeekDay == 8) alrmWeekDay = 1;
-    }
-    
-    alrmHour = alarmHour[alrmWeekDay-1];
-    alrmMinute = alarmMinute[alrmWeekDay-1];
-  
-    if ((alrmWeekDay * 1000L + alrmHour * 60L + alrmMinute) < (w * 1000L + h * 60L + m)) {
-      alrmWeekDay++;
-      if (alrmWeekDay == 8) alrmWeekDay = 1;
-      continue;
-    }
-    
-    break;
+  while ((alarmWeekDay & (1 << (alrmWeekDay - 1))) == 0) {
+    alrmWeekDay++;
+    if (alrmWeekDay == 8) alrmWeekDay = 1;
   }
+    
+  alrmHour = alarmHour[alrmWeekDay-1];
+  alrmMinute = alarmMinute[alrmWeekDay-1];
   
   // расчёт времени рассвета
   if (alrmMinute > dawnDuration) {                  // если минут во времени будильника больше продолжительности рассвета

@@ -350,7 +350,7 @@ byte getMaxBrightness() {
 
 void saveMaxBrightness(byte brightness) {
   if (brightness != getMaxBrightness()) {
-    EEPROMwrite(1, globalBrightness);
+    EEPROMwrite(1, brightness);
     eepromModified = true;
   }
 }

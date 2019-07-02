@@ -12,6 +12,9 @@
 
 // ************************ МАТРИЦА *************************
 
+#define FASTLED_INTERRUPT_RETRY_COUNT 0
+#define FASTLED_ALLOW_INTERRUPTS 0
+
 #include "FastLED.h"
 
 #define BRIGHTNESS 32         // стандартная маскимальная яркость (0-255)
@@ -259,9 +262,6 @@ const byte ALARM_LIST_IDX[] PROGMEM = {EFFECT_SNOW, EFFECT_BALL, EFFECT_RAINBOW,
   boolean modeDir;
 #endif
 
-#define FASTLED_INTERRUPT_RETRY_COUNT 0
-#define FASTLED_ALLOW_INTERRUPTS 0
-
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 bool useSoftAP = false;            // использовать режим точки доступа
@@ -427,7 +427,9 @@ byte fadeSoundStepCounter = 0;       // счетчик шагов изменен
 
 #define PIN_BTN D6                   // кнопка подключена сюда (PIN --- КНОПКА --- GND)
 #include "GyverButton.h"
-GButton butt(PIN_BTN);
+
+GButton butt(PIN_BTN);                         // Физическая кнопка
+//GButton butt(PIN_BTN, LOW_PULL, NORM_OPEN);  // Сенсорная кнопка TTP223
 
 #define HOLD_TIMEOUT 2000            // Время удержания кнопки перед выполнением действия ( + debounce time) суммарно - около 3 сек
 bool isButtonHold = false;           // Кнопка нажата и удерживается

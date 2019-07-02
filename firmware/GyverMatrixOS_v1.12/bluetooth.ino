@@ -35,7 +35,7 @@ void bluetoothRoutine() {
       }
       bool timeToSync = ntpSyncTimer.isReady();
       if (timeToSync) { ntp_cnt = 0; refresh_time = true; }
-      if (timeToSync || (refresh_time && ntp_t == 0 && ntp_cnt < 10)) {
+      if (timeToSync || (refresh_time && ntp_t == 0 && (ntp_cnt < 10 || !init_time))) {
         getNTP();
       }
     }
@@ -126,7 +126,7 @@ void bluetoothRoutine() {
     // Была команда остановки воспроизведения музыки, но плеер ее "не услышал" / проигнорировал 
     // и продолжает играть - отправить команду останова воспроизведения повторно
     bool isPlaying = (soundFolder != 0 && soundFile != 0) || isAlarming || isPlayAlarmSound || fadeSoundStepCounter > 0;
-    if (!isPlaying && isPlayerBusy()) {
+    if (isDfPlayerOk && !isPlaying && isPlayerBusy()) {
        dfPlayer.stop();      
     }
 
@@ -272,7 +272,7 @@ void bluetoothRoutine() {
     }
 
     // Есть ли изменение статуса MP3-плеера?
-    if (dfPlayer.available()) {
+    if (isDfPlayerOk && dfPlayer.available()) {
 
       // Вывести детали об изменении статуса в лог
       byte msg_type = dfPlayer.readType();      
@@ -441,7 +441,7 @@ void parsing() {
 
     // Режимы кроме 4 (яркость), 14 (новый спец-режим) и 18 (запрос параметров страницы),
     // 19 (настройки часов), 20 (настройки будильника), 21 (настройки сети) сбрасывают спец-режим
-    if (intData[0] != 4 &&intData[0] != 14 && intData[0] != 18 && intData[0] != 19 &&
+    if (intData[0] != 4 && intData[0] != 14 && intData[0] != 18 && intData[0] != 19 &&
         intData[0] != 20 && intData[0] != 21) {
       if (specialMode) {
         idleTimer.setInterval(idleTime);
@@ -597,8 +597,8 @@ void parsing() {
         // 5 - пароль точки доступа
         tmp_eff = receiveText.indexOf("|");
         if (tmp_eff > 0) {
-           b_tmp = receiveText.substring(0, tmp_eff).toInt();
-           str = receiveText.substring(tmp_eff+1, receiveText.length()+1);
+          b_tmp = receiveText.substring(0, tmp_eff).toInt();
+          str = receiveText.substring(tmp_eff+1, receiveText.length()+1);
            switch(b_tmp) {
             case 0:
               runningText = str;
@@ -1063,7 +1063,7 @@ void parsing() {
        - $22 HH1 MM1 NN1 HH2 MM2 NN2
            HHn - час срабатывания
            MMn - минуты срабатывания
-           NNn - эффект: -2 - выключено; -1 - выключить матрицу; 0 - случайный режим и далее по кругу; 1 и далее - список режимов ALARM_LIST 
+           NNn - эффект: -5 - выключено; -4 - выключить матрицу; -3 - ночные часы; -2 - камин с часами; -1 бегущая строка ..  0 - случайный режим и далее по кругу; 1 и далее - список режимов ALARM_LIST 
       */    
         AM1_hour = intData[1];
         AM1_minute = intData[2];
@@ -1072,7 +1072,7 @@ void parsing() {
         if (AM1_hour > 23) AM1_hour = 23;
         if (AM1_minute < 0) AM1_minute = 0;
         if (AM1_minute > 59) AM1_minute = 59;
-        if (AM1_effect_id < -5) AM1_minute = -5;
+        if (AM1_effect_id < -5) AM1_effect_id = -5;
         setAM1params(AM1_hour, AM1_minute, AM1_effect_id);
         AM2_hour = intData[4];
         AM2_minute = intData[5];
@@ -1081,7 +1081,7 @@ void parsing() {
         if (AM2_hour > 23) AM2_hour = 23;
         if (AM2_minute < 0) AM2_minute = 0;
         if (AM2_minute > 59) AM2_minute = 59;
-        if (AM2_effect_id < -5) AM2_minute = -5;
+        if (AM2_effect_id < -5) AM2_effect_id = -5;
         setAM2params(AM2_hour, AM2_minute, AM2_effect_id);
 
         saveSettingsTimer.reset();
@@ -1149,7 +1149,7 @@ void parsing() {
           // Оставшийся буфер преобразуем с строку
           if (intData[0] == 5) {  // строка картинки
             pictureLine = String(&incomeBuffer[bufIdx]);
-          } if (intData[0] == 6) {  // текст
+          } else if (intData[0] == 6) {  // текст
             receiveText = String(&incomeBuffer[bufIdx]);
             receiveText.trim();
           }
@@ -1160,8 +1160,8 @@ void parsing() {
           packetSize = 0;                              // все байты из входящего пакета обработаны
         } else {
           incomingByte = incomeBuffer[bufIdx++];       // обязательно ЧИТАЕМ входящий символ
-      } 
-    }       
+        } 
+     }       
   }
   
   if (haveIncomeData) {
@@ -1438,7 +1438,7 @@ void sendPageParams(int page) {
     udp.write(incomeBuffer);
     udp.endPacket();
     delay(0);
-    Serial.println("Ответ на " + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(incomeBuffer));
+    Serial.println(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(incomeBuffer));
   } else {
     sendAcknowledge();
   }
@@ -1457,7 +1457,7 @@ void sendAcknowledge() {
   udp.endPacket();
   delay(0);
   if (isCmd) {
-    Serial.println("Ответ на " + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(replyBuffer));
+    Serial.println(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(replyBuffer));
   }
 }
 

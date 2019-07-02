@@ -34,10 +34,10 @@ void printDetail(uint8_t type, int value){
       Serial.println(F("Card Online!"));
       break;
     case DFPlayerUSBInserted:
-      Serial.println("USB Inserted!");
+      Serial.println(F("USB Inserted!"));
       break;
     case DFPlayerUSBRemoved:
-      Serial.println("USB Removed!");
+      Serial.println(F("USB Removed!"));
       break;
     case DFPlayerPlayFinished:
       Serial.print(F("Number: "));

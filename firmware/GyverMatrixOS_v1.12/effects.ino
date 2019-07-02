@@ -494,7 +494,7 @@ void dawnProcedure() {
     FastLED.setBrightness(dawnBrightness);        
 
     if (realDawnDuration <= 0 || realDawnDuration > dawnDuration) realDawnDuration = dawnDuration;
-    dawnTimer.setInterval((realDawnDuration * 60 / (MAX_DAWN_BRIGHT - MIN_DAWN_BRIGHT)) * 1000L);
+    dawnTimer.setInterval(realDawnDuration * 60000L / (MAX_DAWN_BRIGHT - MIN_DAWN_BRIGHT));
   }
 
   // Пришло время увеличить яркость рассвета?
@@ -503,7 +503,7 @@ void dawnProcedure() {
     FastLED.setBrightness(dawnBrightness);
   }
     
-  byte b_tmp = mapEffectToMode(alarmEffect);
+  byte b_tmp = mapEffectToMode(isAlarming ? alarmEffect : EFFECT_DAWN_ALARM);
   if (b_tmp == 255) b_tmp = DEMO_DAWN_ALARM;
   if (b_tmp == DEMO_DAWN_ALARM) {
     // Если устройство лампа (DEVICE_TYPE == 0) - матрица свернута в "трубу" - рассвет - огонек, бегущий вкруговую по спирали
@@ -539,7 +539,8 @@ void dawnLampSpiral() {
   
   if (!firstRowFlag) fillAll(tailColor);
   
-  for (byte i=0; i<8; i++) {
+  byte tail_len = min(8, WIDTH - 1);  
+  for (byte i=0; i<tail_len; i++) {
     x--;
     if (x < 0) { x = WIDTH - 1; y--; }
     if (y < 0) {
