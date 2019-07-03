@@ -81,8 +81,8 @@ void doEffectWithOverlay(byte aMode) {
   if (effectTimer.isReady()) {
 
 #if (OVERLAY_CLOCK == 1)
-    boolean loadFlag2;
-    boolean needOverlay = modeCode != MC_TEXT && overlayAllowed();
+    bool loadFlag2;
+    bool needOverlay = modeCode != MC_TEXT && overlayAllowed();
     if (needOverlay) {
       if (!loadingFlag && needUnwrap()) {
         if (showDateInClock && showDateState) {
@@ -217,9 +217,14 @@ void nextModeHandler() {
   }
   
   loadingFlag = true;
-  gamemodeFlag = false;
   autoplayTimer = millis();
   setTimersForMode(thisMode);
+
+  byte tmp_effect = mapModeToEffect(thisMode);  
+  byte tmp_game = mapModeToGame(thisMode);
+  gamemodeFlag = tmp_game != 255;
+  effectsFlag = tmp_effect != 255;
+
   FastLED.clear();
   FastLED.show();
   FastLED.setBrightness(globalBrightness);
@@ -246,9 +251,14 @@ void prevModeHandler() {
   }
   
   loadingFlag = true;
-  gamemodeFlag = false;
   autoplayTimer = millis();
   setTimersForMode(thisMode);
+
+  byte tmp_effect = mapModeToEffect(thisMode);  
+  byte tmp_game = mapModeToGame(thisMode);
+  gamemodeFlag = tmp_game != 255;
+  effectsFlag = tmp_effect != 255;
+  
   FastLED.clear();
   FastLED.show();
   FastLED.setBrightness(globalBrightness);
@@ -497,6 +507,7 @@ byte mapModeToEffect(byte aMode) {
     case DEMO_RAINBOW:              tmp_effect = EFFECT_RAINBOW;  break;            // rainbowRoutine();
     case DEMO_RAINBOW_DIAG:         tmp_effect = EFFECT_RAINBOW_DIAG; break;        // rainbowDiagonalRoutine();
     case DEMO_FIRE:                 tmp_effect = EFFECT_FIRE;  break;               // fireRoutine()
+    case DEMO_CLOCK:                tmp_effect = EFFECT_CLOCK;  break;              // clockRoutine()
     case DEMO_ANIMATION:            tmp_effect = EFFECT_ANIMATION; break;           // animation();
     case DEMO_DAWN_ALARM:           tmp_effect = EFFECT_DAWN_ALARM; break;          // alarmProcedure();
     case DEMO_FILL_COLOR:           tmp_effect = EFFECT_FILL_COLOR; break;          // fillColorProcedure();
@@ -510,9 +521,7 @@ byte mapModeToEffect(byte aMode) {
     case DEMO_MAZE: break;          // mazeRoutine();
     case DEMO_RUNNER: break;        // runnerRoutine();
     case DEMO_FLAPPY: break;        // flappyRoutine();
-    case DEMO_ARKANOID: break;      // arkanoidRoutine();
-    
-    case DEMO_CLOCK: break;         // clockRoutine();     
+    case DEMO_ARKANOID: break;      // arkanoidRoutine();    
   }
   return tmp_effect;
 }

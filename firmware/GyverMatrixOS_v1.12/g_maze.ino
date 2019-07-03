@@ -17,7 +17,7 @@
 
 // --------------------- ДЛЯ РАЗРАБОТЧИКОВ ----------------------
 const uint16_t maxSolves = MAZE_WIDTH * MAZE_WIDTH * 5;
-char *maze = (char*)malloc(MAZE_WIDTH * MAZE_HEIGHT * sizeof(char));;
+char *maze = (char*)malloc(MAZE_WIDTH * MAZE_HEIGHT * sizeof(char));
 int8_t playerPos[2];
 uint32_t labTimer;
 
@@ -26,6 +26,7 @@ void newGameMaze() {
   playerPos[1] = !SHIFT;
 
   buttons = 4;
+  FastLED.clear();
 
   GenerateMaze(maze, MAZE_WIDTH, MAZE_HEIGHT);    // генерировать лабиринт обычным способом
   SolveMaze(maze, MAZE_WIDTH, MAZE_HEIGHT);       // найти путь

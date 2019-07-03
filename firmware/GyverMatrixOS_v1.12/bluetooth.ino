@@ -14,11 +14,37 @@ char incomeBuffer[UDP_TX_PACKET_MAX_SIZE];        // Буфер для прие�
 char replyBuffer[7];                              // ответ клиенту - подтверждения получения команды: "ack;/r/n/0"
 
 unsigned long ackCounter = 0;
-String receiveText = "";
+String receiveText = "", s_tmp = "";
+byte tmpSaveMode = 0;
 
 void bluetoothRoutine() {  
   
   parsing();                                    // принимаем данные
+
+  if (tmpSaveMode != thisMode) {
+    tmpSaveMode = thisMode;
+    if (thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2) {
+      // Это бегущий текст  
+      Serial.print(F("Включена бегущая строка "));
+      Serial.println(thisMode);
+    } else {
+      byte tmp_effect = mapModeToEffect(thisMode);
+      if (tmp_effect != 255) {
+        s_tmp = String(EFFECT_LIST);    
+        s_tmp = GetToken(s_tmp, tmp_effect+1, ',');
+        Serial.print(F("Включен эффект "));
+        Serial.println("'" + s_tmp + "'");
+      } else {
+        byte tmp_game = mapModeToGame(thisMode);
+        if (tmp_game != 255) {
+          s_tmp = String(GAME_LIST);    
+          s_tmp = GetToken(s_tmp, tmp_game+1, ',');
+          Serial.print(F("Включена игра "));
+          Serial.println("'" + s_tmp + "'");
+        }
+      }
+    }
+  }
 
   // на время принятия данных матрицу не обновляем!
   if (!parseStarted) {                          

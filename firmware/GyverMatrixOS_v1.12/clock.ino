@@ -90,12 +90,16 @@ boolean overlayAllowed() {
 
   // Оверлей не разрешен, если часы еще не инициализированы
   if (!init_time) return false;
-  
+
+  // В играх оверлея часов нет;
+  if (gamemodeFlag) return false;
+    
   // Оверлей разрешен текущими параметрами спец.режима?
   if (specialMode) return specialClock;
   
   // Оверлей разрешен общими настройками часов? 
   bool allowed = getClockOverlayEnabled();
+  
   // Оверлей разрешен настройками списка разрешенных для оверлея эффектов?
   if (allowed) {
     for (byte i = 0; i < listSize; i++) {
@@ -114,6 +118,8 @@ boolean overlayAllowed() {
     byte tmp_effect = mapModeToEffect(thisMode);
     if (tmp_effect <= MAX_EFFECT) 
       allowed = getEffectClock(tmp_effect);   
+    else
+      allowed = false;  
   }
 
   return allowed;
