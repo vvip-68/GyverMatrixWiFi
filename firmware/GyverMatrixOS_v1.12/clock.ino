@@ -564,7 +564,8 @@ void checkAlarmTime() {
          specialModeId = -1;
          isAlarming = true;
          isAlarmStopped = false;
-         loadingFlag = true;         
+         loadingFlag = true;  
+         gamemodeFlag = false;
          thisMode = DEMO_DAWN_ALARM;
          // Реальная продолжительность рассвета
          realDawnDuration = (alrmHour * 60L + alrmMinute) - (dawnHour * 60L + dawnMinute);

@@ -189,13 +189,17 @@ void bluetoothRoutine() {
     }
 
     // Любое нажатие кнопки останавливает будильник
-    if ((isAlarming || isPlayAlarmSound) && (isButtonHold || clicks > 0)) stopAlarm();
+    if ((isAlarming || isPlayAlarmSound) && (isButtonHold || clicks > 0)) {
+      stopAlarm();
+    }
             
     // Обработка нажатий кнопки
     else if (isButtonHold) {
       
       // Если работает будильник - любое количество нажатий или удержание прерывает будильник и включает часы на черном фоне     
-      if ((isAlarming || isPlayAlarmSound)) stopAlarm();
+      if ((isAlarming || isPlayAlarmSound)) {
+        stopAlarm();
+      }
 
       // Если с момента нажатия и удержания прошло более HOLD_TIMEOUT милисекунд...
       if (hold_start_time != 0 && (millis() - hold_start_time) > HOLD_TIMEOUT) {
@@ -391,6 +395,7 @@ void parsing() {
         3 - пароль для подключения к сети 
         4 - имя точки доступа
         5 - пароль к точке доступа
+        6 - настройки будильников
     7 - управление текстом: 
         $7 1 пуск; 
         $7 0 стоп; 
@@ -467,7 +472,8 @@ void parsing() {
 
     // Режимы кроме 4 (яркость), 14 (новый спец-режим) и 18 (запрос параметров страницы),
     // 19 (настройки часов), 20 (настройки будильника), 21 (настройки сети) сбрасывают спец-режим
-    if (intData[0] != 4 && intData[0] != 14 && intData[0] != 18 && intData[0] != 19 &&
+    if (intData[0] != 4  && intData[0] != 14 && 
+        intData[0] != 18 && intData[0] != 19 &&
         intData[0] != 20 && intData[0] != 21) {
       if (specialMode) {
         idleTimer.setInterval(idleTime);
@@ -480,7 +486,7 @@ void parsing() {
     }
 
     // Режимы кроме 18 останавливают будильник, если он работает (идет рассвет)
-    if (intData[0] != 18) {
+    if (intData[0] != 18 && intData[0] != 20) {
       wifi_print_ip = false;
       wifi_current_ip = "";
       stopAlarm();
@@ -621,6 +627,7 @@ void parsing() {
         // 3 - пароль к сети
         // 4 - имя точки доступа
         // 5 - пароль точки доступа
+        // 6 - настройки будильника в формате $6 6|DD EF WD HH1 MM1 HH2 MM2 HH3 MM3 HH4 MM4 HH5 MM5 HH6 MM6 HH7 MM7
         tmp_eff = receiveText.indexOf("|");
         if (tmp_eff > 0) {
           b_tmp = receiveText.substring(0, tmp_eff).toInt();
@@ -652,10 +659,49 @@ void parsing() {
               // После получения пароля - перезапустить создание точки доступа
               if (useSoftAP) startSoftAP();
               break;
+            case 6:
+              // Настройки будильника в формате $6 6|DD EF WD HH1 MM1 HH2 MM2 HH3 MM3 HH4 MM4 HH5 MM5 HH6 MM6 HH7 MM7
+              // DD    - установка продолжительности рассвета (рассвет начинается за DD минут до установленного времени будильника)
+              // EF    - установка эффекта, который будет использован в качестве рассвета
+              // WD    - установка дней пн-вс как битовая маска
+              // HHx   - часы дня недели x (1-пн..7-вс)
+              // MMx   - минуты дня недели x (1-пн..7-вс)
+              //
+              // Остановить будильнтк, если он сработал
+              dfPlayer.stop();
+              soundFolder = 0;
+              soundFile = 0;
+              isAlarming = false;
+              isAlarmStopped = false;
+              
+              // Настройки содержат 17 элеиентов (см. формат выше)
+              tmp_eff = CountTokens(str, ' ');
+              if (tmp_eff == 17) {
+              
+                dawnDuration = constrain(GetToken(str, 1, ' ').toInt(),1,59);
+                alarmEffect = mapAlarmToEffect(GetToken(str, 2, ' ').toInt());
+                alarmWeekDay = GetToken(str, 3, ' ').toInt();
+                saveAlarmParams(alarmWeekDay,dawnDuration,alarmEffect);
+                
+                for(byte i=0; i<7; i++) {
+                  alarmHourVal = constrain(GetToken(str, i*2+4, ' ').toInt(), 0, 23);
+                  alarmMinuteVal = constrain(GetToken(str, i*2+5, ' ').toInt(), 0, 59);
+                  alarmHour[i] = alarmHourVal;
+                  alarmMinute[i] = alarmMinuteVal;
+                  setAlarmTime(i+1, alarmHourVal, alarmMinuteVal);
+                }
+  
+                // Рассчитать время начала рассвета будильника
+                calculateDawnTime();            
+              }
+              break;
            }
         }
         saveSettingsTimer.reset();
-        sendAcknowledge();
+        if (b_tmp == 6) 
+          sendPageParams(8);
+        else
+          sendAcknowledge();
         break;
       case 7:
         BTcontrol = true;
@@ -913,27 +959,9 @@ void parsing() {
       case 20:
         switch (intData[1]) { 
           case 0:  
-            if (isAlarming || isPlayAlarmSound) stopAlarm();            
-            break;
-          case 1:
-            //  $20 1 DD EF WD;
-            //   DD    - установка продолжительности рассвета (рассвет начинается за DD минут до установленного времени будильника)
-            //   EF    - установка эффекта, который будет использован в качестве рассвета
-            //   WD    - установка дней пн-вс как битовая маска
-            dfPlayer.stop();
-            soundFolder = 0;
-            soundFile = 0;
-            isAlarming = false;
-            isAlarmStopped = false;
-
-            dawnDuration = constrain(intData[2],1,59);
-            alarmEffect = mapAlarmToEffect(intData[3]);
-            alarmWeekDay = intData[4];
-            saveAlarmParams(alarmWeekDay,dawnDuration,alarmEffect);
-            
-            // Рассчитать время начала рассвета будильника
-            calculateDawnTime();            
-            saveSettingsTimer.reset();
+            if (isAlarming || isPlayAlarmSound) {
+              stopAlarm();            
+            }
             break;
           case 2:
             if (isDfPlayerOk) {
@@ -1018,31 +1046,12 @@ void parsing() {
              dfPlayer.volume(maxAlarmVolume);
             }
             break;
-          case 6:
-            //  $20 6 DD HH MM;
-            //   DD    - день установки времени будильник 1 - пн.. 7- вс
-            //   HH    - установка времени будильника - часы
-            //   MM    - установка времени будильника - минуты
-            alarmDay = constrain(intData[2], 1, 7);
-            alarmHourVal = constrain(intData[3], 0, 23);
-            alarmMinuteVal = constrain(intData[4], 0, 59);
-            alarmHour[alarmDay - 1] = alarmHourVal;
-            alarmMinute[alarmDay - 1] = alarmMinuteVal;
-            setAlarmTime(alarmDay,alarmHourVal,alarmMinuteVal);
-            break;
-          case 7:
-            // Рассчитать время начала рассвета будильника
-            saveSettingsTimer.reset();
-            calculateDawnTime();            
-            break;
         }
         if (intData[1] == 0) {
           sendPageParams(8);
-        } else if (intData[1] == 1 || intData[1] == 2 || intData[1] == 7) { // Режимы установки параметров - сохранить
+        } else if (intData[1] == 1 || intData[1] == 2) { // Режимы установки параметров - сохранить
           // saveSettings();
           sendPageParams(8);
-        } else if (intData[1] == 6) {
-          sendAcknowledge();
         } else {
           sendPageParams(96);
         }        
