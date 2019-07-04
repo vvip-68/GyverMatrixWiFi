@@ -1,4 +1,4 @@
-#define UDP_PACKET_MAX_SIZE  96
+#define UDP_PACKET_MAX_SIZE  512
 #define PARSE_AMOUNT 8          // максимальное количество значений в массиве, который хотим получить
 #define header '$'              // стартовый символ
 #define divider ' '             // разделительный символ
