@@ -149,13 +149,6 @@ void bluetoothRoutine() {
       }      
     }            
 
-    // Была команда остановки воспроизведения музыки, но плеер ее "не услышал" / проигнорировал 
-    // и продолжает играть - отправить команду останова воспроизведения повторно
-    bool isPlaying = (soundFolder != 0 && soundFile != 0) || isAlarming || isPlayAlarmSound || fadeSoundStepCounter > 0;
-    if (isDfPlayerOk && !isPlaying && isPlayerBusy()) {
-       dfPlayer.stop();      
-    }
-
     checkAlarmTime();
     checkAutoMode1Time();
     checkAutoMode2Time();
@@ -302,7 +295,7 @@ void bluetoothRoutine() {
     }
 
     // Есть ли изменение статуса MP3-плеера?
-    if (isDfPlayerOk && dfPlayer.available()) {
+    if (dfPlayer.available()) {
 
       // Вывести детали об изменении статуса в лог
       byte msg_type = dfPlayer.readType();      

@@ -1,11 +1,9 @@
 void InitializeDfPlayer1() {
   mp3Serial.begin(9600);  
-  isDfPlayerOk = dfPlayer.begin(mp3Serial, true, true);
-  if (isDfPlayerOk) {    
-    dfPlayer.setTimeOut(2000);
-    dfPlayer.EQ(DFPLAYER_EQ_NORMAL);
-    dfPlayer.volume(1);
-  } 
+  dfPlayer.begin(mp3Serial, true, true);
+  dfPlayer.setTimeOut(2000);
+  dfPlayer.EQ(DFPLAYER_EQ_NORMAL);
+  dfPlayer.volume(1);
 }
 
 void InitializeDfPlayer2() {    
@@ -75,10 +73,6 @@ void printDetail(uint8_t type, int value){
     default:
       break;
   }
-}
-
-bool isPlayerBusy() {
-  return digitalRead(PIN_BUSY) == 0;
 }
 
 void refreshDfPlayerFiles() {

@@ -414,7 +414,6 @@ timerMinim ntpSyncTimer(1000 * 60 * SYNC_TIME_PERIOD);            // Сверя�
 SoftwareSerial mp3Serial(SRX, STX);
 
 #include "DFRobotDFPlayerMini.h"     // Установите в менеджере библиотек стандартную библиотеку DFRobotDFPlayerMini ("DFPlayer - A Mini MP3 Player For Arduino" )
-#define PIN_BUSY D5 
 
 DFRobotDFPlayerMini dfPlayer; 
 bool isDfPlayerOk = false;
@@ -453,8 +452,6 @@ byte AM2_minute = 0;                 // Режим 2 по времени - ми�
 int8_t AM2_effect_id = -5;           // Режим 2 по времени - ID эффекта или -5 - выключено; -4 - выключить матрицу (черный экран); -3 - ночные часы, -2 - камин с часами, -1 - бегущая строка, 0 - случайныйб 1 и далее - эффект ALARM_LIST
 
 void setup() {
-  
-  pinMode(PIN_BUSY, INPUT);
   
   Serial.begin(115200);
   delay(10);
@@ -507,7 +504,7 @@ void setup() {
   FastLED.show();
 
   // Второй этап инициализации плеера - проверка наличия файлов звуков на SD карте  
-  if (isDfPlayerOk) InitializeDfPlayer2();
+  InitializeDfPlayer2();
   if (!isDfPlayerOk) Serial.println(F("MP3 плеер недоступен."));
 
   if (CLOCK_X < 0) CLOCK_X = 0;
