@@ -453,6 +453,8 @@ int8_t AM2_effect_id = -5;           // Режим 2 по времени - ID э
 
 void setup() {
   
+  ESP.wdtEnable(WDTO_8S);
+
   Serial.begin(115200);
   delay(10);
   
@@ -527,9 +529,16 @@ void setup() {
   calculateDawnTime();
 }
 
-void loop() {
-  
+unsigned long t = millis();
+
+void loop() {  
   bluetoothRoutine();
+  ESP.wdtFeed();
+
+  if (millis() - t > 5000) {
+    t = millis();
+    Serial.println(String(F("Free memory:")) + String(ESP.getFreeHeap()));
+  }
 }
 
 // -----------------------------------------
