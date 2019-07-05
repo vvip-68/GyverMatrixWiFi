@@ -23,7 +23,7 @@ byte saveThisMode;
 byte clockHue;
 
 #if (OVERLAY_CLOCK == 1)
-CRGB overlayLEDs[165];                // По максимому календарь - шрифт 3x5 - 4 цифры в два ряда, по одному пробелу между цифрами и рядами - 15x11
+CRGB overlayLEDs[165];                // По максимуму календарь - шрифт 3x5 - 4 цифры в два ряда, по одному пробелу между цифрами и рядами - 15x11
                                       // По максимуму часы шрифт 3x5 гориз - 4 цифры по одному пробелу между цифрами - 15x5, 
                                       //                             верт - два ряда по две цифры по одному пробелу между цифрами и рядами - 7x11, 
 byte listSize = sizeof(overlayList);
@@ -488,13 +488,22 @@ void calculateDawnTime() {
   byte w = weekday()-1;
   if (w == 0) w = 7;
 
-  while ((alarmWeekDay & (1 << (alrmWeekDay - 1))) == 0) {
-    alrmWeekDay++;
-    if (alrmWeekDay == 8) alrmWeekDay = 1;
+  byte cnt = 0;
+  while (cnt < 2) {
+    cnt++;
+    while ((alarmWeekDay & (1 << (alrmWeekDay - 1))) == 0) {
+      alrmWeekDay++;
+      if (alrmWeekDay == 8) alrmWeekDay = 1;
+    }
+      
+    alrmHour = alarmHour[alrmWeekDay-1];
+    alrmMinute = alarmMinute[alrmWeekDay-1];
+  
+    // "Сегодня" время будильника уже прошло? 
+    if (alrmWeekDay == w && (h * 60L + w > alrmHour * 60L + alrmMinute)) {
+      alrmWeekDay++;
+    }
   }
-    
-  alrmHour = alarmHour[alrmWeekDay-1];
-  alrmMinute = alarmMinute[alrmWeekDay-1];
   
   // расчёт времени рассвета
   if (alrmMinute > dawnDuration) {                  // если минут во времени будильника больше продолжительности рассвета
@@ -825,7 +834,7 @@ void SetAutoMode(byte amode) {
     
     if (ef == 0) {
       // "Случайный" режим и далее автосмена
-      Serial.print(F(" демонcтрации эффектов:"));
+      Serial.print(F("демонcтрации эффектов:"));
       uint32_t cnt = CountTokens(s_tmp, ','); 
       ef = random(0, cnt - 1); 
     } else {
