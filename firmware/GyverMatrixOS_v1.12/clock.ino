@@ -77,9 +77,6 @@ void parseNTP() {
 
 void getNTP() {
   if (!wifi_connected) return;
-
-  WiFi.hostByName(ntpServerName, timeServerIP);
-
   sendNTPpacket(timeServerIP); // send an NTP packet to a time server
   // wait to see if a reply is available
   ntp_t = millis();

@@ -490,6 +490,9 @@ void setup() {
   // UDP-клиент на указанном порту
   udp.begin(localPort);
 
+  // IP адрес сервера времени
+  WiFi.hostByName(ntpServerName, timeServerIP);
+
   // Таймер бездействия
   if (idleTime == 0) // Таймер Idle  отключен
     idleTimer.setInterval(4294967295);
