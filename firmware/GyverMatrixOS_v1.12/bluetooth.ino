@@ -633,6 +633,7 @@ void parsing() {
             case 1:
               str.toCharArray(ntpServerName, 30);
               setNtpServer(str);
+              WiFi.hostByName(ntpServerName, timeServerIP);
               break;
             case 2:
               str.toCharArray(ssid, 24);
