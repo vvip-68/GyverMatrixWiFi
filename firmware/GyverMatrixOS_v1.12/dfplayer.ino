@@ -41,6 +41,7 @@ void printDetail(uint8_t type, int value){
       Serial.print(F("Number: "));
       Serial.print(value);
       Serial.println(F(". Play Finished!"));
+      if (!isPlayAlarmSound) dfPlayer.stop();
       break;
     case DFPlayerError:
       Serial.print(F("DFPlayerError:"));
@@ -109,7 +110,7 @@ void PlayAlarmSound() {
   int8_t sound = alarmSound;
   // Звук будильника - случайный?
   if (sound == 0) {
-    sound = random(1, alarmSoundsCount);     // -1 - нет звукаж 0 - случайный; 1..alarmSoundsCount - звук
+    sound = random(1, alarmSoundsCount);     // -1 - нет звука; 0 - случайный; 1..alarmSoundsCount - звук
   }
   // Установлен корректный звук?
   if (sound > 0) {
@@ -164,6 +165,8 @@ void StopSound(int duration) {
 
   if (duration <= 0) {
     dfPlayer.stop();
+    delay(100);
+    dfPlayer.volume(0);
     return;
   }
   

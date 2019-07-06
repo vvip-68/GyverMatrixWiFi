@@ -64,6 +64,7 @@ void bluetoothRoutine() {
       if (timeToSync) { ntp_cnt = 0; refresh_time = true; }
       if (timeToSync || (refresh_time && ntp_t == 0 && (ntp_cnt < 10 || !init_time))) {
         getNTP();
+        if (ntp_cnt >= 10) udp.flush();
       }
     }
 

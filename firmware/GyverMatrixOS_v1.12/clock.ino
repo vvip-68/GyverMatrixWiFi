@@ -601,9 +601,10 @@ void checkAlarmTime() {
     delay(0); // Для предотвращения ESP8266 Watchdog Timer
 
     // Если рассвет начинался и остановлен пользователем и время начала рассвета уже прошло - сбросить флаги, подготовив их к следующему циклу
-    if (isAlarmStopped && ((w * 1000L + h * 60L + m) > (alrmWeekDay * 1000L + alrmHour * 60L + alrmMinute))) {
+    if (isAlarmStopped && ((w * 1000L + h * 60L + m) > (alrmWeekDay * 1000L + alrmHour * 60L + alrmMinute + alarmDuration))) {
       isAlarming = false;
       isAlarmStopped = false;
+      StopSound(0);
     }
   }
   
