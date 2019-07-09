@@ -92,13 +92,13 @@ CRGB leds[NUM_LEDS];
 byte CLOCK_ORIENT = 0;     // 0 горизонтальные, 1 вертикальные
 
 // Макрос центрирования отображения часов на матрице
-#define CLOCK_X_H (byte(float(WIDTH - (4*3 + 3*1)) / 2 + 0.51)) // 4 цифры * (шрифт 3 пикс шириной) 3 + пробела между цифрами), /2 - в центр 
-#define CLOCK_Y_H (byte(float(HEIGHT - 1*5) / 2 + 0.51))        // Одна строка цифр 5 пикс высотой  / 2 - в центр
-#define CLOCK_X_V (byte(float(WIDTH - (2*3 + 1)) / 2 + 0.51))   // 2 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
-#define CLOCK_Y_V (byte(float(HEIGHT - (2*5 + 1)) / 2 + 0.51))  // Две строки цифр 5 пикс высотой + 1 пробел между строкми / 2 - в центр
+#define CLOCK_X_H (byte((WIDTH - float(4*3 + 3*1)) / 2 + 0.51))  // 4 цифры * (шрифт 3 пикс шириной) 3 + пробела между цифрами), /2 - в центр 
+#define CLOCK_Y_H (byte((HEIGHT - float(1*5)) / 2 + 0.51))       // Одна строка цифр 5 пикс высотой  / 2 - в центр
+#define CLOCK_X_V (byte((WIDTH - float(2*3 + 1)) / 2 + 0.51))    // 2 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
+#define CLOCK_Y_V (byte((HEIGHT - float(2*5 + 1)) / 20 + 0.51))  // Две строки цифр 5 пикс высотой + 1 пробел между строкми / 2 - в центр
 
-#define CAL_X (byte(float(WIDTH - (4*3 + 1)) / 2 ))             // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
-#define CAL_Y (byte(float(HEIGHT - (2*5 + 1)) / 2))             // Две строки цифр 5 пикс высотой + 1 пробел между строкми / 2 - в центр
+#define CAL_X (byte((WIDTH - float(4*3 + 1)) / 2.0 ))            // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
+#define CAL_Y (byte((HEIGHT - float(2*5 + 1)) / 2.0))            // Две строки цифр 5 пикс высотой + 1 пробел между строкми / 2 - в центр
 
 byte CALENDAR_X = CAL_X;
 byte CALENDAR_Y = CAL_Y;
@@ -512,8 +512,7 @@ void setup() {
   InitializeDfPlayer2();
   if (!isDfPlayerOk) Serial.println(F("MP3 плеер недоступен."));
 
-  if (CLOCK_X < 0) CLOCK_X = 0;
-  if (CLOCK_Y < 0) CLOCK_Y = 0;  
+  checkClockOrigin();
 
   /*
   butt.setDebounce(50);        // настройка антидребезга (по умолчанию 80 мс)
@@ -575,6 +574,7 @@ void startWiFi() {
         Serial.println(WiFi.localIP());
         break;
       }
+      ESP.wdtFeed();
       delay(1000);
       Serial.print(".");
     }
@@ -613,6 +613,7 @@ void startSoftAP() {
     
     WiFi.enableAP(false);
     WiFi.softAPdisconnect(true);
+    ESP.wdtFeed();
     delay(1000);
     
     Serial.print(".");

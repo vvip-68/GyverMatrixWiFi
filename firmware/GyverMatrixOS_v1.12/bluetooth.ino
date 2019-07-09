@@ -925,8 +925,7 @@ void parsing() {
                CLOCK_X = CLOCK_X_V;
                CLOCK_Y = CLOCK_Y_V;
              }
-             if (CLOCK_X < 0) CLOCK_X = 0;
-             if (CLOCK_Y < 0) CLOCK_Y = 0;
+             checkClockOrigin();
              saveClockOrientation(CLOCK_ORIENT);
              break;
            case 5:               // $19 5 X; - Режим цвета часов  X: 0 - горизонтально, 1 - вертикально

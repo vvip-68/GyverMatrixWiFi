@@ -213,7 +213,8 @@ void nextModeHandler() {
       thisMode = curMode++;
       if (thisMode >= MODES_AMOUNT) thisMode = 0;
       break;
-    }    
+    }  
+    ESP.wdtFeed();  
   }
   
   loadingFlag = true;
@@ -247,7 +248,8 @@ void prevModeHandler() {
       thisMode = curMode--;
       if (thisMode < 0) thisMode = MODES_AMOUNT - 1;
       break;
-    }    
+    }   
+    ESP.wdtFeed(); 
   }
   
   loadingFlag = true;

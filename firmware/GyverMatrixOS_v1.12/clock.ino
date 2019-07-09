@@ -211,8 +211,8 @@ void drawClock(byte hrs, byte mins, boolean dots, byte X, byte Y) {
   byte m01 = mins % 10;
   
   if (CLOCK_ORIENT == 0) {
-    if (h10 == 1 && m01 != 1) X--;
-    // 0 в часах невыводим, для центрирования сдвигаем остальные цифры влево на место нуля
+    if (h10 == 1 && m01 != 1 && X > 0) X--;
+    // 0 в часах не выводим, для центрирования сдвигаем остальные цифры влево на место нуля
     if (h10 > 0) 
       drawDigit3x5(h10, X + (h10 == 1 ? 1 : 0), Y, clockLED[0]); // шрифт 3x5 в котором 1 - по центру знакоместа - смещать вправо на 1 колонку
     else 
@@ -247,7 +247,7 @@ void drawClock(byte hrs, byte mins, boolean dots, byte X, byte Y) {
   }
 }
 
-// нарисовать часы
+// нарисовать дату календаря
 void drawCalendar(byte aday, byte amnth, int16_t ayear, boolean dots, byte X, byte Y) {
 
   // Число месяца
@@ -852,4 +852,23 @@ void SetAutoMode(byte amode) {
   }
   
   Serial.println();
+}
+
+void checkClockOrigin() {
+  if (CLOCK_X < 0) CLOCK_X = 0;
+  if (CLOCK_Y < 0) CLOCK_Y = 0;
+  
+  // ширина и высота отображения часов  
+  byte cw = CLOCK_ORIENT == 0 ? 4*3 + 3*1 : 2*3 + 1; // гориз: 4 цифры * (шрифт 3 пикс шириной) 3 + пробела между цифрами) // ширина горизонтальных часов
+                                                     // верт:  2 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами)  // ширина вертикальных часов
+  byte ch = CLOCK_ORIENT == 0 ? 1*5 : 2*5 + 1;       // гориз: Одна строка цифр 5 пикс высотой                             // высота горизонтальных часов
+                                                     // верт:  Две строки цифр 5 пикс высотой + 1 пробел между строкми     // высота вертикальных часовв
+  while (CLOCK_X > 0 && CLOCK_X + cw >= WIDTH)  CLOCK_X--;
+  while (CLOCK_Y > 0 && CLOCK_Y + ch >= HEIGHT) CLOCK_Y--;
+
+  cw = 4*3 + 1;                                     // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами)          // ширина календаря
+  ch = 2*5 + 1;                                     // Две строки цифр 5 пикс высотой + 1 пробел между строкми             // высота календаря
+  
+  while (CALENDAR_X > 0 && CALENDAR_X + cw >= WIDTH)  CALENDAR_X--; 
+  while (CALENDAR_Y > 0 && CALENDAR_Y + ch >= HEIGHT) CALENDAR_Y--;
 }
