@@ -52,7 +52,7 @@ CRGB clockLED[5] = {HOUR_COLOR, HOUR_COLOR, DOT_COLOR, MIN_COLOR, MIN_COLOR};
 
   // all NTP fields have been given values, now
   // you can send a packet requesting a timestamp:
-  udp.beginPacket(address, 123); //NTP requests are to port 123
+  udp.beginPacket(address, 123); // NTP requests are to port 123
   udp.write(packetBuffer, NTP_PACKET_SIZE);
   udp.endPacket();
 }
@@ -60,7 +60,6 @@ CRGB clockLED[5] = {HOUR_COLOR, HOUR_COLOR, DOT_COLOR, MIN_COLOR, MIN_COLOR};
 void parseNTP() {
     Serial.println(F("Разбор пакета NTP"));
     ntp_t = 0; ntp_cnt = 0; init_time = true; refresh_time = false;
-    //udp.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
     unsigned long highWord = word(incomeBuffer[40], incomeBuffer[41]);
     unsigned long lowWord = word(incomeBuffer[42], incomeBuffer[43]);
     // combine the four bytes (two words) into a long integer
