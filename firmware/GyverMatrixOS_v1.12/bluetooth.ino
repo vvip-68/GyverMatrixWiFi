@@ -1071,6 +1071,14 @@ void parsing() {
             break;
           case 1:  
             // $21 1 IP1 IP2 IP3 IP4 - установить статический IP адрес подключения к локальной WiFi сети, пример: $21 1 192 168 0 106
+            // Локальная сеть - 10.х.х.х или 172.16.х.х - 172.31.х.х или 192.168.х.х
+            // Если задан адрес не локальной сети - сбросить его в 0.0.0.0, что означает получение динамического адреса 
+            if (!(intData[2] == 10 || intData[2] == 172 && intData[3] >= 16 && intData[3] <= 31 || intData[2] == 192 && intData[3] == 168)) {
+              intData[2] = 0;
+              intData[3] = 0;
+              intData[4] = 0;
+              intData[5] = 0;
+            }
             saveStaticIP(intData[2], intData[3], intData[4], intData[5]);
             saveSettingsTimer.reset();
             break;
