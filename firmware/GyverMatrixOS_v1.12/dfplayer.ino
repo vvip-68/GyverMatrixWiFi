@@ -41,7 +41,9 @@ void printDetail(uint8_t type, int value){
       Serial.print(F("Number: "));
       Serial.print(value);
       Serial.println(F(". Play Finished!"));
-      if (!isPlayAlarmSound) dfPlayer.stop();
+      if (!(isAlarming || isPlayAlarmSound) && soundFolder == 0 && soundFile == 0) {
+        dfPlayer.stop();
+      }
       break;
     case DFPlayerError:
       Serial.print(F("DFPlayerError:"));
