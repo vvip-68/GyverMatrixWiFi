@@ -149,7 +149,7 @@ void rainbowDiagonalRoutine() {
   hue += 3;
   for (byte x = 0; x < WIDTH; x++) {
     for (byte y = 0; y < HEIGHT; y++) {
-      CRGB thisColor = CHSV((byte)(hue + (float)(WIDTH / HEIGHT * x + y) * (float)(255 / maxDim)), 255, 255);      
+      CRGB thisColor = CHSV((byte)(hue + (float)(WIDTH / HEIGHT * x + y) * (float)(255 / max(WIDTH, HEIGHT))), 255, 255);      
       drawPixelXY(x, y, thisColor); //leds[getPixelNumber(i, j)] = thisColor;
     }
   }

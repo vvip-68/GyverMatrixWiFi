@@ -20,6 +20,7 @@ const uint16_t maxSolves = MAZE_WIDTH * MAZE_WIDTH * 5;
 char *maze = (char*)malloc(MAZE_WIDTH * MAZE_HEIGHT * sizeof(char));
 int8_t playerPos[2];
 uint32_t labTimer;
+boolean mazeMode = false;
 
 void newGameMaze() {
   playerPos[0] = !SHIFT;

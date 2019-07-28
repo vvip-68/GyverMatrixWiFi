@@ -127,7 +127,9 @@ void doEffectWithOverlay(byte aMode) {
 }
 
 void customModes(byte aMode) {
-  
+
+  String text;
+
   switch (aMode) {    
     case DEMO_TEXT_0: 
       text = runningText == "" ? TEXT_1 : runningText; 
