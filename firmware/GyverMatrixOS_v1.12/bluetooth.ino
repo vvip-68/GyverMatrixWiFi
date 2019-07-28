@@ -735,7 +735,7 @@ void parsing() {
           if (!BTcontrol) BTcontrol = !isColorEffect(effect);                    // При установке эффекта дыхание / цвета / радуга пикс - переключаться в управление по BT не нужно
           loadingFlag = intData[1] == 0 && !isColorEffect(effect);
           effectsFlag = intData[1] == 0 || (intData[1] == 1 && intData[3] == 1); // выбор эффекта - сразу запускать           
-          if (effect == EFFECT_FILL_COLOR && globalColor == 0x000000) globalColor = 0xffffff;
+          if (effect == EFFECT_FILL_COLOR && globalColor == 0x000000) setGlobalColor(0xffffff);
         } else if (intData[1] == 2) {
           // Вкл/выкл использование эффекта в демо-режиме
           saveEffectUsage(effect, intData[3] == 1); 
@@ -1232,7 +1232,7 @@ void parsing() {
         if (parse_index == 1) {       // для второго (с нуля) символа в посылке
           if (parseMode == NORMAL) intData[parse_index] = string_convert.toInt();             // преобразуем строку в int и кладём в массив}
           if (parseMode == COLOR) {                                                           // преобразуем строку HEX в цифру
-            globalColor = (uint32_t)HEXtoInt(string_convert);           
+            setGlobalColor((uint32_t)HEXtoInt(string_convert));
             if (intData[0] == 0) {
               if (runningFlag && effectsFlag) effectsFlag = false;   
               incomingByte = ending;
@@ -1530,29 +1530,29 @@ void setSpecialMode(int spc_mode) {
     case 0:  // Черный экран (выкл);
       tmp_eff = EFFECT_FILL_COLOR;
       specialClock = false;
-      globalColor = 0x000000;
+      setGlobalColor(0x000000);
       specialBrightness = 0;
       isTurnedOff = true;
       break;
     case 1:  // Черный экран с часами;  
       tmp_eff = EFFECT_FILL_COLOR;
       specialClock = true;
-      globalColor = 0x000000;
+      setGlobalColor(0x000000);
       break;
     case 2:  // Белый экран (освещение);
       tmp_eff = EFFECT_FILL_COLOR;
       specialClock = false;
-      globalColor = 0xffffff;
+      setGlobalColor(0xffffff);
       break;
     case 3:  // Белый экран с часами;
       tmp_eff = EFFECT_FILL_COLOR;
       specialClock = true;
-      globalColor = 0xffffff;
+      setGlobalColor(0xffffff);
       break;
     case 4:  // Черный экран с часами минимальной яркости - ночной режим;
       tmp_eff = EFFECT_FILL_COLOR;
       specialClock = true;
-      globalColor = 0x000000;
+      setGlobalColor(0x000000);
       COLOR_MODE = 0; // Монохром, т.к все что не белоена миним. яркости черное, белое - красным.
       specialBrightness = 1;
       isNightClock = true;
@@ -1565,13 +1565,13 @@ void setSpecialMode(int spc_mode) {
       tmp_eff = EFFECT_FILL_COLOR;
       str = String(incomeBuffer).substring(6,12); // $14 6 00FFAA;
       specialClock = false;
-      globalColor = (uint32_t)HEXtoInt(str);
+      setGlobalColor((uint32_t)HEXtoInt(str));
       break;
     case 7:  // Экран указанного цвета с часами;
       tmp_eff = EFFECT_FILL_COLOR;
       str = String(incomeBuffer).substring(6,12); // $14 6 00FFAA;
       specialClock = true;
-      globalColor = (uint32_t)HEXtoInt(str);
+      setGlobalColor((uint32_t)HEXtoInt(str));
       break;
   }
 
@@ -1592,6 +1592,8 @@ void setSpecialMode(int spc_mode) {
       specialModeId = spc_mode;
     }
   }  
+  
+  setCurrentSpecMode(spc_mode);
 }
 
 void resetModes() {
@@ -1635,6 +1637,7 @@ void setEffect(byte eff) {
       }  
     }
   }
+  setCurrentSpecMode(-1);
 }
 
 void startGame(byte game, bool newGame, bool paused) {
@@ -1662,6 +1665,7 @@ void startGame(byte game, bool newGame, bool paused) {
       FastLED.show(); 
     }    
   }  
+  setCurrentSpecMode(-1);
 }
 
 void startRunningText() {
@@ -1670,9 +1674,10 @@ void startRunningText() {
     effectsFlag = false;
   }
   // Если при включении режима "Бегущая строка" цвет текста - черный -- включить белый, т.к черный на черном не видно
-  if (globalColor == 0x000000) globalColor = 0xffffff;
+  if (globalColor == 0x000000) setGlobalColor(0xffffff);
   if (!useAutoBrightness)
     FastLED.setBrightness(globalBrightness);    
+  setCurrentSpecMode(-1);
 }
 
 void showCurrentIP() {

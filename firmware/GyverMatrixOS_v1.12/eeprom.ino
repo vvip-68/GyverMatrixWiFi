@@ -1,6 +1,6 @@
-#define EEPROM_OK 0x5A                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
-#define EFFECT_EEPROM 150                  // начальная ячейка eeprom с параметрами эффектов
-#define GAME_EEPROM 230                    // начальная ячейка eeprom с параметрами игр
+#define EEPROM_OK 0x5F                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
+#define EFFECT_EEPROM 160                  // начальная ячейка eeprom с параметрами эффектов 3 байта на эффект, 25 эффектов)
+#define GAME_EEPROM 240                    // начальная ячейка eeprom с параметрами игр (2 байта на игру, 6 игр)
 
 void loadSettings() {
 
@@ -23,9 +23,9 @@ void loadSettings() {
   //   16 - Отображать с часами текущую дату 
   //   17 - Кол-во секунд отображения даты
   //   18 - Кол-во секунд отображения часов
-  //   19 - IP[0]
-  //   20 - IP[1]
-  //   21 - IP[2]
+  //   19 - globalColor R
+  //   20 - globalColor G
+  //   21 - globalColor B
   //   22 - Будильник, дни недели
   //   23 - Будильник, продолжительность "рассвета"
   //   24 - Будильник, эффект "рассвета"
@@ -43,7 +43,7 @@ void loadSettings() {
   //   36 - Режим 2 по времени - часы
   //   37 - Режим 2 по времени - минуты
   //   38 - Режим 2 по времени - ID эффекта или -1 - выключено; 0 - случайный;
-  //   39 - IP[3]
+  //   39 - Текущий спец-режим, чтобы при включении лампы если включен спец-режим - переключиться в него или -1 - не спец. режим
   //   40 - Будильник, время: понедельник : часы
   //   41 - Будильник, время: понедельник : минуты
   //   42 - Будильник, время: вторник : часы
@@ -63,12 +63,14 @@ void loadSettings() {
   //  80-103  - имя сети  WiFi       - 24 байта
   //  104-119 - пароль сети  WiFi    - 16 байт
   //  120-149 - имя NTP сервера      - 30 байт
-  //  150 - 150+(Nэфф*3)   - скорость эффекта
-  //  151 - 150+(Nэфф*3)+1 - 1 - оверлей часов разрешен; 0 - нет оверлея часов
-  //  152 - 150+(Nэфф*3)+2 - эффект в авторежиме: 1 - использовать; 0 - не использовать
+  //  150-153 - Статический IP адрес лампы  
+  //  154-169 - зарезервировано 
+  //  160 - 160+(Nэфф*3)   - скорость эффекта
+  //  161 - 160+(Nэфф*3)+1 - 1 - оверлей часов разрешен; 0 - нет оверлея часов
+  //  162 - 160+(Nэфф*3)+2 - эффект в авторежиме: 1 - использовать; 0 - не использовать
   // ....
-  //  230 - 100+(Nигр*2)   - скорость игры
-  //  230 - 100+(Nигр*2)+1 - использовать игру в демо-режиме
+  //  240 - 100+(Nигр*2)   - скорость игры
+  //  240 - 100+(Nигр*2)+1 - использовать игру в демо-режиме
 
   // Инициализировано ли EEPROM
   bool isInitialized = EEPROMread(0) == EEPROM_OK;  
@@ -105,6 +107,8 @@ void loadSettings() {
     alarmSound = getAlarmSound();
     dawnSound = getDawnSound();
     maxAlarmVolume = getMaxAlarmVolume();
+
+    globalColor = getGlobalColor();
 
     useSoftAP = getUseSoftAP();
     getSoftAPName().toCharArray(apName, 10);        //  54-63   - имя точки доступа    ( 9 байт макс) + 1 байт '\0'
@@ -156,6 +160,7 @@ void loadSettings() {
     maxAlarmVolume = 30;
     useAutoBrightness = false;
     autoBrightnessMin = 1;
+    globalColor = 0xFFFFFF;
 
     AM1_hour = 0;
     AM1_minute = 0;
@@ -206,6 +211,11 @@ void saveDefaults() {
   EEPROMwrite(16, showDateInClock ? 1 : 0);
   EEPROMwrite(17, showDateDuration);
   EEPROMwrite(18, showDateInterval);
+
+  // globalColor = 0xFFFFFF
+  EEPROMwrite(19, 0xFF);
+  EEPROMwrite(20, 0xFF);
+  EEPROMwrite(21, 0xFF);
   
   saveAlarmParams(alarmWeekDay,dawnDuration,alarmEffect);
   for (byte i=0; i<7; i++) {
@@ -224,6 +234,7 @@ void saveDefaults() {
   EEPROMwrite(36, AM2_hour);            // Режим 2 по времени - часы
   EEPROMwrite(37, AM2_minute);          // Режим 2 по времени - минуты
   EEPROMwrite(38, (byte)AM2_effect_id); // Режим 2 по времени - действие: -5 - выключено; -4 - выключить матрицу (черный экран); -3 - ночные часы, -2 - камин с часами, -1 - бегущая строка, 0 - случайныйб 1 и далее - эффект ALARM_LIST
+  EEPROMwrite(39, (byte)-1);            // Текущий спец-режим - это не спец-режим
   
   // Настройки по умолчанию для эффектов
   int addr = EFFECT_EEPROM;
@@ -245,10 +256,10 @@ void saveDefaults() {
   strcpy(ntpServerName, DEFAULT_NTP_SERVER);
   setNtpServer(String(ntpServerName));
 
-  EEPROMwrite(19, IP_STA[0]);
-  EEPROMwrite(20, IP_STA[1]);
-  EEPROMwrite(21, IP_STA[2]);
-  EEPROMwrite(39, IP_STA[3]);
+  EEPROMwrite(150, IP_STA[0]);
+  EEPROMwrite(151, IP_STA[1]);
+  EEPROMwrite(152, IP_STA[2]);
+  EEPROMwrite(153, IP_STA[3]);
 
   eepromModified = true;
 }
@@ -806,11 +817,22 @@ void setAM2effect(int8_t effect) {
   }
 }
 
+int8_t getCurrentSpecMode() {
+  return (int8_t)EEPROMread(39);
+}
+
+void setCurrentSpecMode(int8_t mode) {
+  if (mode != getCurrentSpecMode()) {
+    EEPROMwrite(39, (byte)mode);
+    eepromModified = true;
+  }
+}
+
 void loadStaticIP() {
-  IP_STA[0] = EEPROMread(19);
-  IP_STA[1] = EEPROMread(20);
-  IP_STA[2] = EEPROMread(21);
-  IP_STA[3] = EEPROMread(39);
+  IP_STA[0] = EEPROMread(150);
+  IP_STA[1] = EEPROMread(151);
+  IP_STA[2] = EEPROMread(152);
+  IP_STA[3] = EEPROMread(153);
 }
 
 void saveStaticIP(byte p1, byte p2, byte p3, byte p4) {
@@ -819,11 +841,30 @@ void saveStaticIP(byte p1, byte p2, byte p3, byte p4) {
     IP_STA[1] = p2;
     IP_STA[2] = p3;
     IP_STA[3] = p4;
-    EEPROMwrite(19, p1);
-    EEPROMwrite(20, p2);
-    EEPROMwrite(21, p3);
-    EEPROMwrite(39, p4);
+    EEPROMwrite(150, p1);
+    EEPROMwrite(151, p2);
+    EEPROMwrite(152, p3);
+    EEPROMwrite(153, p4);
     eepromModified = true;  
+  }
+}
+
+uint32_t getGlobalColor() {
+  byte r,g,b;
+  r = EEPROMread(19);
+  g = EEPROMread(20);
+  b = EEPROMread(21);
+  return (uint32_t)r<<16 | (uint32_t)g<<8 | (uint32_t)b;
+}
+
+void setGlobalColor(uint32_t color) {
+  globalColor = color;
+  if (color != getGlobalColor()) {
+    CRGB cl = CRGB(color);
+    EEPROMwrite(19, cl.r); // R
+    EEPROMwrite(20, cl.g); // G
+    EEPROMwrite(21, cl.b); // B
+    eepromModified = true;
   }
 }
 

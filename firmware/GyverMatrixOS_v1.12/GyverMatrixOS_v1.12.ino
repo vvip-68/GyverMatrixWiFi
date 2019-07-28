@@ -509,6 +509,9 @@ void setup() {
   TEXT_3 = String(F("светодиодах"));
 
   brightness_filter.setCoef(0.1); // установка коэффициента фильтрации (0.0... 1.0). Чем меньше, тем плавнее фильтр  
+
+  int8_t spc_mode = getCurrentSpecMode();
+  if (spc_mode >= 0 && spc_mode <= 7) setSpecialMode(spc_mode);
 }
 
 void loop() {  
