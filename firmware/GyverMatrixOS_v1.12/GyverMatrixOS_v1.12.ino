@@ -6,9 +6,13 @@
 // Дальнейшее развитие: vvip, 2019
 // https://AlexGyAver.ru/
 
-// GyverMatrixOS
-// Версия прошивки 1.12, совместима с приложением GyverMatrixWiFi версии 1.13 и выше
-// поддерживает микроконтроллеры на базе ESP8266 (NodeMCU, Wemos D1)
+// ************************ ХАКИ *************************
+
+// Рекомендуется увеличить размер стека ESP8266:
+// В файле C:\Users\AlVa\AppData\Local\Arduino15\packages\esp8266\hardware\esp8266\2.5.2\cores\esp8266\cont.h
+// #ifndef CONT_STACKSIZE
+// #define CONT_STACKSIZE 6144
+// #endif
 
 // ************************ МАТРИЦА *************************
 
@@ -92,13 +96,13 @@ CRGB leds[NUM_LEDS];
 byte CLOCK_ORIENT = 0;     // 0 горизонтальные, 1 вертикальные
 
 // Макрос центрирования отображения часов на матрице
-#define CLOCK_X_H (byte((WIDTH - float(4*3 + 3*1)) / 2 + 0.51))  // 4 цифры * (шрифт 3 пикс шириной) 3 + пробела между цифрами), /2 - в центр 
-#define CLOCK_Y_H (byte((HEIGHT - float(1*5)) / 2 + 0.51))       // Одна строка цифр 5 пикс высотой  / 2 - в центр
-#define CLOCK_X_V (byte((WIDTH - float(2*3 + 1)) / 2 + 0.51))    // 2 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
-#define CLOCK_Y_V (byte((HEIGHT - float(2*5 + 1)) / 20 + 0.51))  // Две строки цифр 5 пикс высотой + 1 пробел между строкми / 2 - в центр
+#define CLOCK_X_H (byte((WIDTH - (4*3 + 3*1)) / 2.0 + 0.51))  // 4 цифры * (шрифт 3 пикс шириной) 3 + пробела между цифрами), /2 - в центр 
+#define CLOCK_Y_H (byte((HEIGHT - (1*5)) / 2.0 + 0.51))       // Одна строка цифр 5 пикс высотой  / 2 - в центр
+#define CLOCK_X_V (byte((WIDTH - (2*3 + 1)) / 2.0 + 0.51))    // 2 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
+#define CLOCK_Y_V (byte((HEIGHT - (2*5 + 1)) / 2.0 + 0.51))   // Две строки цифр 5 пикс высотой + 1 пробел между строкми / 2 - в центр
 
-#define CAL_X (byte((WIDTH - float(4*3 + 1)) / 2.0 ))            // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
-#define CAL_Y (byte((HEIGHT - float(2*5 + 1)) / 2.0))            // Две строки цифр 5 пикс высотой + 1 пробел между строкми / 2 - в центр
+#define CAL_X (byte((WIDTH - (4*3 + 1)) / 2.0))               // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами) /2 - в центр
+#define CAL_Y (byte((HEIGHT - (2*5 + 1)) / 2.0))              // Две строки цифр 5 пикс высотой + 1 пробел между строкми / 2 - в центр
 
 byte CALENDAR_X = CAL_X;
 byte CALENDAR_Y = CAL_Y;
@@ -373,7 +377,7 @@ timerMinim fadeSoundTimer(4294967295);   // Таймер плавного вкл
 timerMinim autoBrightnessTimer(500);     // Таймер отслеживания показаний датчика света при включенной авторегулировки яркости матрицы
 timerMinim saveSettingsTimer(30000);     // Таймер отложенного сохранения настроек
 
-#define DEFAULT_NTP_SERVER "time.nist.gov" // NTP сервер по умолчанию
+#define DEFAULT_NTP_SERVER "ru.pool.ntp.org" // NTP сервер по умолчанию "time.nist.gov"
 
 #define DEFAULT_AP_NAME "MatrixAP"       // Имя точки доступа по умолчанию 
 #define DEFAULT_AP_PASS "12341234"       // Пароль точки доступа по умолчанию
@@ -427,8 +431,7 @@ byte fadeSoundStepCounter = 0;       // счетчик шагов изменен
 #define PIN_BTN D6                   // кнопка подключена сюда (PIN --- КНОПКА --- GND)
 #include "GyverButton.h"
 
-GButton butt(PIN_BTN);                         // Физическая кнопка
-//GButton butt(PIN_BTN, LOW_PULL, NORM_OPEN);  // Сенсорная кнопка TTP223
+GButton butt(PIN_BTN);               // Физическая кнопка
 
 #define HOLD_TIMEOUT 2000            // Время удержания кнопки перед выполнением действия ( + debounce time) суммарно - около 3 сек
 bool isButtonHold = false;           // Кнопка нажата и удерживается
@@ -458,8 +461,6 @@ void setup() {
   Serial.begin(115200);
   delay(10);
   
-  Serial.println();
-  
   EEPROM.begin(256);
   loadSettings();
 
@@ -470,28 +471,10 @@ void setup() {
      
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
 
-  // Подключиться к WiFi сети
-  startWiFi();
-
-  // Если режим точки тоступане используется и к WiFi сети подключиться не удалось- создать точку доступа
-  if (!wifi_connected){
-    WiFi.mode(WIFI_AP);
-    startSoftAP();
-  }
-
-  if (useSoftAP && !ap_connected) startSoftAP();    
-
-  // Сообщить UDP порт, на который ожидаются подключения
-  if (wifi_connected || ap_connected) {
-    Serial.print(F("UDP-сервер на порту "));
-    Serial.println(localPort);
-  }
+  connectToNetwork();
 
   // UDP-клиент на указанном порту
   udp.begin(localPort);
-
-  // IP адрес сервера времени
-  WiFi.hostByName(ntpServerName, timeServerIP);
 
   // Таймер бездействия
   if (idleTime == 0) // Таймер Idle  отключен
@@ -526,22 +509,11 @@ void setup() {
   TEXT_3 = String(F("светодиодах"));
 
   brightness_filter.setCoef(0.1); // установка коэффициента фильтрации (0.0... 1.0). Чем меньше, тем плавнее фильтр  
-
-  // Рассчитать время начала рассвета
-  calculateDawnTime();
 }
-
-unsigned long t = millis();
 
 void loop() {  
   bluetoothRoutine();
   ESP.wdtFeed();
-  /*
-  if (millis() - t > 5000) {
-    t = millis();
-    Serial.println(String(F("Free memory:")) + String(ESP.getFreeHeap()));
-  }
-  */
 }
 
 // -----------------------------------------
@@ -623,4 +595,30 @@ void startSoftAP() {
   
   if (!ap_connected) 
     Serial.println(F("Не удалось создать WiFi точку доступа."));
+}
+
+void printNtpServerName() {
+  Serial.print(F("NTP-сервер "));
+  Serial.print(ntpServerName);
+  Serial.print(F(" -> "));
+  Serial.println(timeServerIP);
+}
+
+void connectToNetwork() {
+  // Подключиться к WiFi сети
+  startWiFi();
+
+  // Если режим точки тоступане используется и к WiFi сети подключиться не удалось - создать точку доступа
+  if (!wifi_connected){
+    WiFi.mode(WIFI_AP);
+    startSoftAP();
+  }
+
+  if (useSoftAP && !ap_connected) startSoftAP();    
+
+  // Сообщить UDP порт, на который ожидаются подключения
+  if (wifi_connected || ap_connected) {
+    Serial.print(F("UDP-сервер на порту "));
+    Serial.println(localPort);
+  }
 }

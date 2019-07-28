@@ -51,7 +51,7 @@ void bluetoothRoutine() {
   if (!parseStarted) {                          
 
     if (wifi_connected && useNtp) {
-      if (ntp_t > 0 && millis() - ntp_t > 3000) {
+      if (ntp_t > 0 && millis() - ntp_t > 5000) {
         Serial.println(F("Таймаут NTP запроса!"));
         ntp_t = 0;
         ntp_cnt++;
@@ -64,7 +64,15 @@ void bluetoothRoutine() {
       if (timeToSync) { ntp_cnt = 0; refresh_time = true; }
       if (timeToSync || (refresh_time && ntp_t == 0 && (ntp_cnt < 10 || !init_time))) {
         getNTP();
-        if (ntp_cnt >= 10) udp.flush();
+        if (ntp_cnt >= 10) {
+          if (init_time) {
+            udp.flush();
+          } else {
+            //ESP.restart();
+            ntp_cnt = 0;
+            connectToNetwork();
+          }
+        }        
       }
     }
 
@@ -634,7 +642,9 @@ void parsing() {
             case 1:
               str.toCharArray(ntpServerName, 30);
               setNtpServer(str);
-              WiFi.hostByName(ntpServerName, timeServerIP);
+              if (wifi_connected) {
+                refresh_time = true; ntp_t = 0; ntp_cnt = 0;
+              }
               break;
             case 2:
               str.toCharArray(ssid, 24);

@@ -37,7 +37,9 @@ CRGB clockLED[5] = {HOUR_COLOR, HOUR_COLOR, DOT_COLOR, MIN_COLOR, MIN_COLOR};
   Serial.print(F("Отправка NTP пакета на сервер "));
   Serial.println(ntpServerName);
   // set all bytes in the buffer to 0
-  memset(packetBuffer, 0, NTP_PACKET_SIZE);
+  // memset(packetBuffer, 0, NTP_PACKET_SIZE);
+  for (byte i=0; i<NTP_PACKET_SIZE; i++) packetBuffer[i] = 0;
+  
   // Initialize values needed to form NTP request
   // (see URL above for details on the packets)
   packetBuffer[0] = 0b11100011;   // LI, Version, Mode
@@ -76,6 +78,9 @@ void parseNTP() {
 
 void getNTP() {
   if (!wifi_connected) return;
+  WiFi.hostByName(ntpServerName, timeServerIP);
+  if (!timeServerIP.isSet()) timeServerIP.fromString(F("80.240.216.155"));  // Один из ru.pool.ntp.org // 195.3.254.2
+  printNtpServerName();
   sendNTPpacket(timeServerIP); // send an NTP packet to a time server
   // wait to see if a reply is available
   ntp_t = millis();
@@ -862,12 +867,12 @@ void checkClockOrigin() {
                                                      // верт:  2 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами)  // ширина вертикальных часов
   byte ch = CLOCK_ORIENT == 0 ? 1*5 : 2*5 + 1;       // гориз: Одна строка цифр 5 пикс высотой                             // высота горизонтальных часов
                                                      // верт:  Две строки цифр 5 пикс высотой + 1 пробел между строкми     // высота вертикальных часовв
-  while (CLOCK_X > 0 && CLOCK_X + cw >= WIDTH)  CLOCK_X--;
-  while (CLOCK_Y > 0 && CLOCK_Y + ch >= HEIGHT) CLOCK_Y--;
+  while (CLOCK_X > 0 && CLOCK_X + cw > WIDTH)  CLOCK_X--;
+  while (CLOCK_Y > 0 && CLOCK_Y + ch > HEIGHT) CLOCK_Y--;
 
   cw = 4*3 + 1;                                     // 4 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами)          // ширина календаря
   ch = 2*5 + 1;                                     // Две строки цифр 5 пикс высотой + 1 пробел между строкми             // высота календаря
   
-  while (CALENDAR_X > 0 && CALENDAR_X + cw >= WIDTH)  CALENDAR_X--; 
-  while (CALENDAR_Y > 0 && CALENDAR_Y + ch >= HEIGHT) CALENDAR_Y--;
+  while (CALENDAR_X > 0 && CALENDAR_X + cw > WIDTH)  CALENDAR_X--; 
+  while (CALENDAR_Y > 0 && CALENDAR_Y + ch > HEIGHT) CALENDAR_Y--;
 }
