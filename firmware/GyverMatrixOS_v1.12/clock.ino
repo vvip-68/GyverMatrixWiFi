@@ -505,6 +505,8 @@ void calculateDawnTime() {
       alrmWeekDay++;
     }
   }
+
+  // Serial.printf("Alarm: h:%d m:%d wd:%d\n", alrmWeekDay, alrmHour, alrmMinute);
   
   // расчёт времени рассвета
   if (alrmMinute > dawnDuration) {                  // если минут во времени будильника больше продолжительности рассвета
@@ -521,6 +523,8 @@ void calculateDawnTime() {
     }
     dawnMinute = 60 - (dawnDuration - alrmMinute);  // находим минуту рассвета в новом часе
   }
+
+  // Serial.printf("Dawn: h:%d m:%d wd:%d\n", dawnWeekDay, dawnHour, dawnMinute);
 
   Serial.print(String(F("Следующий рассвет в "))+String(dawnHour)+ F(":") + String(dawnMinute));
   switch(dawnWeekDay) {
