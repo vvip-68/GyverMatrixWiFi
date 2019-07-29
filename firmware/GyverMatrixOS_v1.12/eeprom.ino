@@ -266,6 +266,8 @@ void saveDefaults() {
 
 void saveSettings() {
 
+  saveSettingsTimer.reset();
+
   if (!eepromModified) return;
   
   // Поставить отметку, что EEPROM инициализировано параметрами эффектов
@@ -273,7 +275,7 @@ void saveSettings() {
   
   EEPROM.commit();
   Serial.println(F("Настройки сохранены в EEPROM"));
-  
+
   eepromModified = false;
 }
 

@@ -696,7 +696,8 @@ void parsing() {
                   alarmMinute[i] = alarmMinuteVal;
                   setAlarmTime(i+1, alarmHourVal, alarmMinuteVal);
                 }
-  
+                // Незамедлительно сохранить настройки будильника
+                saveSettings();
                 // Рассчитать время начала рассвета будильника
                 calculateDawnTime();            
               }
@@ -1045,7 +1046,7 @@ void parsing() {
             break;
           case 5:
             if (isDfPlayerOk && soundFolder > 0) {
-             // $20 5 VV; - установит уровень громкости проигрывания примеров (когда уже играет)
+             // $20 5 VV; - установить уровень громкости проигрывания примеров (когда уже играет)
              //    VV - уровень громкости
              maxAlarmVolume = constrain(intData[2],0,30);
              dfPlayer.volume(maxAlarmVolume);
@@ -1132,7 +1133,7 @@ void parsing() {
         if (AM2_effect_id < -5) AM2_effect_id = -5;
         setAM2params(AM2_hour, AM2_minute, AM2_effect_id);
 
-        saveSettingsTimer.reset();
+        saveSettings();
         sendPageParams(10);
         break;
     }
