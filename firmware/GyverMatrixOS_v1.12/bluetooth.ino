@@ -1480,13 +1480,13 @@ void sendPageParams(int page) {
       cmd96 = str;
       break;
     case 97:  // Запрос списка эффектов для будильника
-      str="$18 LA:[" + String(ALARM_LIST).substring(0,UDP_PACKET_MAX_SIZE-12); + "];"; 
+      str="$18 LA:[" + String(ALARM_LIST).substring(0,UDP_PACKET_MAX_SIZE-12) + "];"; 
       break;
     case 98:  // Запрос списка игр
-      str="$18 LG:[" + String(GAME_LIST).substring(0,UDP_PACKET_MAX_SIZE-12); + "];"; 
+      str="$18 LG:[" + String(GAME_LIST).substring(0,UDP_PACKET_MAX_SIZE-12) + "];"; 
       break;
     case 99:  // Запрос списка эффектов
-      str="$18 LE:[" + String(EFFECT_LIST).substring(0,UDP_PACKET_MAX_SIZE-12); + "];"; 
+      str="$18 LE:[" + String(EFFECT_LIST).substring(0,UDP_PACKET_MAX_SIZE-12) + "];"; 
       break;
   }
   
