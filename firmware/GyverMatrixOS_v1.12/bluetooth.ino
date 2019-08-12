@@ -31,14 +31,14 @@ void bluetoothRoutine() {
     } else {
       byte tmp_effect = mapModeToEffect(thisMode);
       if (tmp_effect != 255) {
-        s_tmp = String(EFFECT_LIST);    
+        s_tmp = String(EFFECT_LIST).substring(0,UDP_PACKET_MAX_SIZE);
         s_tmp = GetToken(s_tmp, tmp_effect+1, ',');
         Serial.print(F("Включен эффект "));
         Serial.println("'" + s_tmp + "'");
       } else {
         byte tmp_game = mapModeToGame(thisMode);
         if (tmp_game != 255) {
-          s_tmp = String(GAME_LIST);    
+          s_tmp = String(GAME_LIST).substring(0,UDP_PACKET_MAX_SIZE);;    
           s_tmp = GetToken(s_tmp, tmp_game+1, ',');
           Serial.print(F("Включена игра "));
           Serial.println("'" + s_tmp + "'");
@@ -372,9 +372,9 @@ String pntPart[WIDTH];      // массив разобранной входно�
 // ********************* ПРИНИМАЕМ ДАННЫЕ **********************
 void parsing() {
 // ****************** ОБРАБОТКА *****************
-  String str;
+  String str, str1, str2;
   byte b_tmp;
-  int8_t tmp_eff;
+  int8_t tmp_eff, idx;
 
   byte alarmDay;
   byte alarmHourVal;
@@ -582,23 +582,32 @@ void parsing() {
         str = pictureLine.substring(0, b_tmp);
         pntY = str.toInt();
         pictureLine = pictureLine.substring(b_tmp+1);
-        
-        pictureLine.toCharArray(incomeBuffer, pictureLine.length()+1);
-        pch = strtok (incomeBuffer,"|");
+
         pntIdx = 0;
-        while (pch != NULL)
+        idx = pictureLine.indexOf("|");
+        while (idx>0)
         {
-          pntPart[pntIdx++] = String(pch);
-          pch = strtok (NULL, "|");
+          str = pictureLine.substring(0, idx);
+          pictureLine = pictureLine.substring(idx+1);
+          
+          pntPart[pntIdx++] = str;
+          idx = pictureLine.indexOf("|");
+
+          if (idx<0 && pictureLine.length()>0) {
+            pntPart[pntIdx++] = pictureLine;  
+          }          
+          delay(0);
         }
-        
+
         for (int i=0; i<pntIdx; i++) {
           str = pntPart[i];
-          str.toCharArray(buf, str.length()+1);
+          idx = str.indexOf(" ");
+          str1 = str.substring(0, idx);
+          str2 = str.substring(idx+1);
 
-          pntColor=HEXtoInt(String(strtok(buf," ")));
-          pntX=atoi(strtok(NULL," "));
-
+          pntColor=HEXtoInt(str1);
+          pntX=str2.toInt();
+          
           // начало картинки - очистить матрицу
           if (pntX == 0 && pntY == 0) {
             FastLED.clear(); 
@@ -606,6 +615,7 @@ void parsing() {
           }
           
           drawPixelXY(pntX, HEIGHT - pntY - 1, gammaCorrection(pntColor));
+          delay(0);
         }
 
         // Выводить построчно для ускорения вывода на экран
@@ -1470,13 +1480,13 @@ void sendPageParams(int page) {
       cmd96 = str;
       break;
     case 97:  // Запрос списка эффектов для будильника
-      str="$18 LA:[" + String(ALARM_LIST) + "];"; 
+      str="$18 LA:[" + String(ALARM_LIST).substring(0,UDP_PACKET_MAX_SIZE-12); + "];"; 
       break;
     case 98:  // Запрос списка игр
-      str="$18 LG:[" + String(GAME_LIST) + "];"; 
+      str="$18 LG:[" + String(GAME_LIST).substring(0,UDP_PACKET_MAX_SIZE-12); + "];"; 
       break;
     case 99:  // Запрос списка эффектов
-      str="$18 LE:[" + String(EFFECT_LIST) + "];"; 
+      str="$18 LE:[" + String(EFFECT_LIST).substring(0,UDP_PACKET_MAX_SIZE-12); + "];"; 
       break;
   }
   

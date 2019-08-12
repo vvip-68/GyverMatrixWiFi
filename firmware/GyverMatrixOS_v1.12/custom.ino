@@ -46,7 +46,7 @@
   Рисунки и анимации:
     loadImage(<название массива>);    // основная функция вывода картинки
     imageRoutine();                   // пример использования
-    animation();                      // пример анимации
+    animation(<n>);                   // пример анимации
 */
 
 // ************************* СВОЙ СПИСОК РЕЖИМОВ ************************
@@ -168,9 +168,13 @@ void customModes(byte aMode) {
     case DEMO_FLAPPY:              flappyRoutine(); break;
     case DEMO_ARKANOID:            arkanoidRoutine(); break;
     case DEMO_CLOCK:               clockRoutine(); break;
-    case DEMO_ANIMATION:           animation(); break;
     case DEMO_DAWN_ALARM:          dawnProcedure(); break;
     case DEMO_FILL_COLOR:          fillColorProcedure(); break;
+    case DEMO_ANIMATION_1:         animation(1); break;
+    case DEMO_ANIMATION_2:         animation(2); break;
+    case DEMO_ANIMATION_3:         animation(3); break;
+    case DEMO_ANIMATION_4:         animation(4); break;
+    case DEMO_ANIMATION_5:         animation(5); break;
 
     // Специальные режимы - доступные только для вызова из эффекта рассвета - dawnProcedure()
     case DEMO_DAWN_ALARM_SPIRAL:   dawnLampSpiral(); break;
@@ -202,7 +206,9 @@ void nextModeHandler() {
   byte aCnt = 0;
   byte curMode = thisMode;
 
-  while (aCnt < MODES_AMOUNT) {
+  
+  loadingFlag = true;
+  autoplayTimer = millis();  while (aCnt < MODES_AMOUNT) {
     // Берем следующий режим по циклу режимов
     aCnt++; thisMode++;  
     if (thisMode >= MODES_AMOUNT) thisMode = 0;
@@ -218,9 +224,7 @@ void nextModeHandler() {
     }  
     ESP.wdtFeed();  
   }
-  
-  loadingFlag = true;
-  autoplayTimer = millis();
+
   setTimersForMode(thisMode);
 
   byte tmp_effect = mapModeToEffect(thisMode);  
@@ -423,9 +427,13 @@ byte mapEffectToMode(byte effect) {
     case EFFECT_NOISE_ZEBRA:         tmp_mode = DEMO_NOISE_ZEBRA;  break;         // zebraNoise();
     case EFFECT_NOISE_FOREST:        tmp_mode = DEMO_NOISE_FOREST; break;         // forestNoise();
     case EFFECT_NOISE_OCEAN:         tmp_mode = DEMO_NOISE_OCEAN; break;          // oceanNoise();
-    case EFFECT_ANIMATION:           tmp_mode = DEMO_ANIMATION; break;            // animation();
     case EFFECT_DAWN_ALARM:          tmp_mode = DEMO_DAWN_ALARM; break;           // dawnProcedure();
     case EFFECT_FILL_COLOR:          tmp_mode = DEMO_FILL_COLOR; break;           // fillColorProcedure();
+    case EFFECT_ANIMATION_1:         tmp_mode = DEMO_ANIMATION_1; break;          // animation(1);
+    case EFFECT_ANIMATION_2:         tmp_mode = DEMO_ANIMATION_2; break;          // animation(2);
+    case EFFECT_ANIMATION_3:         tmp_mode = DEMO_ANIMATION_3; break;          // animation(3);
+    case EFFECT_ANIMATION_4:         tmp_mode = DEMO_ANIMATION_4; break;          // animation(4);
+    case EFFECT_ANIMATION_5:         tmp_mode = DEMO_ANIMATION_5; break;          // animation(5);
     
     // Нет соответствия - выполняются для текущего режима thisMode
     case EFFECT_BREATH:              // Дыхание
@@ -460,7 +468,11 @@ byte mapEffectToModeCode(byte effect) {
     case EFFECT_NOISE_ZEBRA:         tmp_mode = MC_NOISE_ZEBRA;  break;         // zebraNoise();
     case EFFECT_NOISE_FOREST:        tmp_mode = MC_NOISE_FOREST; break;         // forestNoise();
     case EFFECT_NOISE_OCEAN:         tmp_mode = MC_NOISE_OCEAN; break;          // oceanNoise();
-    case EFFECT_ANIMATION:           tmp_mode = MC_IMAGE; break;                // animation();
+    case EFFECT_ANIMATION_1:         tmp_mode = MC_IMAGE; break;                // animation(1);
+    case EFFECT_ANIMATION_2:         tmp_mode = MC_IMAGE; break;                // animation(2);
+    case EFFECT_ANIMATION_3:         tmp_mode = MC_IMAGE; break;                // animation(3);
+    case EFFECT_ANIMATION_4:         tmp_mode = MC_IMAGE; break;                // animation(4);
+    case EFFECT_ANIMATION_5:         tmp_mode = MC_IMAGE; break;                // animation(5);
     case EFFECT_DAWN_ALARM:          tmp_mode = MC_DAWN_ALARM; break;           // dawnProcedure();
     case EFFECT_FILL_COLOR:          tmp_mode = MC_FILL_COLOR; break;           // fillColorProcedure();
 
@@ -512,9 +524,13 @@ byte mapModeToEffect(byte aMode) {
     case DEMO_RAINBOW_DIAG:         tmp_effect = EFFECT_RAINBOW_DIAG; break;        // rainbowDiagonalRoutine();
     case DEMO_FIRE:                 tmp_effect = EFFECT_FIRE;  break;               // fireRoutine()
     case DEMO_CLOCK:                tmp_effect = EFFECT_CLOCK;  break;              // clockRoutine()
-    case DEMO_ANIMATION:            tmp_effect = EFFECT_ANIMATION; break;           // animation();
     case DEMO_DAWN_ALARM:           tmp_effect = EFFECT_DAWN_ALARM; break;          // alarmProcedure();
     case DEMO_FILL_COLOR:           tmp_effect = EFFECT_FILL_COLOR; break;          // fillColorProcedure();
+    case DEMO_ANIMATION_1:          tmp_effect = EFFECT_ANIMATION_1; break;         // animation(1);
+    case DEMO_ANIMATION_2:          tmp_effect = EFFECT_ANIMATION_2; break;         // animation(2);
+    case DEMO_ANIMATION_3:          tmp_effect = EFFECT_ANIMATION_3; break;         // animation(3);
+    case DEMO_ANIMATION_4:          tmp_effect = EFFECT_ANIMATION_4; break;         // animation(4);
+    case DEMO_ANIMATION_5:          tmp_effect = EFFECT_ANIMATION_5; break;         // animation(5);
 
     case DEMO_TEXT_0 :  break;      // Бегущий текст
     case DEMO_TEXT_1 :  break;      // Бегущий текст
@@ -552,9 +568,13 @@ byte mapModeToGame(byte aMode) {
     case DEMO_RAINBOW:              break;       // rainbowRoutine();
     case DEMO_RAINBOW_DIAG:         break;       // rainbowDiagonalRoutine();
     case DEMO_FIRE:                 break;       // fireRoutine()
-    case DEMO_ANIMATION:            break;       // animation();
     case DEMO_DAWN_ALARM:           break;       // dawnProcedure(); 
     case DEMO_FILL_COLOR:           break;       // fillColorProcedure(); 
+    case DEMO_ANIMATION_1:          break;       // animation(1);
+    case DEMO_ANIMATION_2:          break;       // animation(2);
+    case DEMO_ANIMATION_3:          break;       // animation(3);
+    case DEMO_ANIMATION_4:          break;       // animation(4);
+    case DEMO_ANIMATION_5:          break;       // animation(5);
     
     case DEMO_TEXT_0:               break;       // Бегущий текст
     case DEMO_TEXT_1:               break;       // Бегущий текст
@@ -574,14 +594,15 @@ byte mapModeToGame(byte aMode) {
 
 // Соответствие индекса в списке эффектов, доступных в качестве будильника индексам списка известных эффектов
 byte mapAlarmToEffect(byte alrmIdx) {
-  //                              0        1     2                  3     4          5            6         7        8      9           10          11     12   13     14                15                 16    17          18             19       20 
-  //                0       1     2        3     4      5           6     7          8       9   10        11       12     13           14          15     16   17     18                19                 20    21          22             23       24      25
-  // ALARM_LIST  F(              "Снегопад,Шарик,Радуга,            Огонь,The Matrix,Шарики,     Звездопад,Конфетти,Радуга диагональная,Цветной шум,Облака,Лава,Плазма,Радужные переливы,Полосатые переливы,Зебра,Шумящий лес,Морской прибой,Анимация,Рассвет")
-  // EFFECT_LIST F("Дыхание,Цвета,Снегопад,Шарик,Радуга,Радуга пикс,Огонь,The Matrix,Шарики,Часы,Звездопад,Конфетти,Радуга диагональная,Цветной шум,Облака,Лава,Плазма,Радужные переливы,Полосатые переливы,Зебра,Шумящий лес,Морской прибой,Анимация,Рассвет,Лампа")
+  //                              0        1     2                  3     4          5            6         7        8      9           10          11     12   13     14                15                 16    17          18             19    20      21         22         23         24         25 
+  //                0       1     2        3     4      5           6     7          8      9    10        11       12     13           14          15     16   17     18                19                 20    21          22             23    24      25         26         27         28         29
+  // ALARM_LIST  F("              Снегопад,Шарик,Радуга,            Огонь,The Matrix,Шарики,     Звездопад,Конфетти,Радуга диагональная,Цветной шум,Облака,Лава,Плазма,Радужные переливы,Полосатые переливы,Зебра,Шумящий лес,Морской прибой,      Рассвет,Анимация 1,Анимация 2,Анимация 3,Анимация 4,Анимация 5")
+  // EFFECT_LIST F("Дыхание,Цвета,Снегопад,Шарик,Радуга,Радуга пикс,Огонь,The Matrix,Шарики,Часы,Звездопад,Конфетти,Радуга диагональная,Цветной шум,Облака,Лава,Плазма,Радужные переливы,Полосатые переливы,Зебра,Шумящий лес,Морской прибой,Лампа,Рассвет,Анимация 1,Анимация 2,Анимация 3,Анимация 4,Анимация 5")
   // const byte ALARM_LIST_IDX[] PROGMEM = {EFFECT_SNOW, EFFECT_BALL, EFFECT_RAINBOW, EFFECT_FIRE, EFFECT_MATRIX, EFFECT_BALLS,
   //                                        EFFECT_STARFALL, EFFECT_SPARKLES, EFFECT_RAINBOW_DIAG, EFFECT_NOISE_MADNESS, EFFECT_NOISE_CLOUD,
   //                                        EFFECT_NOISE_LAVA, EFFECT_NOISE_PLASMA, EFFECT_NOISE_RAINBOW, EFFECT_NOISE_RAINBOW_STRIP, 
-  //                                        EFFECT_NOISE_ZEBRA, EFFECT_NOISE_FOREST, EFFECT_NOISE_OCEAN, EFFECT_ANIMATION, EFFECT_DAWN_ALARM};
+  //                                        EFFECT_NOISE_ZEBRA, EFFECT_NOISE_FOREST, EFFECT_NOISE_OCEAN, EFFECT_DAWN_ALARM, 
+  //                                        EFFECT_ANIMATION_1, EFFECT_ANIMATION_2, EFFECT_ANIMATION_3, EFFECT_ANIMATION_4, EFFECT_ANIMATION_5};
   return pgm_read_byte(&(ALARM_LIST_IDX[alrmIdx]));
 }
 

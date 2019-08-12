@@ -108,28 +108,67 @@ void imageRoutine() {
   }
 }
 
-void animation() {
+void animation(byte n) {
+  // "n" - индекс в наюоре анимаций (подготовленных картинок) 
   if (loadingFlag) {
     loadingFlag = false;
     modeCode = MC_IMAGE;
   }
   bool isReady = gifTimer.isReady();
   if (isReady) {
-    frameNum++;
-    if (frameNum >= 4) frameNum = 0;
-    switch (frameNum) {
-      case 0:
-        loadImage(frame00);
-        break;
+    switch (n) {
       case 1:
-        loadImage(frame01);
+        // EFFECT_ANIMATION_1 
+        doAnimation1(frameNum);
+        frameNum++;
+        if (frameNum >= 4) frameNum = 0;
         break;
       case 2:
-        loadImage(frame02);
+        // EFFECT_ANIMATION_2 
+        doAnimation2(frameNum);
+        frameNum++;
+        if (frameNum >= 4) frameNum = 0;
         break;
       case 3:
-        loadImage(frame03);
+        // EFFECT_ANIMATION_3 
+        doAnimation3(frameNum);
+        frameNum++;
+        if (frameNum >= 4) frameNum = 0;
+        break;
+      case 4:
+        // EFFECT_ANIMATION_4 
+        doAnimation4(frameNum);
+        frameNum++;
+        if (frameNum >= 4) frameNum = 0;
+        break;
+      case 5:
+        // EFFECT_ANIMATION_5 
+        doAnimation5(frameNum);
+        frameNum++;
+        if (frameNum >= 4) frameNum = 0;
         break;
     }
   }  
 }
+
+void doAnimation1(byte frame) {
+  switch (frame) {
+    case 0:
+      loadImage(frame00);
+      break;
+    case 1:
+      loadImage(frame01);
+      break;
+    case 2:
+      loadImage(frame02);
+      break;
+    case 3:
+      loadImage(frame03);
+      break;
+  }
+}
+
+void doAnimation2(byte frame) { doAnimation1(frame); } // Заглушка чтобы что-то показывалось, пока нет других наборов анимации
+void doAnimation3(byte frame) { doAnimation1(frame); } // Заглушка чтобы что-то показывалось, пока нет других наборов анимации
+void doAnimation4(byte frame) { doAnimation1(frame); } // Заглушка чтобы что-то показывалось, пока нет других наборов анимации
+void doAnimation5(byte frame) { doAnimation1(frame); } // Заглушка чтобы что-то показывалось, пока нет других наборов анимации
