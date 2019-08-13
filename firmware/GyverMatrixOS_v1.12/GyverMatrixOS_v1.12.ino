@@ -150,10 +150,6 @@ byte COLOR_MODE = 0;
 //                               2 - радужная смена (часы, точки, минуты)
 //                               3 - заданные цвета (часы, точки, минуты) - HOUR_COLOR, DOT_COLOR, MIN_COLOR в clock.ino
 
-// не забудьте указать количество режимов для корректного переключения с последнего на первый
-// количество кастомных режимов (которые переключаются сами или кнопкой)
-#define MODES_AMOUNT 31   
-
 // Порядок следования эффектов и игр в демо-режиме (см. customModes() в custom.ino) ID с 0 до MODES_AMOUNT-1
 // Если требуется изменить порядок следования эффектов в демо-режиме - (а также добавить/удалить режимы) - редактируйте
 // последовательность тут. Наличие - тут и в customModes() в custom.ino
@@ -188,11 +184,16 @@ byte COLOR_MODE = 0;
 #define DEMO_FILL_COLOR         28  // Заливка матрицы одним цветом
 #define DEMO_DAWN_ALARM         29  // Режим эффекта будильника "Рассвет"
 // ---------------------------------
-#define DEMO_ANIMATION_1        31
-#define DEMO_ANIMATION_2        32
-#define DEMO_ANIMATION_3        33
-#define DEMO_ANIMATION_4        34
-#define DEMO_ANIMATION_5        35
+#define DEMO_ANIMATION_1        30
+#define DEMO_ANIMATION_2        31
+#define DEMO_ANIMATION_3        32
+#define DEMO_ANIMATION_4        33
+#define DEMO_ANIMATION_5        34
+
+// не забудьте указать количество режимов для корректного переключения с последнего на первый
+// количество кастомных режимов (которые переключаются сами или кнопкой)
+#define MODES_AMOUNT 35
+
 // ---------------------------------
 #define DEMO_DAWN_ALARM_SPIRAL 253  // Специальный режим, вызывается из DEMO_DAWN_ALARM для ламп на круговой матрице - огонек по спирали
 #define DEMO_DAWN_ALARM_SQUARE 254  // Специальный режим, вызывается из DEMO_DAWN_ALARM для плоских матриц - огонек по спирали на плоскости матрицы

@@ -1,4 +1,4 @@
-#define UDP_PACKET_MAX_SIZE  512
+#define UDP_PACKET_MAX_SIZE 1024
 #define PARSE_AMOUNT 8          // максимальное количество значений в массиве, который хотим получить
 #define header '$'              // стартовый символ
 #define divider ' '             // разделительный символ
@@ -11,9 +11,9 @@ boolean recievedFlag;
 byte lastMode = 0;
 boolean parseStarted;
 String pictureLine;
-char incomeBuffer[UDP_PACKET_MAX_SIZE];        // Буфер для приема строки команды из wifi udp сокета
 char replyBuffer[7];                           // ответ клиенту - подтверждения получения команды: "ack;/r/n/0"
-
+char incomeBuffer[UDP_PACKET_MAX_SIZE];        // Буфер для приема строки команды из wifi udp сокета. Также буфер используется для отправки строк в смартфон
+                                               // Строка со списком эффектов может быть длинной, плюс кириллица в UTF занимает 2 байта - буфер должен быть большим.
 unsigned long ackCounter = 0;
 String receiveText = "", s_tmp = "";
 byte tmpSaveMode = 0;
@@ -38,10 +38,13 @@ void bluetoothRoutine() {
       } else {
         byte tmp_game = mapModeToGame(thisMode);
         if (tmp_game != 255) {
-          s_tmp = String(GAME_LIST).substring(0,UDP_PACKET_MAX_SIZE);;    
+          s_tmp = String(GAME_LIST).substring(0,UDP_PACKET_MAX_SIZE);
           s_tmp = GetToken(s_tmp, tmp_game+1, ',');
           Serial.print(F("Включена игра "));
           Serial.println("'" + s_tmp + "'");
+        } else {
+          Serial.print(F("Включен режим "));
+          Serial.println(thisMode);
         }
       }
     }
@@ -856,14 +859,17 @@ void parsing() {
         saveAutoplay(AUTOPLAY);
 
         if (!BTcontrol) {
+          if (runningFlag) loadingFlag = true;       
+          // если false - при переключении с эффекта бегущий текст на демо-режим "бегущий текст" текст демо режима не сначала, а с позиции где бежал текст эффекта
+          // если true - текст начинает бежать сначала, потом плавно затухает на смену режима и потом опять начинает сначала.
+          // И так и так не хорошо. Как починить? 
+          
           runningFlag = false;
           controlFlag = false;      // После начала игры пока не трогаем кнопки - игра автоматическая 
           drawingFlag = false;
           gamemodeFlag = false;
           gamePaused = false;
-          loadingFlag = true;       // если false - при переключении с эффекта бегущий текст на демо-режим "бегущий текст" текст демо режима не сначала, а с позиции где бежал текст эффекта
-                                    // если true - текст начинает бежать сначала, потом плавно затухает на смену режима и потом опять начинает сначала.
-                                    // И так и так не хорошо. Как починить? 
+          specialMode = false;
         } else {
           // Если при переключении в ручной режим был демонстрационный режим бегущей строки - включить ручной режим бегщей строки
           if (intData[1] == 0 || (intData[1] == 1 && (thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2))) {

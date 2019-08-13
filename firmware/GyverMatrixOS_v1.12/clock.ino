@@ -94,10 +94,10 @@ boolean overlayAllowed() {
 
   // В играх оверлея часов нет;
   if (gamemodeFlag) return false;
-    
+  
   // Оверлей разрешен текущими параметрами спец.режима?
   if (specialMode) return specialClock;
-  
+
   // Оверлей разрешен общими настройками часов? 
   bool allowed = getClockOverlayEnabled();
   
@@ -113,16 +113,17 @@ boolean overlayAllowed() {
   if (allowed && BTcontrol && effectsFlag && !(isColorEffect(effect) || effect == MC_CLOCK)) {
     allowed = getEffectClock(effect);   
   }
-  
+    
   // Если в режиме авто - найти соответствие номера отображаемого режима номеру эффекта и проверить - разрешен ли для него оверлей часов
   if (allowed && !BTcontrol) {
     byte tmp_effect = mapModeToEffect(thisMode);
-    if (tmp_effect <= MAX_EFFECT) 
+    if (tmp_effect <= MAX_EFFECT) {
       allowed = getEffectClock(tmp_effect);   
-    else
+    } else {
       allowed = false;  
+    }
   }
-
+  
   return allowed;
 #else
   return false;
@@ -429,7 +430,10 @@ void contrastClockC(){
     CRGB color = -CRGB(globalColor);
     for (byte i = 0; i < 5; i++) clockLED[i] = color;  
   } else {  
-    for (byte i = 0; i < 5; i++) clockLED[i] = CONTRAST_COLOR_3;  
+    CRGB color = CONTRAST_COLOR_3;
+    CRGB gc = CRGB(globalColor);
+    if (color == gc) color = -color;
+    for (byte i = 0; i < 5; i++) clockLED[i] = color;  
   }
 }
 

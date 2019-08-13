@@ -83,6 +83,7 @@ void doEffectWithOverlay(byte aMode) {
 #if (OVERLAY_CLOCK == 1)
     bool loadFlag2;
     bool needOverlay = modeCode != MC_TEXT && overlayAllowed();
+
     if (needOverlay) {
       if (!loadingFlag && needUnwrap()) {
         if (showDateInClock && showDateState) {
@@ -97,7 +98,7 @@ void doEffectWithOverlay(byte aMode) {
       if (loadingFlag) loadFlag2 = true;
     }
 #endif
-
+    
     customModes(aMode);                // режимы крутятся, пиксели мутятся
 
     if (millis() - showDateStateLastChange > (showDateState ? showDateDuration : showDateInterval) * 1000L) {
@@ -206,9 +207,10 @@ void nextModeHandler() {
   byte aCnt = 0;
   byte curMode = thisMode;
 
-  
   loadingFlag = true;
-  autoplayTimer = millis();  while (aCnt < MODES_AMOUNT) {
+  autoplayTimer = millis();  
+  
+  while (aCnt < MODES_AMOUNT) {
     // Берем следующий режим по циклу режимов
     aCnt++; thisMode++;  
     if (thisMode >= MODES_AMOUNT) thisMode = 0;
@@ -216,7 +218,7 @@ void nextModeHandler() {
     // Если новый режим отмечен флагом "использовать" - используем его, иначе берем следующий (и проверяем его)
     if (getUsageForMode(thisMode)) break;
     
-    // Если перебрали все и ни у адного нет флага "использовать" - не обращаем внимание на флаг, используем следующий
+    // Если перебрали все и ни у одного нет флага "использовать" - не обращаем внимание на флаг, используем следующий
     if (aCnt >= MODES_AMOUNT) {
       thisMode = curMode++;
       if (thisMode >= MODES_AMOUNT) thisMode = 0;
