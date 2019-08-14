@@ -355,7 +355,7 @@ void checkIdleState() {
 #if (SMOOTH_CHANGE == 1)
   modeFader();
 #endif
-  
+
   if (idleState) {
     if (fullTextFlag && SHOW_TEXT_ONCE) {
       fullTextFlag = false;
@@ -363,7 +363,7 @@ void checkIdleState() {
       if (AUTOPLAY) nextMode();
     }
     
-    if (millis() - autoplayTimer > autoplayTime && AUTOPLAY) {    // таймер смены режима
+    if ((millis() - autoplayTimer > autoplayTime) && AUTOPLAY) {    // таймер смены режима
       if (modeCode == MC_TEXT && SHOW_FULL_TEXT) {    // режим текста
         if (fullTextFlag) {
           fullTextFlag = false;
@@ -376,8 +376,8 @@ void checkIdleState() {
       }
     }
   } else {
-    if (idleTimer.isReady() && modeCode != MC_CLOCK) {      // таймер холостого режима. 
-      idleState = true;                                     // Если находимся в режиме часов - автоматически из Idle в демо-режим не переходить 
+    if (idleTimer.isReady()) {                  // таймер холостого режима. 
+      idleState = true;
       autoplayTimer = millis();
       gameDemo = true;
 
@@ -395,7 +395,7 @@ void checkIdleState() {
       AUTOPLAY = true;
       
       FastLED.clear();
-      FastLED.show();
+      FastLED.show();      
     }
   }  
 }

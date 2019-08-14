@@ -829,17 +829,21 @@ void SetAutoMode(byte amode) {
     startRunningText();
     
   } else {
+
     Serial.print(F("включение режима "));    
     // Если режим включения == 0 - случайный режим и автосмена по кругу
-    AUTOPLAY = ef == 0;
-    if (!AUTOPLAY) {
-      // Таймер возврата в авторежим отключен    
-      idleTimer.setInterval(4294967295);
-      idleTimer.reset();
-    }
-    
+    idleTimer.setInterval(ef == 0 ? idleTime : 4294967295); 
+    idleTimer.reset();
+
     resetModes();  
 
+    AUTOPLAY = ef == 0;
+    if (AUTOPLAY) {
+      autoplayTimer = millis();
+      idleState = true;
+      BTcontrol = false;
+    }
+    
     String s_tmp = String(ALARM_LIST);
     
     if (ef == 0) {
