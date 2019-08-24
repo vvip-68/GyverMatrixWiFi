@@ -20,7 +20,7 @@ void loadImage(const uint16_t (*frame)) {
 }
 
 void animation(byte n) {
-  // "n" - индекс в наюоре анимаций (подготовленных картинок)
+  // "n" - индекс в наборе анимаций (подготовленных картинок)
   if (loadingFlag) {
     loadingFlag = false;
     modeCode = MC_IMAGE;
