@@ -45,8 +45,8 @@ void animation(byte n) {
         break;
       case 4:
         // EFFECT_ANIMATION_4
-        loadImage(iron_array[frameNum]);
-        if (++frameNum >= sizeof(iron_array) / sizeof(iron_array[0])) frameNum = 0;
+        loadImage(ironMan_array[frameNum]);
+        if (++frameNum >= sizeof(ironMan_array) / sizeof(ironMan_array[0])) frameNum = 0;
         break;
       case 5:
         // EFFECT_ANIMATION_5
