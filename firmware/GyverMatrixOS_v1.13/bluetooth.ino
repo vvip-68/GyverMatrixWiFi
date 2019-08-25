@@ -136,7 +136,7 @@ void bluetoothRoutine() {
       }
     }
     
-    // Один из режимов игры. На игры эффекты не налагаются
+    // Один из режимов игры. На игры эффекты не накладываются
     else if (gamemodeFlag && (!gamePaused || loadingFlag) && !isAlarming) {
       // Для игр отключаем бегущую строку и эффекты
       effectsFlag = false;
