@@ -91,8 +91,8 @@ void refreshDfPlayerFiles() {
     cnt++;
     delay(100);
     Serial.print(F("."));
-  } while ((val = 0 || new_val == 0 || val != new_val) && cnt < 5);
-  alarmSoundsCount = val;
+  } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 5);
+  alarmSoundsCount = val < 0 ? 0 : val;
   
   // Папка с файлами для рассвета
   cnt = 0, val = 0, new_val = 0; 
@@ -103,12 +103,15 @@ void refreshDfPlayerFiles() {
     cnt++;
     delay(100);
     Serial.print(F("."));
-  } while ((val = 0 || new_val == 0 || val != new_val) && cnt < 5);    
-  dawnSoundsCount = val;
+  } while ((val == 0 || new_val == 0 || val != new_val) && cnt < 5);    
+  dawnSoundsCount = val < 0 ? 0 : val;
   Serial.println();  
 }
 
 void PlayAlarmSound() {
+  
+  if (!isDfPlayerOk) return;
+
   int8_t sound = alarmSound;
   // Звук будильника - случайный?
   if (sound == 0) {
@@ -134,6 +137,9 @@ void PlayAlarmSound() {
 }
 
 void PlayDawnSound() {
+  
+  if (!isDfPlayerOk) return;
+
   // Звук рассвета отключен?
   int8_t sound = dawnSound;
   // Звук рассвета - случайный?
@@ -162,6 +168,8 @@ void PlayDawnSound() {
 }
 
 void StopSound(int duration) {
+
+  if (!isDfPlayerOk) return;
   
   isPlayAlarmSound = false;
 
