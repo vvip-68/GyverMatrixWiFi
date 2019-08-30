@@ -1160,49 +1160,45 @@ void parsing() {
   }
 
   // ****************** ПАРСИНГ *****************
-  haveIncomeData = false;
 
+  // Если предыдущий буфер еще не разобран - новых данных из сокета не читаем, продолжаем разбор уже считанного буфера
+  haveIncomeData = bufIdx > 0 && bufIdx < packetSize; 
   if (!haveIncomeData) {
+    packetSize = udp.parsePacket();      
+    haveIncomeData = packetSize > 0;      
+  
+    if (haveIncomeData) {                
+      // read the packet into packetBuffer
+      int len = udp.read(incomeBuffer, UDP_PACKET_MAX_SIZE);
+      if (len > 0) {          
+        incomeBuffer[len]=0;
+      }
+      bufIdx = 0;
+      
+      delay(0);            // ESP8266 при вызове delay отпрабатывает стек IP протокола, дадим ему поработать        
 
-    // Если предыдущий буфер еще не разобран - новых данных из сокета не читаем, продолжаем разбор уже считанного буфера
-    haveIncomeData = bufIdx > 0 && bufIdx < packetSize; 
-    if (!haveIncomeData) {
-      packetSize = udp.parsePacket();      
-      haveIncomeData = packetSize > 0;      
-    
-      if (haveIncomeData) {                
-        // read the packet into packetBufffer
-        int len = udp.read(incomeBuffer, UDP_PACKET_MAX_SIZE);
-        if (len > 0) {          
-          incomeBuffer[len] =0;
-        }
-        bufIdx = 0;
-        
-        delay(0);            // ESP8266 при вызове delay отпрабатывает стек IP протокола, дадим ему поработать        
-
-        Serial.print(F("UDP пакeт размером "));
-        Serial.print(packetSize);
-        Serial.print(F(" от "));
-        IPAddress remote = udp.remoteIP();
-        for (int i = 0; i < 4; i++) {
-          Serial.print(remote[i], DEC);
-          if (i < 3) {
-            Serial.print(F("."));
-          }
-        }
-        Serial.print(F(", порт "));
-        Serial.println(udp.remotePort());
-        if (udp.remotePort() == localPort) {
-          Serial.print(F("Содержимое: "));
-          Serial.println(incomeBuffer);
+      Serial.print(F("UDP пакeт размером "));
+      Serial.print(packetSize);
+      Serial.print(F(" от "));
+      IPAddress remote = udp.remoteIP();
+      for (int i = 0; i < 4; i++) {
+        Serial.print(remote[i], DEC);
+        if (i < 3) {
+          Serial.print(F("."));
         }
       }
-
-      // NTP packet from time server
-      if (haveIncomeData && udp.remotePort() == 123) {
-        parseNTP();
-        haveIncomeData = false;
+      Serial.print(F(", порт "));
+      Serial.println(udp.remotePort());
+      if (udp.remotePort() == localPort) {
+        Serial.print(F("Содержимое: "));
+        Serial.println(incomeBuffer);
       }
+    }
+
+    // NTP packet from time server
+    if (haveIncomeData && udp.remotePort() == 123) {
+      parseNTP();
+      haveIncomeData = false;
     }
 
     if (haveIncomeData) {         
