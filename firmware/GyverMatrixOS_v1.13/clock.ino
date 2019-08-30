@@ -644,7 +644,7 @@ void checkAlarmTime() {
   delay(0); // Для предотвращения ESP8266 Watchdog Timer
 
   //Плавное изменение громкости будильника
-  if (fadeSoundTimer.isReady()) {
+  if (fadeSoundTimer.isReady() && isDfPlayerOk) {
     if (fadeSoundDirection > 0) {
       // увеличение громкости
       dfPlayer.volumeUp();
@@ -664,9 +664,8 @@ void checkAlarmTime() {
         StopSound(0);
       }
     }
-  }
-  
-  delay(0); // Для предотвращения ESP8266 Watchdog Timer    
+    delay(0); // Для предотвращения ESP8266 Watchdog Timer    
+  }  
 }
 
 void stopAlarm() {

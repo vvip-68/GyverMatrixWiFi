@@ -308,7 +308,7 @@ void bluetoothRoutine() {
     }
 
     // Есть ли изменение статуса MP3-плеера?
-    if (dfPlayer.available()) {
+    if (USE_MP3 == 1 && dfPlayer.available()) {
 
       // Вывести детали об изменении статуса в лог
       byte msg_type = dfPlayer.readType();      
@@ -686,8 +686,10 @@ void parsing() {
               // HHx   - часы дня недели x (1-пн..7-вс)
               // MMx   - минуты дня недели x (1-пн..7-вс)
               //
-              // Остановить будильнтк, если он сработал
-              dfPlayer.stop();
+              // Остановить будильник, если он сработал
+              if (isDfPlayerOk) { 
+                dfPlayer.stop();
+              }
               soundFolder = 0;
               soundFile = 0;
               isAlarming = false;
