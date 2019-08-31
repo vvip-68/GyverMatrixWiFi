@@ -1160,7 +1160,7 @@ void parsing() {
   }
 
   // ****************** ПАРСИНГ *****************
-
+  
   // Если предыдущий буфер еще не разобран - новых данных из сокета не читаем, продолжаем разбор уже считанного буфера
   haveIncomeData = bufIdx > 0 && bufIdx < packetSize; 
   if (!haveIncomeData) {
@@ -1171,7 +1171,7 @@ void parsing() {
       // read the packet into packetBuffer
       int len = udp.read(incomeBuffer, UDP_PACKET_MAX_SIZE);
       if (len > 0) {          
-        incomeBuffer[len]=0;
+        incomeBuffer[len] = 0;
       }
       bufIdx = 0;
       
@@ -1199,34 +1199,37 @@ void parsing() {
     if (haveIncomeData && udp.remotePort() == 123) {
       parseNTP();
       haveIncomeData = false;
+      bufIdx = 0;
     }
-
-    if (haveIncomeData) {         
-      if (parseMode == TEXT) {                         // если нужно принять строку - принимаем всю
-          // Из за ошибки в компоненте UdpSender в Thunkable - теряются половина отправленных 
-          // символов, если их кодировка - двухбайтовый UTF8, т.к. оно вычисляет длину строки без учета двухбайтовости
-          // Чтобы символы не терялись - при отправке строки из андроид-программы, она добивается с конца пробелами
-          // Здесь эти конечные пробелы нужно предварительно удалить
-          while (packetSize > 0 && incomeBuffer[packetSize-1] == ' ') packetSize--;
-          incomeBuffer[packetSize] = 0;
-
-          // Оставшийся буфер преобразуем с строку
-          if (intData[0] == 5) {  // строка картинки
-            pictureLine = String(&incomeBuffer[bufIdx]);
-          } else if (intData[0] == 6) {  // текст
-            receiveText = String(&incomeBuffer[bufIdx]);
-            receiveText.trim();
-          }
-                    
-          incomingByte = ending;                       // сразу завершаем парс
-          parseMode = NORMAL;
-          bufIdx = 0; 
-          packetSize = 0;                              // все байты из входящего пакета обработаны
-        } else {
-          incomingByte = incomeBuffer[bufIdx++];       // обязательно ЧИТАЕМ входящий символ
-        } 
-     }       
   }
+
+  if (haveIncomeData) {         
+    
+    // Из за ошибки в компоненте UdpSender в Thunkable - теряются половина отправленных 
+    // символов, если их кодировка - двухбайтовый UTF8, т.к. оно вычисляет длину строки без учета двухбайтовости
+    // Чтобы символы не терялись - при отправке строки из андроид-программы, она добивается с конца пробелами
+    // Здесь эти конечные пробелы нужно предварительно удалить
+    while (packetSize > 0 && incomeBuffer[packetSize-1] == ' ') packetSize--;
+    incomeBuffer[packetSize] = 0;
+
+    if (parseMode == TEXT) {                         // если нужно принять строку - принимаем всю
+
+        // Оставшийся буфер преобразуем с строку
+        if (intData[0] == 5) {  // строка картинки
+          pictureLine = String(&incomeBuffer[bufIdx]);
+        } else if (intData[0] == 6) {  // текст
+          receiveText = String(&incomeBuffer[bufIdx]);
+          receiveText.trim();
+        }
+                  
+        incomingByte = ending;                       // сразу завершаем парс
+        parseMode = NORMAL;
+        bufIdx = 0; 
+        packetSize = 0;                              // все байты из входящего пакета обработаны
+      } else { 
+        incomingByte = incomeBuffer[bufIdx++];       // обязательно ЧИТАЕМ входящий символ
+      } 
+   }       
   
   if (haveIncomeData) {
 
@@ -1276,6 +1279,7 @@ void parsing() {
       parseMode == NORMAL;
       parseStarted = false;                         // сброс
       recievedFlag = true;                          // флаг на принятие
+      bufIdx = 0;
     }
 
     if (bufIdx >= packetSize) {                     // Весь буфер разобран 
