@@ -73,6 +73,14 @@ void loadSettings() {
   //  200 - 200+(Nэфф*3)+1 - 1 - оверлей часов разрешен; 0 - нет оверлея часов
   //  200 - 200+(Nэфф*3)+2 - эффект в авторежиме: 1 - использовать; 0 - не использовать
 
+  // Сначала инициализируем имя сети/точки доступа, пароли и имя NTP-сервера значениями по умолчанию.
+  // Ниже, если EEPROM уже инициализирован - из него будут загружены актуальные значения
+  strcpy(apName, DEFAULT_AP_NAME);
+  strcpy(apPass, DEFAULT_AP_PASS);
+  strcpy(ssid, NETWORK_SSID);
+  strcpy(pass, NETWORK_PASS);
+  strcpy(ntpServerName, DEFAULT_NTP_SERVER);    
+
   // Инициализировано ли EEPROM
   bool isInitialized = EEPROMread(0) == EEPROM_OK;  
     
@@ -168,14 +176,7 @@ void loadSettings() {
     AM1_effect_id = -5;
     AM2_hour = 0;
     AM2_minute = 0;
-    AM2_effect_id = -5;
-    
-    strcpy(apName, DEFAULT_AP_NAME);
-    strcpy(apPass, DEFAULT_AP_PASS);
-    strcpy(ssid, NETWORK_SSID);
-    strcpy(pass, NETWORK_PASS);
-
-    strcpy(ntpServerName, DEFAULT_NTP_SERVER);    
+    AM2_effect_id = -5;    
   }
 
   scrollTimer.setInterval(scrollSpeed);
