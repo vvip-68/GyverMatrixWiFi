@@ -511,6 +511,11 @@ void dawnProcedure() {
     b_tmp = DEVICE_TYPE == 0 ? DEMO_DAWN_ALARM_SPIRAL : DEMO_DAWN_ALARM_SQUARE;
   }
 
+  // Если эффект "Лампа" и цвет - черный (остался от "выключено" - цвет лампы - белый
+  if (b_tmp == MC_FILL_COLOR && globalColor == 0) {
+     globalColor = 0xFFFFFF;          
+  }
+
   // Спец.режимы так же как и обычные вызываются в customModes (DEMO_DAWN_ALARM_SPIRAL и DEMO_DAWN_ALARM_SQUARE)
   customModes(b_tmp);
 
@@ -732,8 +737,12 @@ void fillColorProcedure() {
     loadingFlag = false;
   }
 
-  if (specialMode) 
-    FastLED.setBrightness(specialBrightness);  
+  byte bright =
+    isAlarming && !isAlarmStopped 
+    ? dawnBrightness
+    : (specialMode ? specialBrightness : globalBrightness);
+
+  FastLED.setBrightness(bright);  
   
   fillAll(gammaCorrection(globalColor));    
 }
