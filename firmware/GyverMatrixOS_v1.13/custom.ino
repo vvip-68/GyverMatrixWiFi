@@ -245,16 +245,16 @@ void prevModeHandler() {
 
   while (aCnt < MODES_AMOUNT) {
     // Берем предыдущий режим по циклу режимов
-    aCnt++; thisMode--;  
-    if (thisMode < 0) thisMode = MODES_AMOUNT - 1;
+    aCnt++; thisMode--; // thisMode: byte => при переполнении вернет 255 
+    if (thisMode >= MODES_AMOUNT) thisMode = MODES_AMOUNT - 1;
 
     // Если новый режим отмечен флагом "использовать" - используем его, иначе берем следующий (и проверяем его)
     if (getUsageForMode(thisMode)) break;
     
     // Если перебрали все и ни у адного нет флага "использовать" - не обращаем внимание на флаг, используем следующий
     if (aCnt >= MODES_AMOUNT) {
-      thisMode = curMode--;
-      if (thisMode < 0) thisMode = MODES_AMOUNT - 1;
+      thisMode = curMode--; // thisMode: byte => при переполнении вернет 255
+      if (thisMode >= MODES_AMOUNT) thisMode = MODES_AMOUNT - 1;
       break;
     }   
     ESP.wdtFeed(); 
