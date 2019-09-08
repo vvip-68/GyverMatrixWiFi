@@ -233,6 +233,8 @@ void nextModeHandler() {
   byte tmp_game = mapModeToGame(thisMode);
   gamemodeFlag = tmp_game != 255;
   effectsFlag = tmp_effect != 255;
+  if (gamemodeFlag) game = tmp_game;
+  if (effectsFlag) effect = tmp_effect;
 
   FastLED.clear();
   FastLED.show();
@@ -268,6 +270,8 @@ void prevModeHandler() {
   byte tmp_game = mapModeToGame(thisMode);
   gamemodeFlag = tmp_game != 255;
   effectsFlag = tmp_effect != 255;
+  if (gamemodeFlag) game = tmp_game;
+  if (effectsFlag) effect = tmp_effect;
   
   FastLED.clear();
   FastLED.show();

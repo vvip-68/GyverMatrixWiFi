@@ -153,12 +153,11 @@ void bluetoothRoutine() {
       effects();
       
     } else {
-      
       // Сформировать и вывести на матрицу текущий демо-режим
-      if (!BTcontrol || effectsFlag || isAlarming) 
-        customRoutine();
-      else if (BTcontrol && effectsFlag && isColorEffect(effect)) {
+      if(effectsFlag && isColorEffect(effect) && !isAlarming) {      
         effects();  
+      } else {
+        customRoutine();
       }      
     }            
 
@@ -902,13 +901,11 @@ void parsing() {
           gameDemo = true;
         }
         idleState = !BTcontrol && AUTOPLAY; 
-        if (idleState) {
-          if (idleTime == 0) // тамймер отключен
-            idleTimer.setInterval(4294967295);
-          else
-            idleTimer.setInterval(idleTime);
-          idleTimer.reset();
-        }
+        if (idleTime == 0) // тамймер отключен
+          idleTimer.setInterval(4294967295);
+        else
+          idleTimer.setInterval(idleTime);
+        idleTimer.reset();
         saveSettingsTimer.reset();
         sendAcknowledge();
         break;
