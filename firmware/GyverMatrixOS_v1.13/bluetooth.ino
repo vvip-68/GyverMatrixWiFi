@@ -84,14 +84,15 @@ void bluetoothRoutine() {
       // авторегулировки яркости нет.    
       if (!(isAlarming || isNightClock || isTurnedOff || specialModeId == 2 || specialModeId == 3 || specialModeId == 6 || specialModeId == 7 || thisMode == DEMO_DAWN_ALARM)) {
         // 300 - это при макс. освещении, чтобы макс возможный 255 наступал не на грани порога чувствительности ФР, а немного раньше  
-        int16_t val = (byte)brightness_filter.filtered((int16_t)map(analogRead(PHOTO_PIN),0,1023,0,300)); 
+        int16_t vin = analogRead(PHOTO_PIN);
+        int16_t val = brightness_filter.filtered((int16_t)map(vin,0,1023,-20,255)); 
+        if (val < 1) val = 1;
         if (val < autoBrightnessMin) val = autoBrightnessMin;
-        if (val > 255) val = 255;
         if (specialMode) {
            specialBrightness = val;
         } else {
            globalBrightness = val;
-        }        
+        }  
         FastLED.setBrightness(val);
         // В режиме рисования нужно принудительно обновлять экран,
         // т.к статическое изображение не обновляется автоматически 
@@ -355,9 +356,10 @@ void effects() {
   }
 }
 
+enum eModes {NORMAL, COLOR, TEXT} parseMode;
+
 byte parse_index;
 String string_convert = "";
-enum modes {NORMAL, COLOR, TEXT} parseMode;
 
 bool haveIncomeData = false;
 char incomingByte;
