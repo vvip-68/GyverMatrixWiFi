@@ -120,7 +120,7 @@ void bluetoothRoutine() {
          txt = init_time
            ? clockCurrentText() + " " + dateCurrentTextLong()  // + dateCurrentTextShort()
            : TEXT_1; 
-      }      
+      }  
       fillString(txt, txtColor); 
       // Включенная бегущая строка только формирует строку в массиве точек матрицы, но не отображает ее
       // Если эффекты выключены - нужно принудительно вызывать отображение матрицы

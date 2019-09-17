@@ -129,21 +129,10 @@ void doEffectWithOverlay(byte aMode) {
 
 void customModes(byte aMode) {
 
-  String text;
-
   switch (aMode) {    
-    case DEMO_TEXT_0: 
-      text = runningText == "" ? TEXT_1 : runningText; 
-      fillString(text, CRGB::RoyalBlue);
-      break;
-    case DEMO_TEXT_1: 
-      text = runningText == "" ? TEXT_2 : runningText;
-      fillString(text, 1);
-      break;
-    case DEMO_TEXT_2: 
-      text = runningText == "" ? TEXT_3 : runningText;
-      fillString(text, 2);
-      break;
+    case DEMO_TEXT_0:              fillString(TEXT_1, CRGB::RoyalBlue); break;
+    case DEMO_TEXT_1:              fillString(TEXT_2, 1); break;
+    case DEMO_TEXT_2:              fillString(TEXT_3, 2); break;
     case DEMO_NOISE_MADNESS:       madnessNoise(); break;
     case DEMO_NOISE_CLOUD:         cloudNoise(); break;
     case DEMO_NOISE_LAVA:          lavaNoise(); break;
