@@ -62,7 +62,6 @@ void customRoutine() {
     // Беугщая строка - таймер внутри fillString (runningText.ino)
     if (!isAlarming && (thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2)) {
       customModes(thisMode);
-      FastLED.show();
     } 
 
     // Эффекты - возможно наложение часов

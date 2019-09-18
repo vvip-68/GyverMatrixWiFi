@@ -32,26 +32,28 @@
 // *********** "дыхание" яркостью ***********
 boolean brightnessDirection;
 void brightnessRoutine() {
-  if (brightnessDirection) {
-    breathBrightness += 2;
-    if (breathBrightness > globalBrightness - 2) {
-      breathBrightness = globalBrightness;
-      brightnessDirection = false;
+  if (effectTimer.isReady()) {
+    if (brightnessDirection) {
+      breathBrightness += 2;
+      if (breathBrightness > globalBrightness - 2) {
+        breathBrightness = globalBrightness;
+        brightnessDirection = false;
+      }
+    } else {
+      breathBrightness -= 2;
+      if (breathBrightness < 2) {
+        breathBrightness = 2;
+        brightnessDirection = true;
+      }
     }
-  } else {
-    breathBrightness -= 2;
-    if (breathBrightness < 2) {
-      breathBrightness = 2;
-      brightnessDirection = true;
-    }
+    FastLED.setBrightness(breathBrightness);
   }
-  FastLED.setBrightness(breathBrightness);
 }
 
 // *********** смена цвета активных светодиодов (рисунка) ***********
 byte hue;
 void colorsRoutine() {
-  hue += 4;
+  if (effectTimer.isReady()) hue += 4;
   for (int i = 0; i < NUM_LEDS; i++) {
     if (getPixColor(i) > 0) leds[i] = CHSV(hue, 255, 255);
   }
@@ -158,7 +160,7 @@ void rainbowDiagonalRoutine() {
 
 // *********** радуга активных светодиодов (рисунка) ***********
 void rainbowColorsRoutine() {
-  hue++;
+  if (effectTimer.isReady()) hue++;
   for (byte i = 0; i < WIDTH; i++) {
     CRGB thisColor = CHSV((byte)(hue + i * float(255 / WIDTH)), 255, 255);
     for (byte j = 0; j < HEIGHT; j++)

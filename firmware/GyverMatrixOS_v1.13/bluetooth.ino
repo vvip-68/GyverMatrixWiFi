@@ -122,12 +122,6 @@ void bluetoothRoutine() {
            : TEXT_1; 
       }  
       fillString(txt, txtColor); 
-      // Включенная бегущая строка только формирует строку в массиве точек матрицы, но не отображает ее
-      // Если эффекты выключены - нужно принудительно вызывать отображение матрицы
-      if (!effectsFlag) 
-        FastLED.show();
-      else if (isColorEffect(effect)) 
-        effects();   
     }
 
     else if (drawingFlag && !isAlarming) {
@@ -345,14 +339,12 @@ void effects() {
   // Только эффекты 0, 1 и 5 совместимы с бегущей строкой - они меняют цвет букв
   // Остальные эффекты портят бегущую строку - ее нужно отключать  
   if (runningFlag && !isColorEffect(effect)) runningFlag = false;  // Дыхание, Цвет, Радуга пикс
-    
-  if (effectTimer.isReady()) {
-    switch (effect) {
-      case EFFECT_BREATH: brightnessRoutine(); break;         // Дыхание
-      case EFFECT_COLOR: colorsRoutine(); break;              // Цвет
-      case EFFECT_RAINBOW_PIX: rainbowColorsRoutine(); break; // Радуга пикс.
-    }
-    FastLED.show();
+
+  // Наложение эффекта изменения цвета / яркости на матрицу
+  switch (effect) {
+    case EFFECT_BREATH: brightnessRoutine(); break;       // Дыхание
+    case EFFECT_COLOR: colorsRoutine(); break;              // Цвет
+    case EFFECT_RAINBOW_PIX: rainbowColorsRoutine(); break; // Радуга пикс.
   }
 }
 
