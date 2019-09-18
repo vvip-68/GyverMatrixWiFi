@@ -91,7 +91,7 @@ void loadSettings() {
     gameSpeed = map(EEPROMread(4),0,255,D_GAME_SPEED_MIN,D_GAME_SPEED_MAX); 
     AUTOPLAY = getAutoplay();
     autoplayTime = getAutoplayTime();
-    idleTime = getIdleTime();    
+    idleTime = getIdleTime();        
     overlayEnabled = getClockOverlayEnabled();
     useNtp = getUseNtp();
     SYNC_TIME_PERIOD = getNtpSyncTime();
@@ -402,9 +402,8 @@ void saveIdleTime(long value) {
 }
 
 long getIdleTime() {
-  long time = EEPROMread(8) * 60 * 1000L;  
-  time = ((long)IDLE_TIME * 60L * 1000L);
-  return time;
+  long iTime = EEPROMread(8) * 60L * 1000L;  
+  return iTime;
 }
 
 void saveEffectClock(byte effect, boolean overlay) {
