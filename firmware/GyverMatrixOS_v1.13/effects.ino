@@ -32,26 +32,28 @@
 // *********** "дыхание" яркостью ***********
 boolean brightnessDirection;
 void brightnessRoutine() {
-  if (brightnessDirection) {
-    breathBrightness += 2;
-    if (breathBrightness > globalBrightness - 2) {
-      breathBrightness = globalBrightness;
-      brightnessDirection = false;
+  if (effectTimer.isReady()) {
+    if (brightnessDirection) {
+      breathBrightness += 2;
+      if (breathBrightness > globalBrightness - 2) {
+        breathBrightness = globalBrightness;
+        brightnessDirection = false;
+      }
+    } else {
+      breathBrightness -= 2;
+      if (breathBrightness < 2) {
+        breathBrightness = 2;
+        brightnessDirection = true;
+      }
     }
-  } else {
-    breathBrightness -= 2;
-    if (breathBrightness < 2) {
-      breathBrightness = 2;
-      brightnessDirection = true;
-    }
+    FastLED.setBrightness(breathBrightness);
   }
-  FastLED.setBrightness(breathBrightness);
 }
 
 // *********** смена цвета активных светодиодов (рисунка) ***********
 byte hue;
 void colorsRoutine() {
-  hue += 4;
+  if (effectTimer.isReady()) hue += 4;
   for (int i = 0; i < NUM_LEDS; i++) {
     if (getPixColor(i) > 0) leds[i] = CHSV(hue, 255, 255);
   }
@@ -158,7 +160,7 @@ void rainbowDiagonalRoutine() {
 
 // *********** радуга активных светодиодов (рисунка) ***********
 void rainbowColorsRoutine() {
-  hue++;
+  if (effectTimer.isReady()) hue++;
   for (byte i = 0; i < WIDTH; i++) {
     CRGB thisColor = CHSV((byte)(hue + i * float(255 / WIDTH)), 255, 255);
     for (byte j = 0; j < HEIGHT; j++)
@@ -511,6 +513,11 @@ void dawnProcedure() {
     b_tmp = DEVICE_TYPE == 0 ? DEMO_DAWN_ALARM_SPIRAL : DEMO_DAWN_ALARM_SQUARE;
   }
 
+  // Если эффект "Лампа" и цвет - черный (остался от "выключено" - цвет лампы - белый
+  if (b_tmp == MC_FILL_COLOR && globalColor == 0) {
+     globalColor = 0xFFFFFF;          
+  }
+
   // Спец.режимы так же как и обычные вызываются в customModes (DEMO_DAWN_ALARM_SPIRAL и DEMO_DAWN_ALARM_SQUARE)
   customModes(b_tmp);
 
@@ -732,8 +739,12 @@ void fillColorProcedure() {
     loadingFlag = false;
   }
 
-  if (specialMode) 
-    FastLED.setBrightness(specialBrightness);  
+  byte bright =
+    isAlarming && !isAlarmStopped 
+    ? dawnBrightness
+    : (specialMode ? specialBrightness : globalBrightness);
+
+  FastLED.setBrightness(bright);  
   
   fillAll(gammaCorrection(globalColor));    
 }

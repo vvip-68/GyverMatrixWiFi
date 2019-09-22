@@ -62,7 +62,6 @@ void customRoutine() {
     // Беугщая строка - таймер внутри fillString (runningText.ino)
     if (!isAlarming && (thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2)) {
       customModes(thisMode);
-      FastLED.show();
     } 
 
     // Эффекты - возможно наложение часов
@@ -129,21 +128,10 @@ void doEffectWithOverlay(byte aMode) {
 
 void customModes(byte aMode) {
 
-  String text;
-
   switch (aMode) {    
-    case DEMO_TEXT_0: 
-      text = runningText == "" ? TEXT_1 : runningText; 
-      fillString(text, CRGB::RoyalBlue);
-      break;
-    case DEMO_TEXT_1: 
-      text = runningText == "" ? TEXT_2 : runningText;
-      fillString(text, 1);
-      break;
-    case DEMO_TEXT_2: 
-      text = runningText == "" ? TEXT_3 : runningText;
-      fillString(text, 2);
-      break;
+    case DEMO_TEXT_0:              fillString(TEXT_1, CRGB::RoyalBlue); break;
+    case DEMO_TEXT_1:              fillString(TEXT_2, 1); break;
+    case DEMO_TEXT_2:              fillString(TEXT_3, 2); break;
     case DEMO_NOISE_MADNESS:       madnessNoise(); break;
     case DEMO_NOISE_CLOUD:         cloudNoise(); break;
     case DEMO_NOISE_LAVA:          lavaNoise(); break;
@@ -233,6 +221,8 @@ void nextModeHandler() {
   byte tmp_game = mapModeToGame(thisMode);
   gamemodeFlag = tmp_game != 255;
   effectsFlag = tmp_effect != 255;
+  if (gamemodeFlag) game = tmp_game;
+  if (effectsFlag) effect = tmp_effect;
 
   FastLED.clear();
   FastLED.show();
@@ -245,16 +235,16 @@ void prevModeHandler() {
 
   while (aCnt < MODES_AMOUNT) {
     // Берем предыдущий режим по циклу режимов
-    aCnt++; thisMode--;  
-    if (thisMode < 0) thisMode = MODES_AMOUNT - 1;
+    aCnt++; thisMode--; // thisMode: byte => при переполнении вернет 255 
+    if (thisMode >= MODES_AMOUNT) thisMode = MODES_AMOUNT - 1;
 
     // Если новый режим отмечен флагом "использовать" - используем его, иначе берем следующий (и проверяем его)
     if (getUsageForMode(thisMode)) break;
     
     // Если перебрали все и ни у адного нет флага "использовать" - не обращаем внимание на флаг, используем следующий
     if (aCnt >= MODES_AMOUNT) {
-      thisMode = curMode--;
-      if (thisMode < 0) thisMode = MODES_AMOUNT - 1;
+      thisMode = curMode--; // thisMode: byte => при переполнении вернет 255
+      if (thisMode >= MODES_AMOUNT) thisMode = MODES_AMOUNT - 1;
       break;
     }   
     ESP.wdtFeed(); 
@@ -268,6 +258,8 @@ void prevModeHandler() {
   byte tmp_game = mapModeToGame(thisMode);
   gamemodeFlag = tmp_game != 255;
   effectsFlag = tmp_effect != 255;
+  if (gamemodeFlag) game = tmp_game;
+  if (effectsFlag) effect = tmp_effect;
   
   FastLED.clear();
   FastLED.show();

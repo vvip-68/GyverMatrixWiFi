@@ -47,10 +47,11 @@ void fillString(String text, uint32_t color) {
       offset = WIDTH + 3;
       fullTextFlag = true;
     }
-    
-    // Сразу показывать сформированный текст не нужно - на него могут далее налагаться эффекты мерцания / цвета
-    // там где это нужно - будет принудительный вызов FastLED.show()
-    // FastLED.show(); 
+        
+    if (effectsFlag && isColorEffect(effect)) {  
+       effects();   
+    }
+    FastLED.show();
   }
 }
 

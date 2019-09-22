@@ -73,6 +73,14 @@ void loadSettings() {
   //  200 - 200+(Nэфф*3)+1 - 1 - оверлей часов разрешен; 0 - нет оверлея часов
   //  200 - 200+(Nэфф*3)+2 - эффект в авторежиме: 1 - использовать; 0 - не использовать
 
+  // Сначала инициализируем имя сети/точки доступа, пароли и имя NTP-сервера значениями по умолчанию.
+  // Ниже, если EEPROM уже инициализирован - из него будут загружены актуальные значения
+  strcpy(apName, DEFAULT_AP_NAME);
+  strcpy(apPass, DEFAULT_AP_PASS);
+  strcpy(ssid, NETWORK_SSID);
+  strcpy(pass, NETWORK_PASS);
+  strcpy(ntpServerName, DEFAULT_NTP_SERVER);    
+
   // Инициализировано ли EEPROM
   bool isInitialized = EEPROMread(0) == EEPROM_OK;  
     
@@ -83,7 +91,7 @@ void loadSettings() {
     gameSpeed = map(EEPROMread(4),0,255,D_GAME_SPEED_MIN,D_GAME_SPEED_MAX); 
     AUTOPLAY = getAutoplay();
     autoplayTime = getAutoplayTime();
-    idleTime = getIdleTime();    
+    idleTime = getIdleTime();        
     overlayEnabled = getClockOverlayEnabled();
     useNtp = getUseNtp();
     SYNC_TIME_PERIOD = getNtpSyncTime();
@@ -168,14 +176,7 @@ void loadSettings() {
     AM1_effect_id = -5;
     AM2_hour = 0;
     AM2_minute = 0;
-    AM2_effect_id = -5;
-    
-    strcpy(apName, DEFAULT_AP_NAME);
-    strcpy(apPass, DEFAULT_AP_PASS);
-    strcpy(ssid, NETWORK_SSID);
-    strcpy(pass, NETWORK_PASS);
-
-    strcpy(ntpServerName, DEFAULT_NTP_SERVER);    
+    AM2_effect_id = -5;    
   }
 
   scrollTimer.setInterval(scrollSpeed);
@@ -401,9 +402,8 @@ void saveIdleTime(long value) {
 }
 
 long getIdleTime() {
-  long time = EEPROMread(8) * 60 * 1000L;  
-  if (time == 0) time = ((long)IDLE_TIME * 60L * 1000L);
-  return time;
+  long iTime = EEPROMread(8) * 60L * 1000L;  
+  return iTime;
 }
 
 void saveEffectClock(byte effect, boolean overlay) {
@@ -663,7 +663,7 @@ String getSoftAPName() {
 
 void setSoftAPName(String SoftAPName) {
   if (SoftAPName != getSoftAPName()) {
-    EEPROM_string_write(54, SoftAPName);
+    EEPROM_string_write(54, SoftAPName, 10);
     eepromModified = true;
   }
 }
@@ -674,7 +674,7 @@ String getSoftAPPass() {
 
 void setSoftAPPass(String SoftAPPass) {
   if (SoftAPPass != getSoftAPPass()) {
-    EEPROM_string_write(64, SoftAPPass);
+    EEPROM_string_write(64, SoftAPPass, 16);
     eepromModified = true;
   }
 }
@@ -685,7 +685,7 @@ String getSsid() {
 
 void setSsid(String Ssid) {
   if (Ssid != getSsid()) {
-    EEPROM_string_write(80, Ssid);
+    EEPROM_string_write(80, Ssid, 24);
     eepromModified = true;
   }
 }
@@ -696,7 +696,7 @@ String getPass() {
 
 void setPass(String Pass) {
   if (Pass != getPass()) {
-    EEPROM_string_write(104, Pass);
+    EEPROM_string_write(104, Pass, 16);
     eepromModified = true;
   }
 }
@@ -707,7 +707,7 @@ String getNtpServer() {
 
 void setNtpServer(String server) {
   if (server != getNtpServer()) {
-    EEPROM_string_write(120, server);
+    EEPROM_string_write(120, server, 30);
     eepromModified = true;
   }
 }
@@ -771,7 +771,7 @@ int8_t getAM1effect() {
 }
 
 void setAM1effect(int8_t effect) {
-  if (effect != getAM1minute()) {
+  if (effect != getAM1effect()) {
     EEPROMwrite(35, (byte)effect);
     eepromModified = true;
   }
@@ -814,7 +814,7 @@ int8_t getAM2effect() {
 }
 
 void setAM2effect(int8_t effect) {
-  if (effect != getAM2minute()) {
+  if (effect != getAM2effect()) {
     EEPROMwrite(38, (byte)effect);
     eepromModified = true;
   }
@@ -873,16 +873,16 @@ void setGlobalColor(uint32_t color) {
 
 // ----------------------------------------------------------
 
-byte EEPROMread(byte addr) {    
+byte EEPROMread(uint16_t addr) {    
   return EEPROM.read(addr);
 }
 
-void EEPROMwrite(byte addr, byte value) {    
+void EEPROMwrite(uint16_t addr, byte value) {    
   EEPROM.write(addr, value);
 }
 
 // чтение uint16_t
-uint16_t EEPROM_int_read(byte addr) {    
+uint16_t EEPROM_int_read(uint16_t addr) {    
   byte raw[2];
   for (byte i = 0; i < 2; i++) raw[i] = EEPROMread(addr+i);
   uint16_t &num = (uint16_t&)raw;
@@ -890,37 +890,33 @@ uint16_t EEPROM_int_read(byte addr) {
 }
 
 // запись uint16_t
-void EEPROM_int_write(byte addr, uint16_t num) {
+void EEPROM_int_write(uint16_t addr, uint16_t num) {
   byte raw[2];
   (uint16_t&)raw = num;
   for (byte i = 0; i < 2; i++) EEPROMwrite(addr+i, raw[i]);
 }
 
-// чтение стоки (макс 32 байта)
-String EEPROM_string_read(byte addr, byte len) {
-   if (len>32) len = 32;
+String EEPROM_string_read(uint16_t addr, int16_t len) {
    char buffer[len+1];
    memset(buffer,'\0',len+1);
-   byte i = 0;
+   int16_t i = 0;
    while (i < len) {
      byte c = EEPROMread(addr+i);
-     if (isAlphaNumeric(c) || isPunct(c))
-        buffer[i++] = c;
-     else
-       break;
+     if (c == 0) break;
+     buffer[i++] = c;
+     // if (c != 0 && (isAlphaNumeric(c) || isPunct(c) || isSpace(c)))
    }
    return String(buffer);
 }
 
-// запись строки (макс 32 байта)
-void EEPROM_string_write(byte addr, String buffer) {
+void EEPROM_string_write(uint16_t addr, String buffer, int16_t max_len) {
    uint16_t len = buffer.length();
-   if (len>32) len = 32;
-   byte i = 0;
+   int16_t i = 0;
+   if (len > max_len) len = max_len;
    while (i < len) {
      EEPROMwrite(addr+i, buffer[i++]);
    }
-   if (i < 32) EEPROMwrite(addr+i,0);
+   if (i < max_len) EEPROMwrite(addr+i,0);
 }
 
 // ----------------------------------------------------------

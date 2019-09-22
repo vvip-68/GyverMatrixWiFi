@@ -84,14 +84,15 @@ void bluetoothRoutine() {
       // авторегулировки яркости нет.    
       if (!(isAlarming || isNightClock || isTurnedOff || specialModeId == 2 || specialModeId == 3 || specialModeId == 6 || specialModeId == 7 || thisMode == DEMO_DAWN_ALARM)) {
         // 300 - это при макс. освещении, чтобы макс возможный 255 наступал не на грани порога чувствительности ФР, а немного раньше  
-        int16_t val = (byte)brightness_filter.filtered((int16_t)map(analogRead(PHOTO_PIN),0,1023,0,300)); 
+        int16_t vin = analogRead(PHOTO_PIN);
+        int16_t val = brightness_filter.filtered((int16_t)map(vin,0,1023,-20,255)); 
+        if (val < 1) val = 1;
         if (val < autoBrightnessMin) val = autoBrightnessMin;
-        if (val > 255) val = 255;
         if (specialMode) {
            specialBrightness = val;
         } else {
            globalBrightness = val;
-        }        
+        }  
         FastLED.setBrightness(val);
         // В режиме рисования нужно принудительно обновлять экран,
         // т.к статическое изображение не обновляется автоматически 
@@ -119,14 +120,8 @@ void bluetoothRoutine() {
          txt = init_time
            ? clockCurrentText() + " " + dateCurrentTextLong()  // + dateCurrentTextShort()
            : TEXT_1; 
-      }      
+      }  
       fillString(txt, txtColor); 
-      // Включенная бегущая строка только формирует строку в массиве точек матрицы, но не отображает ее
-      // Если эффекты выключены - нужно принудительно вызывать отображение матрицы
-      if (!effectsFlag) 
-        FastLED.show();
-      else if (isColorEffect(effect)) 
-        effects();   
     }
 
     else if (drawingFlag && !isAlarming) {
@@ -153,12 +148,11 @@ void bluetoothRoutine() {
       effects();
       
     } else {
-      
       // Сформировать и вывести на матрицу текущий демо-режим
-      if (!BTcontrol || effectsFlag || isAlarming) 
-        customRoutine();
-      else if (BTcontrol && effectsFlag && isColorEffect(effect)) {
+      if(effectsFlag && isColorEffect(effect) && !isAlarming) {      
         effects();  
+      } else {
+        customRoutine();
       }      
     }            
 
@@ -345,20 +339,19 @@ void effects() {
   // Только эффекты 0, 1 и 5 совместимы с бегущей строкой - они меняют цвет букв
   // Остальные эффекты портят бегущую строку - ее нужно отключать  
   if (runningFlag && !isColorEffect(effect)) runningFlag = false;  // Дыхание, Цвет, Радуга пикс
-    
-  if (effectTimer.isReady()) {
-    switch (effect) {
-      case EFFECT_BREATH: brightnessRoutine(); break;         // Дыхание
-      case EFFECT_COLOR: colorsRoutine(); break;              // Цвет
-      case EFFECT_RAINBOW_PIX: rainbowColorsRoutine(); break; // Радуга пикс.
-    }
-    FastLED.show();
+
+  // Наложение эффекта изменения цвета / яркости на матрицу
+  switch (effect) {
+    case EFFECT_BREATH: brightnessRoutine(); break;       // Дыхание
+    case EFFECT_COLOR: colorsRoutine(); break;              // Цвет
+    case EFFECT_RAINBOW_PIX: rainbowColorsRoutine(); break; // Радуга пикс.
   }
 }
 
+enum eModes {NORMAL, COLOR, TEXT} parseMode;
+
 byte parse_index;
 String string_convert = "";
-enum modes {NORMAL, COLOR, TEXT} parseMode;
 
 bool haveIncomeData = false;
 char incomingByte;
@@ -902,13 +895,11 @@ void parsing() {
           gameDemo = true;
         }
         idleState = !BTcontrol && AUTOPLAY; 
-        if (idleState) {
-          if (idleTime == 0) // тамймер отключен
-            idleTimer.setInterval(4294967295);
-          else
-            idleTimer.setInterval(idleTime);
-          idleTimer.reset();
-        }
+        if (idleTime == 0) // тамймер отключен
+          idleTimer.setInterval(4294967295);
+        else
+          idleTimer.setInterval(idleTime);
+        idleTimer.reset();
         saveSettingsTimer.reset();
         sendAcknowledge();
         break;
