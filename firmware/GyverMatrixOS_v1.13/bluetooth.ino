@@ -101,7 +101,7 @@ void bluetoothRoutine() {
     }
     
     if (!BTcontrol && effectsFlag && !isColorEffect(effect)) effectsFlag = false;
-
+    
     // При яркости = 1 остаются гореть только красные светодиоды и все эффекты теряют вид.
     // поэтому отображать эффект "ночные часы"
     byte br = specialMode ? specialBrightness : globalBrightness;
@@ -266,7 +266,7 @@ void bluetoothRoutine() {
       // Тройное нажатие      
       if (clicks == 3) {
         // Включить демо-режим
-        idleTimer.setInterval(idleTime);
+        idleTimer.setInterval(idleTime == 0 ? 4294967295 : idleTime);
         idleTimer.reset();
         
         if (wifi_print_ip) {
@@ -475,7 +475,7 @@ void parsing() {
         intData[0] != 18 && intData[0] != 19 &&
         intData[0] != 20 && intData[0] != 21) {
       if (specialMode) {
-        idleTimer.setInterval(idleTime);
+        idleTimer.setInterval(idleTime == 0 ? 4294967295 : idleTime);
         idleTimer.reset();
         specialMode = false;
         isNightClock = false;
@@ -895,10 +895,7 @@ void parsing() {
           gameDemo = true;
         }
         idleState = !BTcontrol && AUTOPLAY; 
-        if (idleTime == 0) // тамймер отключен
-          idleTimer.setInterval(4294967295);
-        else
-          idleTimer.setInterval(idleTime);
+        idleTimer.setInterval(idleTime == 0 ? 4294967295 : idleTime);
         idleTimer.reset();
         saveSettingsTimer.reset();
         sendAcknowledge();
@@ -1608,6 +1605,7 @@ void setSpecialMode(int spc_mode) {
 }
 
 void resetModes() {
+
   // Отключение спец-режима перед включением других
   specialMode = false;
   isNightClock = false;
@@ -1652,7 +1650,7 @@ void setEffect(byte eff) {
 }
 
 void startGame(byte game, bool newGame, bool paused) {
-  
+
   // Найти соответствие thisMode указанной игре. 
   byte b_tmp = mapGameToMode(game);
   
@@ -1680,10 +1678,12 @@ void startGame(byte game, bool newGame, bool paused) {
 }
 
 void startRunningText() {
-  runningFlag = true;
+
+  runningFlag = true;  
   if (!isColorEffect(effect)) {
     effectsFlag = false;
   }
+  
   // Если при включении режима "Бегущая строка" цвет текста - черный -- включить белый, т.к черный на черном не видно
   if (globalColor == 0x000000) setGlobalColor(0xffffff);
   if (!useAutoBrightness)
