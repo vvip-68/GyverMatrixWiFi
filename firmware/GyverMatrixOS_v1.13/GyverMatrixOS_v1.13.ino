@@ -47,9 +47,6 @@
 
 // ******************* ПОДКЛЮЧЕНИЕ К СЕТИ *******************
 
-                                             // Внимание!!! данные параметры действуют ТОЛЬКО ПРИ ПЕРВОЙ загрузке прошивки в МК
-                                             // Если загрузка не первая - нужно изменить значение дефайна EEPROM_OK в 1 строке файла eeprom.ino
- 
 #define NETWORK_SSID ""                      // Имя WiFi сети - пропишите здесь или задайте из программы на смартфоне
 #define NETWORK_PASS ""                      // Пароль для подключения к WiFi сети - пропишите здесь или задайте из программы на смартфоне
 #define DEFAULT_AP_NAME "MatrixAP"           // Имя точки доступа по умолчанию 
@@ -608,21 +605,6 @@ void startWiFi() {
   WiFi.disconnect(true);
   wifi_connected = false;
   WiFi.mode(WIFI_STA);
-
-  Serial.print("ssid='");
-  Serial.print(ssid);
-  Serial.print("'; pwd='");
-  Serial.print(pass);
-  Serial.print("'; ip=");
-  Serial.print(IP_STA[3]);
-  Serial.print(".");
-  Serial.print(IP_STA[2]);
-  Serial.print(".");
-  Serial.print(IP_STA[1]);
-  Serial.print(".");
-  Serial.print(IP_STA[0]);
-  Serial.println();
-  Serial.println();
 
   // Пытаемся соединиться с роутером в сети
   if (strlen(ssid) > 0) {
