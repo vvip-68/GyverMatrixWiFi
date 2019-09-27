@@ -182,7 +182,7 @@ void loadSettings() {
   scrollTimer.setInterval(scrollSpeed);
   effectTimer.setInterval(effectSpeed);
   gameTimer.setInterval(gameSpeed);
-  idleTimer.setInterval(idleTime);  
+  idleTimer.setInterval(idleTime == 0 ? 4294967295 : idleTime);
   ntpSyncTimer.setInterval(1000 * 60 * SYNC_TIME_PERIOD);
   
   // После первой инициализации значений - сохранить их принудительно
