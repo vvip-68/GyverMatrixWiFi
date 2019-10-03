@@ -442,23 +442,23 @@ timerMinim dawnTimer(4294967295);                       // Таймер шага
 SoftwareSerial mp3Serial(SRX, STX);
 DFRobotDFPlayerMini dfPlayer;
 bool isDfPlayerOk = false;
-int16_t alarmSoundsCount = 0;        // Кол-во файлов звуков в папке '01' на SD-карте
-int16_t dawnSoundsCount = 0;         // Кол-во файлов звуков в папке '02' на SD-карте
+int16_t alarmSoundsCount = 0;      // Кол-во файлов звуков в папке '01' на SD-карте
+int16_t dawnSoundsCount = 0;       // Кол-во файлов звуков в папке '02' на SD-карте
 byte soundFolder = 0;
 byte soundFile = 0;
-int8_t fadeSoundDirection = 1;       // направление изменения громкости звука: 1 - увеличение; -1 - уменьшение
-byte fadeSoundStepCounter = 0;       // счетчик шагов изменения громкости, которое осталось сделать
+int8_t fadeSoundDirection = 1;     // направление изменения громкости звука: 1 - увеличение; -1 - уменьшение
+byte fadeSoundStepCounter = 0;     // счетчик шагов изменения громкости, которое осталось сделать
 
 // ---- Физическая кнопка управления режимами
 
-GButton butt(PIN_BTN);               // Физическая кнопка
-#define HOLD_TIMEOUT 2000            // Время удержания кнопки перед выполнением действия ( + debounce time) суммарно - около 3 сек
-bool isButtonHold = false;           // Кнопка нажата и удерживается
-long hold_start_time = 0;            // Время обнаружения состояния "Конпка нажата и удерживается"
+GButton butt(PIN_BTN);             // Физическая кнопка
+#define HOLD_TIMEOUT 2000          // Время удержания кнопки перед выполнением действия ( + debounce time) суммарно - около 3 сек
+bool isButtonHold = false;         // Кнопка нажата и удерживается
+long hold_start_time = 0;          // Время обнаружения состояния "Конпка нажата и удерживается"
 
 // ---- Прочие переменные
 
-int globalBrightness = BRIGHTNESS; // Текущая яркость
+byte globalBrightness = BRIGHTNESS;// Текущая яркость
 byte breathBrightness;             // Яркость эффекта "Дыхание"
 uint32_t globalColor = 0xffffff;   // Цвет рисования при запуске белый
 
