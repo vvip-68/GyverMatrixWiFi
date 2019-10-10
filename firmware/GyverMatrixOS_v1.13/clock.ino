@@ -721,16 +721,16 @@ void setModeByModeId(byte saveThisMode) {
 }
 
 void setRandomMode() {
-    String s_tmp = String(ALARM_LIST);    
-    uint32_t cnt = CountTokens(s_tmp, ','); 
-    byte ef = random(0, cnt - 1); 
-            
-    // Включить указанный режим из списка доступных эффектов без дальнейшей смены
-    // Значение ef может быть 0..N-1 - указанный режим из списка ALARM_LIST (приведенное к индексу с 0)      
-    byte tmp = mapAlarmToEffect(ef);   
-    // Если не опознали что за эффект - включаем режим "Камин"
-    if (tmp != 255) setEffect(tmp);
-    else            setEffect(EFFECT_FIRE);   
+  String s_tmp = String(ALARM_LIST);    
+  uint32_t cnt = CountTokens(s_tmp, ','); 
+  byte ef = random(0, cnt - 1); 
+          
+  // Включить указанный режим из списка доступных эффектов без дальнейшей смены
+  // Значение ef может быть 0..N-1 - указанный режим из списка ALARM_LIST (приведенное к индексу с 0)      
+  byte tmp = mapAlarmToEffect(ef);   
+  // Если не опознали что за эффект - включаем режим "Камин"
+  if (tmp != 255) setEffect(tmp);
+  else            setEffect(EFFECT_FIRE);   
 }
 
 // Проверка необходимости включения режима 1 по установленному времени

@@ -64,7 +64,8 @@ void loadSettings() {
   //  104-119 - пароль сети  WiFi    - 16 байт
   //  120-149 - имя NTP сервера      - 30 байт
   //  150-153 - Статический IP адрес лампы  
-  //  154-159 - зарезервировано 
+  //  154 - Случайная последовательность включения эффектов
+  //  155-159 - зарезервировано 
   // ....
   //  160 - 160+(Nигр*2)   - скорость игры
   //  160 - 160+(Nигр*2)+1 - использовать игру в демо-режиме
@@ -101,6 +102,7 @@ void loadSettings() {
     showDateInClock = getShowDateInClock();  
     showDateDuration = getShowDateDuration();
     showDateInterval = getShowDateInterval();
+    useRandomSequence = getRandomMode();
     
     alarmWeekDay = getAlarmWeekDay();
     alarmEffect = getAlarmEffect();
@@ -170,6 +172,7 @@ void loadSettings() {
     useAutoBrightness = false;
     autoBrightnessMin = 1;
     globalColor = 0xFFFFFF;
+    useRandomSequence = true;
 
     AM1_hour = 0;
     AM1_minute = 0;
@@ -262,6 +265,8 @@ void saveDefaults() {
   EEPROMwrite(151, IP_STA[1]);
   EEPROMwrite(152, IP_STA[2]);
   EEPROMwrite(153, IP_STA[3]);
+
+  EEPROMwrite(154, useRandomSequence ? 1 : 0);
 
   eepromModified = true;
 }
@@ -869,6 +874,17 @@ void setGlobalColor(uint32_t color) {
     EEPROMwrite(21, cl.b); // B
     eepromModified = true;
   }
+}
+
+void saveRandomMode(bool randomMode) {
+  if (randomMode != getRandomMode()) {
+    EEPROMwrite(154, randomMode ? 1 : 0);
+    eepromModified = true;
+  }  
+}
+
+bool getRandomMode() {
+ return EEPROMread(154) != 0;
 }
 
 // ----------------------------------------------------------

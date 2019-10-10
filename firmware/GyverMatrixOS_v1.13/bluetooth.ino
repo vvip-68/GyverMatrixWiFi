@@ -422,7 +422,7 @@ void parsing() {
        - $14 6; Цветной экран;  
        - $14 7; Цветной экран с часами;  
     15 - скорость $15 скорость таймер; 0 - таймер эффектов, 1 - таймер скроллинга текста 2 - таймер игр
-    16 - Режим смены эффектов: $16 value; N:  0 - Autoplay on; 1 - Autoplay off; 2 - PrevMode; 3 - NextMode
+    16 - Режим смены эффектов: $16 value; N:  0 - Autoplay on; 1 - Autoplay off; 2 - PrevMode; 3 - NextMode; 4 - Random mode on/щаа; 5 - Random mode off;
     17 - Время автосмены эффектов и бездействия: $17 сек сек;
     18 - Запрос текущих параметров программой: $18 page;  page: 1 - настройки; 2 - рисование; 3 - картинка; 4 - текст; 5 - эффекты; 6 - игра; 7 - часы; 8 - о приложении 
     19 - работа с настройками часов
@@ -839,12 +839,14 @@ void parsing() {
         sendAcknowledge();
         break;
       case 16:
+        // 16 - Режим смены эффектов: $16 value; N:  0 - Autoplay on; 1 - Autoplay off; 2 - PrevMode; 3 - NextMode; 4 - Autoplay mode on/щаа; 5 - Random mode on/off;
         BTcontrol = intData[1] == 1;                
         if (intData[1] == 0) AUTOPLAY = true;
         else if (intData[1] == 1) AUTOPLAY = false;
         else if (intData[1] == 2) prevMode();
         else if (intData[1] == 3) nextMode();
         else if (intData[1] == 4) AUTOPLAY = intData[2] == 1;
+        else if (intData[1] == 5) useRandomSequence = intData[2] == 1;
 
         idleState = !BTcontrol && AUTOPLAY; 
         if (AUTOPLAY) {
@@ -853,6 +855,7 @@ void parsing() {
           gameDemo = true;
         }
         saveAutoplay(AUTOPLAY);
+        saveRandomMode(useRandomSequence);
 
         if (!BTcontrol) {
           if (runningFlag) loadingFlag = true;       
@@ -1282,6 +1285,7 @@ void sendPageParams(int page) {
   // H:число     высота матрицы
   // DM:Х        демо режим, где Х = 0 - выкл (ручное управление); 1 - вкл
   // AP:Х        автосменарежимов, где Х = 0 - выкл; 1 - вкл
+  // RM:Х        смена режимов в случайном порядке, где Х = 0 - выкл; 1 - вкл
   // PD:число    продолжительность режима в секундах
   // IT:число    время бездействия в секундах
   // BR:число    яркость
@@ -1349,8 +1353,9 @@ void sendPageParams(int page) {
       if (AUTOPLAY)   str+="1|BR:"; else str+="0|BR:";
       str+=String(globalBrightness) + "|PD:" + String(autoplayTime / 1000) + "|IT:" + String(idleTime / 60 / 1000) +  "|AL:";
       if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1"; else str+="0";
-      str+="|BU:" + String(useAutoBrightness ? "1" : "0");    
-      str+="|BY:" + String(autoBrightnessMin);       
+      str+="|BU:" + String(useAutoBrightness ? "1" : "0");
+      str+="|BY:" + String(autoBrightnessMin);
+      str+="|RM:" + String(useRandomSequence);
       str+=";";
       break;
     case 2:  // Рисование. Вернуть: Яркость; Цвет точки;
@@ -1698,4 +1703,35 @@ void showCurrentIP() {
   AUTOPLAY = true;
   wifi_print_ip = true;
   wifi_current_ip = wifi_connected ? WiFi.localIP().toString() : String(F("Нет подключения к сети WiFi"));
+}
+
+void setRandomMode2() {
+  byte cnt = 0;
+  while (cnt < 10) {
+    cnt++;
+    byte newMode = random(0, MODES_AMOUNT - 1);
+    if (!getUsageForMode(newMode)) continue;
+
+    byte tmp = mapModeToEffect(newMode);
+    if (tmp <= MAX_EFFECT) {
+      setEffect(tmp);
+      break;
+    } else {  
+      tmp = mapModeToGame(newMode);
+      if (tmp <= MAX_GAME) {
+        startGame(tmp, true, false);
+        break;
+      } else if (newMode == DEMO_TEXT_0 || newMode == DEMO_TEXT_1 || newMode == DEMO_TEXT_2) {
+        thisMode = newMode;
+        loadingFlag = true;
+        break;
+      }
+    }
+  }
+  if (cnt >= 10) {
+    thisMode = 0;  
+    setTimersForMode(thisMode);
+    AUTOPLAY = true;
+    autoplayTimer = millis();
+  }
 }
