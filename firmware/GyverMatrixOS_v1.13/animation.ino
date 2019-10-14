@@ -33,6 +33,7 @@ void animation(byte n) {
         loadImage(mario_array[frameNum]);
         if (++frameNum >= sizeof(mario_array) / sizeof(mario_array[0])) frameNum = 0;
         break;
+      /*  
       case 2:
         // EFFECT_ANIMATION_2
         loadImage(flame_array[frameNum]);
@@ -53,6 +54,7 @@ void animation(byte n) {
         loadImage(characters_array[frameNum]);
         if (++frameNum >= sizeof(characters_array) / sizeof(characters_array[0])) frameNum = 0;
         break;
+      */  
     }
   }
 }

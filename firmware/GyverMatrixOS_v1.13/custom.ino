@@ -160,11 +160,13 @@ void customModes(byte aMode) {
     case DEMO_DAWN_ALARM:          dawnProcedure(); break;
     case DEMO_FILL_COLOR:          fillColorProcedure(); break;
     case DEMO_ANIMATION_1:         animation(1); break;
+    /*
     case DEMO_ANIMATION_2:         animation(2); break;
     case DEMO_ANIMATION_3:         animation(3); break;
     case DEMO_ANIMATION_4:         animation(4); break;
     case DEMO_ANIMATION_5:         animation(5); break;
-
+    */
+    
     // Специальные режимы - доступные только для вызова из эффекта рассвета - dawnProcedure()
     case DEMO_DAWN_ALARM_SPIRAL:   dawnLampSpiral(); break;
     case DEMO_DAWN_ALARM_SQUARE:   dawnLampSquare(); break;
@@ -436,11 +438,12 @@ byte mapEffectToMode(byte effect) {
     case EFFECT_DAWN_ALARM:          tmp_mode = DEMO_DAWN_ALARM; break;           // dawnProcedure();
     case EFFECT_FILL_COLOR:          tmp_mode = DEMO_FILL_COLOR; break;           // fillColorProcedure();
     case EFFECT_ANIMATION_1:         tmp_mode = DEMO_ANIMATION_1; break;          // animation(1);
+    /*
     case EFFECT_ANIMATION_2:         tmp_mode = DEMO_ANIMATION_2; break;          // animation(2);
     case EFFECT_ANIMATION_3:         tmp_mode = DEMO_ANIMATION_3; break;          // animation(3);
     case EFFECT_ANIMATION_4:         tmp_mode = DEMO_ANIMATION_4; break;          // animation(4);
     case EFFECT_ANIMATION_5:         tmp_mode = DEMO_ANIMATION_5; break;          // animation(5);
-    
+    */
     // Нет соответствия - выполняются для текущего режима thisMode
     case EFFECT_BREATH:              // Дыхание
     case EFFECT_COLOR:               // Цвет
@@ -475,10 +478,12 @@ byte mapEffectToModeCode(byte effect) {
     case EFFECT_NOISE_FOREST:        tmp_mode = MC_NOISE_FOREST; break;         // forestNoise();
     case EFFECT_NOISE_OCEAN:         tmp_mode = MC_NOISE_OCEAN; break;          // oceanNoise();
     case EFFECT_ANIMATION_1:         tmp_mode = MC_IMAGE; break;                // animation(1);
+    /*
     case EFFECT_ANIMATION_2:         tmp_mode = MC_IMAGE; break;                // animation(2);
     case EFFECT_ANIMATION_3:         tmp_mode = MC_IMAGE; break;                // animation(3);
     case EFFECT_ANIMATION_4:         tmp_mode = MC_IMAGE; break;                // animation(4);
     case EFFECT_ANIMATION_5:         tmp_mode = MC_IMAGE; break;                // animation(5);
+    */
     case EFFECT_DAWN_ALARM:          tmp_mode = MC_DAWN_ALARM; break;           // dawnProcedure();
     case EFFECT_FILL_COLOR:          tmp_mode = MC_FILL_COLOR; break;           // fillColorProcedure();
 
@@ -533,10 +538,12 @@ byte mapModeToEffect(byte aMode) {
     case DEMO_DAWN_ALARM:           tmp_effect = EFFECT_DAWN_ALARM; break;          // alarmProcedure();
     case DEMO_FILL_COLOR:           tmp_effect = EFFECT_FILL_COLOR; break;          // fillColorProcedure();
     case DEMO_ANIMATION_1:          tmp_effect = EFFECT_ANIMATION_1; break;         // animation(1);
+    /*
     case DEMO_ANIMATION_2:          tmp_effect = EFFECT_ANIMATION_2; break;         // animation(2);
     case DEMO_ANIMATION_3:          tmp_effect = EFFECT_ANIMATION_3; break;         // animation(3);
     case DEMO_ANIMATION_4:          tmp_effect = EFFECT_ANIMATION_4; break;         // animation(4);
     case DEMO_ANIMATION_5:          tmp_effect = EFFECT_ANIMATION_5; break;         // animation(5);
+    */
 
     case DEMO_TEXT_0 :  break;      // Бегущий текст
     case DEMO_TEXT_1 :  break;      // Бегущий текст
@@ -577,11 +584,12 @@ byte mapModeToGame(byte aMode) {
     case DEMO_DAWN_ALARM:           break;       // dawnProcedure(); 
     case DEMO_FILL_COLOR:           break;       // fillColorProcedure(); 
     case DEMO_ANIMATION_1:          break;       // animation(1);
+    /*
     case DEMO_ANIMATION_2:          break;       // animation(2);
     case DEMO_ANIMATION_3:          break;       // animation(3);
     case DEMO_ANIMATION_4:          break;       // animation(4);
     case DEMO_ANIMATION_5:          break;       // animation(5);
-    
+    */
     case DEMO_TEXT_0:               break;       // Бегущий текст
     case DEMO_TEXT_1:               break;       // Бегущий текст
     case DEMO_TEXT_2:               break;       // Бегущий текст

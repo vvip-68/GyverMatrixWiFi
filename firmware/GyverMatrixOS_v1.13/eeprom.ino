@@ -65,7 +65,8 @@ void loadSettings() {
   //  120-149 - имя NTP сервера      - 30 байт
   //  150-153 - Статический IP адрес лампы  
   //  154 - Случайная последовательность включения эффектов
-  //  155-159 - зарезервировано 
+  //  155 - Последний включенный вручную эффект
+  //  156-159 - зарезервировано 
   // ....
   //  160 - 160+(Nигр*2)   - скорость игры
   //  160 - 160+(Nигр*2)+1 - использовать игру в демо-режиме
@@ -832,6 +833,17 @@ int8_t getCurrentSpecMode() {
 void setCurrentSpecMode(int8_t mode) {
   if (mode != getCurrentSpecMode()) {
     EEPROMwrite(39, (byte)mode);
+    eepromModified = true;
+  }
+}
+
+int8_t getCurrentManualMode() {
+  return (int8_t)EEPROMread(155);
+}
+
+void setCurrentManualMode(int8_t mode) {
+  if (mode != getCurrentManualMode()) {
+    EEPROMwrite(155, (byte)mode);
     eepromModified = true;
   }
 }

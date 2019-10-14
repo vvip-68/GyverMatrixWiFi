@@ -852,10 +852,11 @@ void parsing() {
         if (AUTOPLAY) {
           autoplayTimer = millis(); // При включении автоматического режима сбросить таймер автосмены режимов
           controlFlag = false; 
-          gameDemo = true;
+          gameDemo = true;          
         }
         saveAutoplay(AUTOPLAY);
         saveRandomMode(useRandomSequence);
+        setCurrentManualMode(AUTOPLAY ? -1 : (int8_t)thisMode);
 
         if (!BTcontrol) {
           if (runningFlag) loadingFlag = true;       
@@ -1607,6 +1608,7 @@ void setSpecialMode(int spc_mode) {
   }  
   
   setCurrentSpecMode(spc_mode);
+  setCurrentManualMode(-1);
 }
 
 void resetModes() {
@@ -1652,6 +1654,7 @@ void setEffect(byte eff) {
     }
   }
   setCurrentSpecMode(-1);
+  if (!AUTOPLAY) setCurrentManualMode((int8_t)thisMode);
 }
 
 void startGame(byte game, bool newGame, bool paused) {
@@ -1680,6 +1683,7 @@ void startGame(byte game, bool newGame, bool paused) {
     }    
   }  
   setCurrentSpecMode(-1);
+  if (!AUTOPLAY) setCurrentManualMode((int8_t)thisMode);
 }
 
 void startRunningText() {
@@ -1694,6 +1698,7 @@ void startRunningText() {
   if (!useAutoBrightness)
     FastLED.setBrightness(globalBrightness);    
   setCurrentSpecMode(-1);
+  if (!AUTOPLAY) setCurrentManualMode((int8_t)thisMode);
 }
 
 void showCurrentIP() {
