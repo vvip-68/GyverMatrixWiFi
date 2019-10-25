@@ -544,6 +544,8 @@ void setup() {
   Serial.begin(115200);
   delay(10);
 
+  Serial.println(F("\n\nWiFi Matrix v.1.13.2019.1025"));
+  
   // Инициализация EEPROM и загрузка сохраненных параметров
   EEPROM.begin(512);
   loadSettings();
