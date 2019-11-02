@@ -239,12 +239,10 @@ void drawClock(byte hrs, byte mins, boolean dots, byte X, byte Y) {
     drawDigit3x5(h10, X, Y + 6, clockLED[0]);
     drawDigit3x5(h01, X + 4, Y + 6, clockLED[1]);
     if (dots) { // Мигающие точки легко ассоциируются с часами
-      drawPixelXY(X + 1, Y + 5, clockLED[2]);
-      drawPixelXY(X + 5, Y + 5, clockLED[2]);
+      drawPixelXY(X + 3, Y + 5, clockLED[2]);
     } else {
       if (modeCode == MC_CLOCK) {
-        drawPixelXY(X + 1, Y + 5, 0);
-        drawPixelXY(X + 5, Y + 5, 0);
+        drawPixelXY(X + 3, Y + 5, 0);
       }
     }
     drawDigit3x5(m10, X, Y, clockLED[3]);
