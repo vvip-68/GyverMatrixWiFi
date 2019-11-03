@@ -4,7 +4,7 @@
 // Страница проекта на GitHub: https://github.com/vvip-68/GyverMatrixWiFi
 // Автор: AlexGyver Technologies, 2018
 // Дальнейшее развитие: vvip, 2019
-// https://AlexGyver.ru/
+// https://AlexGgameSpeedyver.ru/
 
 #define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.13.2019.1031")
 #define FASTLED_INTERRUPT_RETRY_COUNT 0
@@ -464,7 +464,7 @@ timerMinim idleTimer(idleTime);                         // Таймер безд
 timerMinim alarmSoundTimer(4294967295);                 // Таймер выключения звука будильника
 timerMinim fadeSoundTimer(4294967295);                  // Таймер плавного включения / выключения звука
 timerMinim autoBrightnessTimer(500);                    // Таймер отслеживания показаний датчика света при включенной авторегулировки яркости матрицы
-timerMinim saveSettingsTimer(30000);                    // Таймер отложенного сохранения настроек
+timerMinim saveSettingsTimer(15000);                    // Таймер отложенного сохранения настроек
 timerMinim ntpSyncTimer(1000 * 60 * SYNC_TIME_PERIOD);  // Таймер синхронизации времени с NTP-сервером
 timerMinim dawnTimer(4294967295);                       // Таймер шага рассвета для будильника "рассвет"
 

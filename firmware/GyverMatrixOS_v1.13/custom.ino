@@ -293,7 +293,7 @@ void setTimersForMode(byte aMode) {
     } else {
       byte tmp_game = mapModeToGame(aMode);
       if (tmp_game != 255) {
-        gameSpeed = DEMO_GAME_SPEED;
+        gameSpeed = getGameSpeed(game);
         gameTimer.setInterval(gameSpeed);
       }
     }
@@ -386,9 +386,6 @@ void checkIdleState() {
       idleState = true;
       autoplayTimer = millis();
       gameDemo = true;
-
-      gameSpeed = DEMO_GAME_SPEED;
-      gameTimer.setInterval(gameSpeed);
 
       BTcontrol = false;
       loadingFlag = true;

@@ -733,7 +733,7 @@ void setRandomMode() {
 
 // Проверка необходимости включения режима 1 по установленному времени
 void checkAutoMode1Time() {
-  if (AM1_effect_id == -5 || !init_time) return;
+  if (AM1_effect_id <= -5 || AM1_effect_id >= MAX_EFFECT || !init_time) return;
   
   hrs = hour();
   mins = minute();
@@ -754,7 +754,7 @@ void checkAutoMode1Time() {
 void checkAutoMode2Time() {
 
   // Действие отличается от "Нет действия" и время установлено?
-  if (AM2_effect_id == -5 || !init_time) return;
+  if (AM2_effect_id <= -5 || AM2_effect_id >= MAX_EFFECT || !init_time) return;
 
   // Если сработал будильник - рассвет - режим не переключать - остаемся в режими обработки будильника
   if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) return;
@@ -796,7 +796,9 @@ void SetAutoMode(byte amode) {
   //     1 и далее - эффект из ALARM_LIST по списку
 
   // включить указанный режим
-  if (ef == -4) {
+  if (ef <= -5 || ef >= MAX_EFFECT) {
+    Serial.print(F("нет действия"));
+  } else if (ef == -4) {
 
     // Выключить матрицу (черный экран)
     Serial.print(F("выключение матрицы"));

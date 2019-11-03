@@ -822,16 +822,16 @@ void parsing() {
         break;
       case 15: 
         if (intData[2] == 0) {
-          effectSpeed = intData[1]; 
+          effectSpeed = 255 - intData[1]; 
           saveEffectSpeed(effect, effectSpeed);
           effectTimer.setInterval(effectSpeed);
           gifTimer.setInterval(effectSpeed * 10);
         } else if (intData[2] == 1) {
-          scrollSpeed = intData[1]; 
+          scrollSpeed = 255 - intData[1]; 
           scrollTimer.setInterval(scrollSpeed);
           saveScrollSpeed(scrollSpeed);
         } else if (intData[2] == 2) {
-          gameSpeed = map(constrain(intData[1],0,255),0,255,D_GAME_SPEED_MIN,D_GAME_SPEED_MAX);      // для игр скорость нужна меньше! вх 0..255 преобразовать в 25..375
+          gameSpeed = map(constrain(255 - intData[1],0,255),0,255,D_GAME_SPEED_MIN,D_GAME_SPEED_MAX);      // для игр скорость нужна меньше! вх 0..255 преобразовать в 25..375
           saveGameSpeed(game, gameSpeed);
           gameTimer.setInterval(gameSpeed);
         }
@@ -1377,7 +1377,7 @@ void sendPageParams(int page) {
     case 4:  // Текст. Вернуть: Яркость; Скорость текста; Вкл/Выкл; Текст; Использовать в демо
       text = runningText;
       text.replace(";","~");
-      str="$18 BR:"+String(globalBrightness) + "|ST:" + String(constrain(map(scrollSpeed, D_TEXT_SPEED_MIN,D_TEXT_SPEED_MAX, 0, 255), 0,255)) + "|TS:";
+      str="$18 BR:"+String(globalBrightness) + "|ST:" + String(255 - constrain(map(scrollSpeed, D_TEXT_SPEED_MIN,D_TEXT_SPEED_MAX, 0, 255), 0,255)) + "|TS:";
       if (runningFlag)  str+="1|TX:["; else str+="0|TX:[";
       str += text + "]" + "|UT:";
       if (getUseTextInDemo())  str+="1"; else str+="0";
@@ -1398,7 +1398,7 @@ void sendPageParams(int page) {
 #endif      
       str="$18 EF:"+String(effect+1) + "|ES:";
       if (effectsFlag)  str+="1|BR:"; else str+="0|BR:";
-      str+=String(globalBrightness) + "|SE:" + String(constrain(map(effectSpeed, D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0, 255), 0,255));
+      str+=String(globalBrightness) + "|SE:" + String(255 - constrain(map(effectSpeed, D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0, 255), 0,255));
       str+="|BU:" + String(useAutoBrightness ? "1" : "0");    
       str+="|BY:" + String(autoBrightnessMin);       
       if (isColorEffect(effect) || !allowed || effect == EFFECT_CLOCK) 
@@ -1416,7 +1416,7 @@ void sendPageParams(int page) {
     case 6:  // Игры. Вернуть: Номер игры; Вкл.выкл; Яркость; Скорость игры; Использовать в демо
       str="$18 GM:"+String(game+1) + "|GS:";
       if (gamemodeFlag && !gamePaused)  str+="1|BR:"; else str+="0|BR:";
-      str+=String(globalBrightness) + "|SG:" + String(constrain(map(gameSpeed, D_GAME_SPEED_MIN,D_GAME_SPEED_MAX, 0, 255), 0,255)); 
+      str+=String(globalBrightness) + "|SG:" + String(255 - constrain(map(gameSpeed, D_GAME_SPEED_MIN,D_GAME_SPEED_MAX, 0, 255), 0,255)); 
       str+="|BU:" + String(useAutoBrightness ? "1" : "0");    
       str+="|BY:" + String(autoBrightnessMin);       
       str+="|UG:" + String(getGameUsage(game) ? "1" : "0");    
