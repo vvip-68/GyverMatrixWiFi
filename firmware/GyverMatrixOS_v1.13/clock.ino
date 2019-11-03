@@ -29,7 +29,6 @@ CRGB overlayLEDs[165];                // По максимуму календа�
 byte listSize = sizeof(overlayList);
 #endif
 
-bool overlayEnabled = getClockOverlayEnabled();
 CRGB clockLED[5] = {HOUR_COLOR, HOUR_COLOR, DOT_COLOR, MIN_COLOR, MIN_COLOR};
 
 // send an NTP request to the time server at the given address
@@ -94,6 +93,9 @@ boolean overlayAllowed() {
 
   // В играх оверлея часов нет;
   if (gamemodeFlag) return false;
+
+  // Часы влазят на матрицу?
+  if (WIDTH < 15 && HEIGHT < 11 || HEIGHT < 5) return false;
   
   // Оверлей разрешен текущими параметрами спец.режима?
   if (specialMode) return specialClock;
@@ -343,7 +345,8 @@ void clockOverlayWrapH(byte posX, byte posY) {
     }
   }
   clockTicker();
-  drawClock(hrs, mins, dotFlag, posX, posY);
+  if (init_time)
+    drawClock(hrs, mins, dotFlag, posX, posY);
 }
 
 void clockOverlayUnwrapH(byte posX, byte posY) {
@@ -365,7 +368,8 @@ void clockOverlayWrapV(byte posX, byte posY) {
     }
   }
   clockTicker();
-  drawClock(hrs, mins, dotFlag, posX, posY);
+  if (init_time)
+    drawClock(hrs, mins, dotFlag, posX, posY);
 }
 
 void clockOverlayUnwrapV(byte posX, byte posY) {
@@ -387,7 +391,8 @@ void calendarOverlayWrap(byte posX, byte posY) {
     }
   }
   clockTicker();
-  drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_X, CALENDAR_Y);
+  if (init_time)
+    drawCalendar(aday, amnth, ayear, dotFlag, CALENDAR_X, CALENDAR_Y);
 }
 
 void calendarOverlayUnwrap(byte posX, byte posY) {
@@ -873,6 +878,24 @@ void checkClockOrigin() {
   if (CLOCK_X < 0) CLOCK_X = 0;
   if (CLOCK_Y < 0) CLOCK_Y = 0;
   
+  // Если высота матрицы не позволяет расположить часы вертикально - переключить в горизонтальный режим
+  if (CLOCK_ORIENT == 1 && HEIGHT < 11) {
+    CLOCK_ORIENT == 0;
+    saveClockOrientation(CLOCK_ORIENT);
+  }
+  
+  // Если размеры матрицы не позволяют показывать оверлей часов - отключить 
+  if (WIDTH < 15 && HEIGHT < 11 || HEIGHT < 5) {
+    overlayEnabled = false;
+    saveClockOverlayEnabled(overlayEnabled);
+  }
+
+  // Если высота матрицы не позволяет показывать календарь в две строки - отключить 
+  if (showDateInClock && HEIGHT < 11) {
+    showDateInClock = false;
+    setShowDateInClock(showDateInClock);
+  }
+
   // ширина и высота отображения часов  
   byte cw = CLOCK_ORIENT == 0 ? 4*3 + 3*1 : 2*3 + 1; // гориз: 4 цифры * (шрифт 3 пикс шириной) 3 + пробела между цифрами) // ширина горизонтальных часов
                                                      // верт:  2 цифры * (шрифт 3 пикс шириной) 1 + пробел между цифрами)  // ширина вертикальных часов

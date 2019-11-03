@@ -6,7 +6,7 @@
 // Дальнейшее развитие: vvip, 2019
 // https://AlexGgameSpeedyver.ru/
 
-#define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.13.2019.1031")
+#define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.13.2019.1103")
 #define FASTLED_INTERRUPT_RETRY_COUNT 0
 #define FASTLED_ALLOW_INTERRUPTS 0
 
@@ -418,6 +418,7 @@ byte showDateDuration = 5;         // на 5 секунд
 byte showDateInterval = 20;        // через каждые 20 секунд
 byte showDateState = false;        // false - отображаются часы; true - отображается дата
 long showDateStateLastChange = 0;  // Время, когда отображение часов сменилось на отображение календаря и наоборот
+bool overlayEnabled = true;        // Разрешено наложение часов на эффекты
 
 int8_t hrs = 0, mins = 0, secs = 0, aday = 1, amnth = 1;
 int16_t ayear = 1970;

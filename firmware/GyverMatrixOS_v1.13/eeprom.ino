@@ -426,7 +426,9 @@ boolean getEffectClock(byte effect) {
 }
 
 boolean getClockOverlayEnabled() {
-  return EEPROMread(5) == 1;
+  boolean val = EEPROMread(5) == 1;
+  if (WIDTH < 15 && HEIGHT < 11 || HEIGHT < 5) val = false;
+  return val;
 }
 
 void saveClockOverlayEnabled(boolean enabled) {
@@ -472,7 +474,11 @@ int8_t getTimeZone() {
 }
 
 byte getClockOrientation() {
-  return EEPROMread(13) == 1 ? 1 : 0;
+  byte val = EEPROMread(13) == 1 ? 1 : 0;
+  // Для вертикальной ориентации нужно минимум 11 точек высота.
+  // Если условие не соблюдено - считать ориентацию горизонтальной
+  if (val == 1 && HEIGHT < 11) val == 0;
+  return val;
 }
 
 void saveClockOrientation(byte orientation) {
@@ -494,7 +500,9 @@ void saveClockColorMode(byte ColorMode) {
 }
 
 bool getShowDateInClock() {
-  return EEPROMread(16) == 1;
+  bool val = EEPROMread(16) == 1;
+  if (val && HEIGHT < 11) val == 0;
+  return val;
 }
 
 void setShowDateInClock(boolean use) {  

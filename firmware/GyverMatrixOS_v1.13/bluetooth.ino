@@ -740,6 +740,8 @@ void parsing() {
         // intData[2] : номер эффекта
         // intData[3] : действие = 1: 0 - стоп 1 - старт; действие = 2: 0 - выкл; 1 - вкл;
         if (intData[1] == 0 || intData[1] == 1) {          
+          // Если в приложении выбраны часы, но они недоступны из за размеров матрицы - брать следующий эффект
+          if (effect == EFFECT_CLOCK && ((WIDTH < 15 && HEIGHT < 11) || HEIGHT < 5)) effect++;
           setEffect(effect);
           if (!BTcontrol) BTcontrol = !isColorEffect(effect);                    // При установке эффекта дыхание / цвета / радуга пикс - переключаться в управление по BT не нужно
           loadingFlag = intData[1] == 0 && !isColorEffect(effect);
@@ -917,7 +919,8 @@ void parsing() {
              saveEffectClock(intData[2], intData[3] == 1);
              break;
            case 1:               // $19 1 X; - сохранить настройку X "Часы в эффектах"
-             saveClockOverlayEnabled(intData[2] == 1);
+             overlayEnabled = (WIDTH < 15 && HEIGHT < 11 || HEIGHT < 5) ? false : intData[2] == 1;
+             saveClockOverlayEnabled(overlayEnabled);
              break;
            case 2:               // $19 2 X; - Использовать синхронизацию часов NTP  X: 0 - нет, 1 - да
              useNtp = intData[2] == 1;
@@ -939,6 +942,8 @@ void parsing() {
              break;
            case 4:               // $19 4 X; - Ориентация часов  X: 0 - горизонтально, 1 - вертикально
              CLOCK_ORIENT = intData[2] == 1 ? 1  : 0;
+             // Если высота матрицы меньше минимальной для режима вертикальных часов (11 точек) положение "Вертикально не может быть задано
+             if (CLOCK_ORIENT == 1 && HEIGHT < 11) CLOCK_ORIENT == 0;
              // Центрируем часы по горизонтали/вертикали по ширине / высоте матрицы
              if (CLOCK_ORIENT == 0) {
                CLOCK_X = CLOCK_X_H;
@@ -957,6 +962,7 @@ void parsing() {
              break;
            case 6:               // $19 6 X; - Показывать дату в режиме часов  X: 0 - нет, 1 - да
              showDateInClock = intData[2] == 1;
+             if (showDateInClock && HEIGHT < 11) showDateInClock == 0;
              setShowDateInClock(showDateInClock);
              break;
            case 7:               // $19 7 D I; - Продолжительность отображения даты / часов (в секундах)
