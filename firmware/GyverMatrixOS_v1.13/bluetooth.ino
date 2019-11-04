@@ -475,7 +475,7 @@ void parsing() {
     // 19 (настройки часов), 20 (настройки будильника), 21 (настройки сети) сбрасывают спец-режим
     if (intData[0] != 4  && intData[0] != 14 && 
         intData[0] != 18 && intData[0] != 19 &&
-        intData[0] != 20 && intData[0] != 21) {
+        intData[0] != 20 && intData[0] != 21 && intData[0] != 23) {
       if (specialMode) {
         idleTimer.setInterval(idleTime == 0 ? 4294967295 : idleTime);
         idleTimer.reset();
@@ -1164,6 +1164,7 @@ void parsing() {
             FastLED.setMaxPowerInVoltsAndMilliamps(5, CURRENT_LIMIT == 0 ? 100000 : CURRENT_LIMIT);            
             break;
         }
+        sendPageParams(1);
         break;
     }
     lastMode = intData[0];  // запомнить предыдущий режим
