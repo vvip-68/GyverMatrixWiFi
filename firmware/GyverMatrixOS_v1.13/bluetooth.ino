@@ -452,13 +452,15 @@ void parsing() {
            D  - день недели
            HH - час времени будильника
            MM - минуты времени будильника
-    21 - настройки подключения к сети . точке доступа
+    21 - настройки подключения к сети / точке доступа
     22 - настройки включения режимов матрицы в указанное время
        - $22 X HH MM NN
            X  - номер режима 1 или 2
            HH - час срабатывания
            MM - минуты срабатывания
            NN - эффект: -2 - выключено; -1 - выключить матрицу; 0 - случайный режим и далее по кругу; 1 и далее - список режимов ALARM_LIST 
+    23 - прочие настройки
+       - $23 0 VAL  - лимито по потребляемому току
   */  
   if (recievedFlag) {      // если получены данные
     recievedFlag = false;
@@ -1153,6 +1155,16 @@ void parsing() {
         saveSettings();
         sendPageParams(10);
         break;
+      case 23:
+        // $23 0 VAL - лимит по потребляемому току
+        switch(intData[1]) {
+          case 0:
+            setPowerLimit(intData[2]);
+            CURRENT_LIMIT = getPowerLimit();
+            FastLED.setMaxPowerInVoltsAndMilliamps(5, CURRENT_LIMIT == 0 ? 100000 : CURRENT_LIMIT);            
+            break;
+        }
+        break;
     }
     lastMode = intData[0];  // запомнить предыдущий режим
   }
@@ -1350,12 +1362,13 @@ void sendPageParams(int page) {
   // AM2H:HH     час включения режима 2     00..23
   // AM2M:MM     минуты включения режима 2  00..59
   // AM2E:NN     номер эффекта режима 1:   -2 - не используется; -1 - выключить матрицу; 0 - включить случайный с автосменой; 1 - номер режима из спписка ALARM_LIST
+  // PW:число    ограничение по току в миллиамперах
   
   String str = "", color, text;
   boolean allowed;
   byte b_tmp;
   switch (page) { 
-    case 1:  // Настройки. Вернуть: Ширина/Высота матрицы; Яркость; Деморежм и Автосмена; Время смены режимо
+    case 1:  // Настройки. Вернуть: Ширина/Высота матрицы; Яркость; Деморежм и Автосмена; Время смены режимов
       str="$18 W:"+String(WIDTH)+"|H:"+String(HEIGHT)+"|DM:";
       if (BTcontrol)  str+="0|AP:"; else str+="1|AP:";
       if (AUTOPLAY)   str+="1|BR:"; else str+="0|BR:";
@@ -1364,6 +1377,7 @@ void sendPageParams(int page) {
       str+="|BU:" + String(useAutoBrightness ? "1" : "0");
       str+="|BY:" + String(autoBrightnessMin);
       str+="|RM:" + String(useRandomSequence);
+      str+="|PW:" + String(CURRENT_LIMIT);
       str+=";";
       break;
     case 2:  // Рисование. Вернуть: Яркость; Цвет точки;

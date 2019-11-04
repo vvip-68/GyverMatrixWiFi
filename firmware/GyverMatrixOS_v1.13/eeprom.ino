@@ -66,7 +66,8 @@ void loadSettings() {
   //  150-153 - Статический IP адрес лампы  
   //  154 - Случайная последовательность включения эффектов
   //  155 - Последний включенный вручную эффект
-  //  156-159 - зарезервировано 
+  //  156,157 - ограничение по току 
+  //  158-159 - зарезервировано 
   // ....
   //  160 - 160+(Nигр*2)   - скорость игры
   //  160 - 160+(Nигр*2)+1 - использовать игру в демо-режиме
@@ -100,6 +101,7 @@ void loadSettings() {
     timeZoneOffset = getTimeZone();
     CLOCK_ORIENT = getClockOrientation();
     COLOR_MODE = getClockColorMode();
+    CURRENT_LIMIT = getPowerLimit();
     showDateInClock = getShowDateInClock();  
     showDateDuration = getShowDateDuration();
     showDateInterval = getShowDateInterval();
@@ -269,6 +271,8 @@ void saveDefaults() {
 
   EEPROMwrite(154, useRandomSequence ? 1 : 0);
 
+  setPowerLimit(CURRENT_LIMIT);
+  
   eepromModified = true;
 }
 
@@ -905,6 +909,19 @@ void saveRandomMode(bool randomMode) {
 
 bool getRandomMode() {
  return EEPROMread(154) != 0;
+}
+
+void setPowerLimit(uint16_t limit) {
+  if (limit != getPowerLimit()) {
+    EEPROM_int_write(156, limit);
+    eepromModified = true;
+  }
+}
+
+uint16_t getPowerLimit() {
+  uint16_t val = (uint16_t)EEPROM_int_read(156);
+  if (val !=0 && val < 1000) val = 1000;
+  return val;
 }
 
 // ----------------------------------------------------------

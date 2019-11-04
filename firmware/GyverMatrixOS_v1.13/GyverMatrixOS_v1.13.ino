@@ -6,7 +6,7 @@
 // Дальнейшее развитие: vvip, 2019
 // https://AlexGgameSpeedyver.ru/
 
-#define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.13.2019.1103")
+#define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.13.2019.1104")
 #define FASTLED_INTERRUPT_RETRY_COUNT 0
 #define FASTLED_ALLOW_INTERRUPTS 0
 
@@ -31,7 +31,7 @@
 // ************************ МАТРИЦА *************************
 
 #define BRIGHTNESS 32         // стандартная маскимальная яркость (0-255)
-#define CURRENT_LIMIT 5000    // лимит по току в миллиамперах, автоматически управляет яркостью (пожалей свой блок питания!) 0 - выключить лимит
+uint16_t CURRENT_LIMIT=5000;  // лимит по току в миллиамперах, автоматически управляет яркостью (пожалей свой блок питания!) 0 - выключить лимит
 
 #define WIDTH 16              // ширина матрицы
 #define HEIGHT 16             // высота матрицы
