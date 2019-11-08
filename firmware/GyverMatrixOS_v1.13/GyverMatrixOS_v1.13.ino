@@ -6,7 +6,7 @@
 // Дальнейшее развитие: vvip, 2019
 // https://AlexGgameSpeedyver.ru/
 
-#define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.13.2019.1104")
+#define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.13.2019.1108")
 #define FASTLED_INTERRUPT_RETRY_COUNT 0
 #define FASTLED_ALLOW_INTERRUPTS 0
 
