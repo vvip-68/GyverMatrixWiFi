@@ -1378,7 +1378,8 @@ void sendPageParams(int page) {
 #endif      
       str="$18 EF:"+String(effect+1) + "|ES:";
       if (effectsFlag)  str+="1|BR:"; else str+="0|BR:";
-      str+=String(globalBrightness) + "|SE:" + String(255 - constrain(map(effectSpeed, D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0, 255), 0,255));
+      str+=String(globalBrightness);
+      str+="|SE:" + (effect == EFFECT_CLOCK ? "X" : String(255 - constrain(map(effectSpeed, D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0, 255), 0,255)));
       str+="|BU:" + String(useAutoBrightness ? "1" : "0");    
       str+="|BY:" + String(autoBrightnessMin);       
       if (!allowed || effect == EFFECT_CLOCK) 
