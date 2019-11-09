@@ -1,4 +1,4 @@
-#define EEPROM_OK 0x5A                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
+#define EEPROM_OK 0x5F                     // Флаг, показывающий, что EEPROM инициализирована корректными данными 
 #define GAME_EEPROM 160                    // начальная ячейка eeprom с параметрами игр (2 байта на игру, 6 игр)
 #define EFFECT_EEPROM 174                  // начальная ячейка eeprom с параметрами эффектов 3 байта на эффект, 29 эффектов)
 
@@ -936,6 +936,7 @@ byte EEPROMread(uint16_t addr) {
 
 void EEPROMwrite(uint16_t addr, byte value) {    
   EEPROM.write(addr, value);
+  saveSettingsTimer.reset();
 }
 
 // чтение uint16_t
@@ -951,6 +952,7 @@ void EEPROM_int_write(uint16_t addr, uint16_t num) {
   byte raw[2];
   (uint16_t&)raw = num;
   for (byte i = 0; i < 2; i++) EEPROMwrite(addr+i, raw[i]);
+  saveSettingsTimer.reset();
 }
 
 String EEPROM_string_read(uint16_t addr, int16_t len) {
@@ -974,6 +976,7 @@ void EEPROM_string_write(uint16_t addr, String buffer, int16_t max_len) {
      EEPROMwrite(addr+i, buffer[i++]);
    }
    if (i < max_len) EEPROMwrite(addr+i,0);
+   saveSettingsTimer.reset();
 }
 
 // ----------------------------------------------------------

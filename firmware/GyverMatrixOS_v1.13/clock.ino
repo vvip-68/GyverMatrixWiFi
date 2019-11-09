@@ -111,8 +111,8 @@ boolean overlayAllowed() {
     }
   }
 
-  // Оверлей разрешен настройками параметров эффекта? (в эффектах Дыхание, Цвета, Радуга пикс. и Часы оверлей часов не разрешен)
-  if (allowed && BTcontrol && effectsFlag && !(isColorEffect(effect) || effect == MC_CLOCK)) {
+  // Оверлей разрешен настройками параметров эффекта? (в эффекте "Часы" оверлей часов не разрешен)
+  if (allowed && BTcontrol && effectsFlag && effect != MC_CLOCK) {
     allowed = getEffectClock(effect);   
   }
     
@@ -411,7 +411,8 @@ boolean needUnwrap() {
       modeCode == MC_MATRIX ||
       modeCode == MC_STARFALL ||
       modeCode == MC_BALLS ||
-      modeCode == MC_FIRE) return true;
+      modeCode == MC_FIRE ||
+      modeCode == MC_PAINTBALL) return true;
   else return false;
 }
 #endif
@@ -456,6 +457,8 @@ void setOverlayColors() {
       case MC_RAINBOW:
       case MC_RAINBOW_DIAG: 
       case MC_NOISE_PLASMA:
+      case MC_LIGHTERS:
+      case MC_PAINTBALL:
         contrastClock();
         break;
       case MC_SNOW:
@@ -700,27 +703,27 @@ void stopAlarm() {
   }
 }
 
-void setModeByModeId(byte saveThisMode) {
+void setModeByModeId(byte aMode) {
 
   if (saveRunningFlag) {
-    thisMode = saveThisMode;
+    thisMode = aMode;
     startRunningText();
   } else {
-    byte tmp = mapModeToEffect(saveThisMode);
+    byte tmp = mapModeToEffect(aMode);
     if (tmp <= MAX_EFFECT) {
-      setEffect(tmp);      
+      setEffect(tmp);
     } else {  
-      tmp = mapModeToGame(saveThisMode);
+      tmp = mapModeToGame(aMode);
       if (tmp <= MAX_GAME) {
         startGame(tmp, true, false);
-      } else if (saveThisMode == DEMO_TEXT_0 || saveThisMode == DEMO_TEXT_1 || saveThisMode == DEMO_TEXT_2) {
-        thisMode = saveThisMode;
+      } else if (aMode == DEMO_TEXT_0 || aMode == DEMO_TEXT_1 || aMode == DEMO_TEXT_2) {
+        thisMode = aMode;
+        startRunningText();
         loadingFlag = true;
       }
     }
   }
   FastLED.setBrightness(globalBrightness);
-  setTimersForMode(thisMode);
 }
 
 void setRandomMode() {

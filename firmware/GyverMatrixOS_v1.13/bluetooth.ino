@@ -27,7 +27,7 @@ void bluetoothRoutine() {
     if (thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2) {
       // Это бегущий текст  
       Serial.print(F("Включена бегущая строка "));
-      Serial.println(thisMode);
+      Serial.println(thisMode + 1);
     } else {
       byte tmp_effect = mapModeToEffect(thisMode);
       if (tmp_effect != 255) {
@@ -100,8 +100,6 @@ void bluetoothRoutine() {
       }
     }
     
-    if (!BTcontrol && effectsFlag && !isColorEffect(effect)) effectsFlag = false;
-    
     // При яркости = 1 остаются гореть только красные светодиоды и все эффекты теряют вид.
     // поэтому отображать эффект "ночные часы"
     byte br = specialMode ? specialBrightness : globalBrightness;
@@ -123,13 +121,6 @@ void bluetoothRoutine() {
       }  
       fillString(txt, txtColor); 
     }
-
-    else if (drawingFlag && !isAlarming) {
-      // Рисование. Если эффект цветов - применить
-      if (effectsFlag && isColorEffect(effect)) {  
-         effects();   
-      }
-    }
     
     // Один из режимов игры. На игры эффекты не накладываются
     else if (gamemodeFlag && (!gamePaused || loadingFlag) && !isAlarming) {
@@ -139,21 +130,13 @@ void bluetoothRoutine() {
       customRoutine();
     }
 
-    // Бегущая строка или Часы в основном режиме и эффект Дыхание или Цвета, Радуга пикс
-    else if ((thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2 || thisMode == DEMO_CLOCK) && effectsFlag && isColorEffect(effect) && !isAlarming) { 
-
-      // Подготовить изображение
-      customModes(thisMode);
-      // Наложить эффект Дыхание / Цвета и вывести в матрицу
-      effects();
+    // В режиме рисования никаких эффектов не нужно
+    else if (drawingFlag && !isAlarming) {
       
-    } else {
-      // Сформировать и вывести на матрицу текущий демо-режим
-      if(effectsFlag && isColorEffect(effect) && !isAlarming) {      
-        effects();  
-      } else {
-        customRoutine();
-      }      
+    }
+    else if (effectsFlag) {
+      // Сформировать и вывести на матрицу текущий демо-режим      
+      customRoutine();
     }            
 
     checkAlarmTime();
@@ -332,22 +315,6 @@ void bluetoothRoutine() {
   }
 }
 
-// Блок эффектов наложения цветовых эффектов на сформированное изображение
-void effects() {
-  
-  // Эффекты наложения цвета на изображение, имеющееся на матрице
-  // Только эффекты 0, 1 и 5 совместимы с бегущей строкой - они меняют цвет букв
-  // Остальные эффекты портят бегущую строку - ее нужно отключать  
-  if (runningFlag && !isColorEffect(effect)) runningFlag = false;  // Дыхание, Цвет, Радуга пикс
-
-  // Наложение эффекта изменения цвета / яркости на матрицу
-  switch (effect) {
-    case EFFECT_BREATH: brightnessRoutine(); break;       // Дыхание
-    case EFFECT_COLOR: colorsRoutine(); break;              // Цвет
-    case EFFECT_RAINBOW_PIX: rainbowColorsRoutine(); break; // Радуга пикс.
-  }
-}
-
 enum eModes {NORMAL, COLOR, TEXT} parseMode;
 
 byte parse_index;
@@ -502,14 +469,13 @@ void parsing() {
         BTcontrol = true;
         drawingFlag = true;
         runningFlag = false;
-        if (gamemodeFlag && game==1) gamePaused = true;
+        if (gamemodeFlag && game==1) 
+          gamePaused = true;
         else {
           gamemodeFlag = false;
           gamePaused = false;
         }
-        if (!isColorEffect(effect)) {
-            effectsFlag = false;
-        }
+        effectsFlag = false;
         drawPixelXY(intData[1], intData[2], gammaCorrection(globalColor));
         FastLED.show();
         sendAcknowledge();
@@ -520,9 +486,7 @@ void parsing() {
         drawingFlag = true;
         gamemodeFlag = false;
         gamePaused = false;
-        if (!isColorEffect(effect)) {
-            effectsFlag = false;
-        }
+        effectsFlag = false;
         fillAll(gammaCorrection(globalColor));
         FastLED.show();
         sendAcknowledge();
@@ -533,9 +497,7 @@ void parsing() {
         gamemodeFlag = false;
         gamePaused = false;
         drawingFlag = true;
-        if (!isColorEffect(effect)) {
-            effectsFlag = false;
-        }
+        effectsFlag = false;
         FastLED.clear();
         FastLED.show();
         sendAcknowledge();
@@ -558,7 +520,6 @@ void parsing() {
           setUseAutoBrightness(useAutoBrightness);
           setAutoBrightnessMin(autoBrightnessMin);
         }
-        saveSettingsTimer.reset();
         sendAcknowledge();
         break;
       case 5:
@@ -714,7 +675,7 @@ void parsing() {
               break;
            }
         }
-        saveSettingsTimer.reset();
+
         if (b_tmp == 6) 
           sendPageParams(8);
         else
@@ -733,7 +694,6 @@ void parsing() {
           // Вкл/Выкл "Использовать в демо-режиме": 2 - вкл; 3 - выкл;
           setUseTextInDemo(intData[1] == 2);
         }
-        saveSettingsTimer.reset();
         sendAcknowledge();
         break;
       case 8:      
@@ -745,15 +705,14 @@ void parsing() {
           // Если в приложении выбраны часы, но они недоступны из за размеров матрицы - брать следующий эффект
           if (effect == EFFECT_CLOCK && ((WIDTH < 15 && HEIGHT < 11) || HEIGHT < 5)) effect++;
           setEffect(effect);
-          if (!BTcontrol) BTcontrol = !isColorEffect(effect);                    // При установке эффекта дыхание / цвета / радуга пикс - переключаться в управление по BT не нужно
-          loadingFlag = intData[1] == 0 && !isColorEffect(effect);
+          BTcontrol = true;
+          loadingFlag = intData[1] == 0;
           effectsFlag = intData[1] == 0 || (intData[1] == 1 && intData[3] == 1); // выбор эффекта - сразу запускать           
           if (effect == EFFECT_FILL_COLOR && globalColor == 0x000000) setGlobalColor(0xffffff);
         } else if (intData[1] == 2) {
           // Вкл/выкл использование эффекта в демо-режиме
           saveEffectUsage(effect, intData[3] == 1); 
         }
-        saveSettingsTimer.reset();                
         // Для "0" и "2" - отправляются параметры, подтверждение отправлять не нужно. Для остальных - нужно
         if (intData[1] == 0 || intData[1] == 2) {
           sendPageParams(5);
@@ -779,7 +738,6 @@ void parsing() {
           // Вкл/выкл использование игры в демо-режиме
           saveGameUsage(game, intData[3] == 1); 
         }
-        saveSettingsTimer.reset();
 
         // Для "0" и "2" - отправляются параметры, подтверждение отправлять не нужно. Для остальных - нужно
         if (intData[1] == 0 || intData[1] == 2) {
@@ -826,20 +784,17 @@ void parsing() {
         break;
       case 15: 
         if (intData[2] == 0) {
+          if (intData[1] == 255) intData[1] = 254;
           effectSpeed = 255 - intData[1]; 
-          saveEffectSpeed(effect, effectSpeed);
-          effectTimer.setInterval(effectSpeed);
-          gifTimer.setInterval(effectSpeed * 10);
+          saveEffectSpeed(effect, effectSpeed);          
         } else if (intData[2] == 1) {
           scrollSpeed = 255 - intData[1]; 
-          scrollTimer.setInterval(scrollSpeed);
           saveScrollSpeed(scrollSpeed);
         } else if (intData[2] == 2) {
           gameSpeed = map(constrain(255 - intData[1],0,255),0,255,D_GAME_SPEED_MIN,D_GAME_SPEED_MAX);      // для игр скорость нужна меньше! вх 0..255 преобразовать в 25..375
           saveGameSpeed(game, gameSpeed);
-          gameTimer.setInterval(gameSpeed);
         }
-        saveSettingsTimer.reset();
+        setTimersForMode(thisMode);
         sendAcknowledge();
         break;
       case 16:
@@ -882,8 +837,6 @@ void parsing() {
           }
         }
 
-        saveSettingsTimer.reset();
-
         if (!BTcontrol && AUTOPLAY) {
           sendPageParams(1);
         } else {        
@@ -905,10 +858,20 @@ void parsing() {
         idleState = !BTcontrol && AUTOPLAY; 
         idleTimer.setInterval(idleTime == 0 ? 4294967295 : idleTime);
         idleTimer.reset();
-        saveSettingsTimer.reset();
         sendAcknowledge();
         break;
       case 18: 
+        if (intData[1] == 2 || // Рисование
+            intData[1] == 3 || // Картинка
+            intData[1] == 4)   // Текст
+        {
+          resetModes();
+          drawingFlag = intData[1] == 2 || intData[1] == 3;
+          runningFlag = intData[1] == 4;
+          BTcontrol = true;
+          FastLED.clear();
+          FastLED.show();
+        }        
         if (intData[1] == 0) { // ping
           sendAcknowledge();
         } else {               // запрос параметров страницы приложения
@@ -978,7 +941,6 @@ void parsing() {
              init_time = true; refresh_time = false; ntp_cnt = 0;
              break;
         }
-        saveSettingsTimer.reset();
         sendAcknowledge();
         break;
       case 20:
@@ -1008,7 +970,6 @@ void parsing() {
               alarmSound = intData[5] - 2;  // Индекс от приложения: 0 - нет; 1 - случайно; 2 - 1-й файл; 3 - ... -> -1 - нет; 0 - случайно; 1 - 1-й файл и т.д
               dawnSound = intData[6] - 2;   // Индекс от приложения: 0 - нет; 1 - случайно; 2 - 1-й файл; 3 - ... -> -1 - нет; 0 - случайно; 1 - 1-й файл и т.д
               saveAlarmSounds(useAlarmSound, alarmDuration, maxAlarmVolume, alarmSound, dawnSound);
-              saveSettingsTimer.reset();
             }
             break;
           case 3:
@@ -1097,7 +1058,6 @@ void parsing() {
                 Serial.println(F("Точка доступа отключена."));
               }
             }      
-            saveSettingsTimer.reset();
             break;
           case 1:  
             // $21 1 IP1 IP2 IP3 IP4 - установить статический IP адрес подключения к локальной WiFi сети, пример: $21 1 192 168 0 106
@@ -1110,7 +1070,6 @@ void parsing() {
               intData[5] = 0;
             }
             saveStaticIP(intData[2], intData[3], intData[4], intData[5]);
-            saveSettingsTimer.reset();
             break;
           case 2:  
             // $21 2; Выполнить переподключение к сети WiFi
@@ -1422,13 +1381,11 @@ void sendPageParams(int page) {
       str+=String(globalBrightness) + "|SE:" + String(255 - constrain(map(effectSpeed, D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX, 0, 255), 0,255));
       str+="|BU:" + String(useAutoBrightness ? "1" : "0");    
       str+="|BY:" + String(autoBrightnessMin);       
-      if (isColorEffect(effect) || !allowed || effect == EFFECT_CLOCK) 
+      if (!allowed || effect == EFFECT_CLOCK) 
           str+="|EC:X";  // X - параметр не используется (неприменим)
       else    
           str+="|EC:" + String(getEffectClock(effect));
-      if (isColorEffect(effect)) 
-          str+="|UE:X";  // X - параметр не используется (неприменим)
-      else if (getEffectUsage(effect))
+      if (getEffectUsage(effect))
           str+="|UE:1";
       else    
           str+="|UE:0";
@@ -1609,6 +1566,14 @@ void setSpecialMode(int spc_mode) {
       specialClock = true;
       setGlobalColor((uint32_t)HEXtoInt(str));
       break;
+    case 8:  // Светлячки
+      tmp_eff = EFFECT_LIGHTERS;
+      specialClock = true;
+      break;
+    case 9:  // Пейнтбол
+      tmp_eff = EFFECT_PAINTBALL;
+      specialClock = true;
+      break;
   }
 
   if (tmp_eff >=0) {    
@@ -1617,10 +1582,9 @@ void setSpecialMode(int spc_mode) {
     byte b_tmp = mapEffectToMode(tmp_eff);
     if (b_tmp != 255) {
       effect = (byte)tmp_eff;
-      thisMode = b_tmp;
+      thisMode = b_tmp;      
       specialMode = true;
-      effectSpeed = getEffectSpeed(effect);
-      effectTimer.setInterval(effectSpeed);
+      setTimersForMode(thisMode);
       // Таймер возврата в авторежим отключен    
       idleTimer.setInterval(4294967295);
       idleTimer.reset();
@@ -1654,29 +1618,25 @@ void resetModes() {
 
 void setEffect(byte eff) {
 
-  effect = eff;
-  
-  // Эффект динамического цвета не отключает текущий режим
-  if (!isColorEffect(effect)) resetModes();
-
-  loadingFlag = !isColorEffect(effect);
+  effect = eff;  
+  resetModes();
+  loadingFlag = true;
   effectsFlag = true;
     
   effectSpeed = getEffectSpeed(effect);
   effectTimer.setInterval(effectSpeed);
 
   // Найти соответствие thisMode указанному эффекту. 
-  if (!isColorEffect(effect)) {            
-    byte b_tmp = mapEffectToMode(effect);           
-    if (b_tmp != 255) {
-      thisMode = b_tmp;
-      if (!useAutoBrightness) {
-        FastLED.setBrightness(globalBrightness);      
-      }  
-    }
+  byte b_tmp = mapEffectToMode(effect);           
+  if (b_tmp != 255) {
+    thisMode = b_tmp;
+    if (!useAutoBrightness) {
+      FastLED.setBrightness(globalBrightness);      
+    }  
   }
   setCurrentSpecMode(-1);
   if (!AUTOPLAY) setCurrentManualMode((int8_t)thisMode);
+  setTimersForMode(thisMode);
 }
 
 void startGame(byte game, bool newGame, bool paused) {
@@ -1706,21 +1666,24 @@ void startGame(byte game, bool newGame, bool paused) {
   }  
   setCurrentSpecMode(-1);
   if (!AUTOPLAY) setCurrentManualMode((int8_t)thisMode);
+  setTimersForMode(thisMode);
 }
 
 void startRunningText() {
 
   runningFlag = true;  
-  if (!isColorEffect(effect)) {
-    effectsFlag = false;
-  }
+  effectsFlag = false;
   
   // Если при включении режима "Бегущая строка" цвет текста - черный -- включить белый, т.к черный на черном не видно
   if (globalColor == 0x000000) setGlobalColor(0xffffff);
+
   if (!useAutoBrightness)
     FastLED.setBrightness(globalBrightness);    
+    
   setCurrentSpecMode(-1);
   if (!AUTOPLAY) setCurrentManualMode((int8_t)thisMode);
+  
+  setTimersForMode(thisMode);
 }
 
 void showCurrentIP() {

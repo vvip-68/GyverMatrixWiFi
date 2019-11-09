@@ -47,10 +47,7 @@ void fillString(String text, uint32_t color) {
       offset = WIDTH + 3;
       fullTextFlag = true;
     }
-        
-    if (effectsFlag && isColorEffect(effect)) {  
-       effects();   
-    }
+            
     FastLED.show();
   }
 }

@@ -27,37 +27,12 @@
 // эффект "снег"
 #define SNOW_DENSE 10     // плотность снегопада
 
+// эффект "Светляки"
+#define LIGHTERS_AM 35    // количество светляков
+
 // --------------------- ДЛЯ РАЗРАБОТЧИКОВ ----------------------
 
-// *********** "дыхание" яркостью ***********
-boolean brightnessDirection;
-void brightnessRoutine() {
-  if (effectTimer.isReady()) {
-    if (brightnessDirection) {
-      breathBrightness += 2;
-      if (breathBrightness > globalBrightness - 2) {
-        breathBrightness = globalBrightness;
-        brightnessDirection = false;
-      }
-    } else {
-      breathBrightness -= 2;
-      if (breathBrightness < 2) {
-        breathBrightness = 2;
-        brightnessDirection = true;
-      }
-    }
-    FastLED.setBrightness(breathBrightness);
-  }
-}
-
-// *********** смена цвета активных светодиодов (рисунка) ***********
 byte hue;
-void colorsRoutine() {
-  if (effectTimer.isReady()) hue += 4;
-  for (int i = 0; i < NUM_LEDS; i++) {
-    if (getPixColor(i) > 0) leds[i] = CHSV(hue, 255, 255);
-  }
-}
 
 // *********** снегопад 2.0 ***********
 void snowRoutine() {
@@ -156,18 +131,6 @@ void rainbowDiagonalRoutine() {
     }
   }
 }
-
-
-// *********** радуга активных светодиодов (рисунка) ***********
-void rainbowColorsRoutine() {
-  if (effectTimer.isReady()) hue++;
-  for (byte i = 0; i < WIDTH; i++) {
-    CRGB thisColor = CHSV((byte)(hue + i * float(255 / WIDTH)), 255, 255);
-    for (byte j = 0; j < HEIGHT; j++)
-      if (getPixColor(getPixelNumber(i, j)) > 0) drawPixelXY(i, j, thisColor);
-  }
-}
-
 
 // ********************** огонь **********************
 unsigned char matrixValue[8][16];
@@ -747,4 +710,124 @@ void fillColorProcedure() {
   FastLED.setBrightness(bright);  
   
   fillAll(gammaCorrection(globalColor));    
+}
+
+// ----------------------------- СВЕТЛЯКИ ------------------------------
+int lightersPos[2][LIGHTERS_AM];
+int8_t lightersSpeed[2][LIGHTERS_AM];
+CHSV lightersColor[LIGHTERS_AM];
+byte loopCounter;
+
+int angle[LIGHTERS_AM];
+int speedV[LIGHTERS_AM];
+int8_t angleSpeed[LIGHTERS_AM];
+
+void lightersRoutine() {
+  if (loadingFlag) {
+    loadingFlag = false;
+    modeCode = MC_LIGHTERS;
+    randomSeed(millis());
+    for (byte i = 0; i < LIGHTERS_AM; i++) {
+      lightersPos[0][i] = random(0, WIDTH * 10);
+      lightersPos[1][i] = random(0, HEIGHT * 10);
+      lightersSpeed[0][i] = random(-10, 10);
+      lightersSpeed[1][i] = random(-10, 10);
+      lightersColor[i] = CHSV(random(0, 255), 255, 255);
+    }
+  }
+  FastLED.clear();
+  if (++loopCounter > 20) loopCounter = 0;
+  for (byte i = 0; i < map(LIGHTERS_AM,0,255,5,150); i++) {
+    if (loopCounter == 0) {     // меняем скорость каждые 255 отрисовок
+      lightersSpeed[0][i] += random(-3, 4);
+      lightersSpeed[1][i] += random(-3, 4);
+      lightersSpeed[0][i] = constrain(lightersSpeed[0][i], -20, 20);
+      lightersSpeed[1][i] = constrain(lightersSpeed[1][i], -20, 20);
+    }
+
+    lightersPos[0][i] += lightersSpeed[0][i];
+    lightersPos[1][i] += lightersSpeed[1][i];
+
+    if (lightersPos[0][i] < 0) lightersPos[0][i] = (WIDTH - 1) * 10;
+    if (lightersPos[0][i] >= WIDTH * 10) lightersPos[0][i] = 0;
+
+    if (lightersPos[1][i] < 0) {
+      lightersPos[1][i] = 0;
+      lightersSpeed[1][i] = -lightersSpeed[1][i];
+    }
+    if (lightersPos[1][i] >= (HEIGHT - 1) * 10) {
+      lightersPos[1][i] = (HEIGHT - 1) * 10;
+      lightersSpeed[1][i] = -lightersSpeed[1][i];
+    }
+    drawPixelXY(lightersPos[0][i] / 10, lightersPos[1][i] / 10, lightersColor[i]);
+  }
+}
+
+// ------------- ПЕЙНТБОЛ -------------
+const uint8_t BorderWidth = 1U;
+void lightBallsRoutine() {
+  if (loadingFlag) {
+    loadingFlag = false;
+    modeCode = MC_PAINTBALL;
+    FastLED.clear();  // очистить
+  }
+  
+  // Apply some blurring to whatever's already on the matrix
+  // Note that we never actually clear the matrix, we just constantly
+  // blur it repeatedly.  Since the blurring is 'lossy', there's
+  // an automatic trend toward black -- by design.
+  uint8_t blurAmount = dim8_raw(beatsin8(3,64,100));
+  blur2d(leds, WIDTH, HEIGHT, blurAmount);
+ 
+  // Use two out-of-sync sine waves  
+  uint8_t  i = beatsin8(  91, BorderWidth, maxDim-BorderWidth);
+  uint8_t  j = beatsin8( 109, BorderWidth, maxDim-BorderWidth);
+  uint8_t  k = beatsin8(  73, BorderWidth, maxDim-BorderWidth);
+  uint8_t  m = beatsin8( 123, BorderWidth, maxDim-BorderWidth);
+
+  // The color of each point shifts over time, each at a different speed.
+  uint32_t ms = millis();
+  int16_t idx, wh = WIDTH * HEIGHT;
+
+  byte cnt = map(effectSpeed, 0, 255, 1, 5);
+  
+  if (cnt <= 1) { idx = XY(i, j); if (idx < wh) leds[idx] += CHSV( ms / 29, 200U, 255U); }
+  if (cnt <= 2) { idx = XY(j, k); if (idx < wh) leds[idx] += CHSV( ms / 41, 200U, 255U); }
+  if (cnt <= 3) { idx = XY(k, m); if (idx < wh) leds[idx] += CHSV( ms / 73, 200U, 255U); }
+  if (cnt <= 4) { idx = XY(m, i); if (idx < wh) leds[idx] += CHSV( ms / 97, 200U, 255U); }
+}
+
+// Trivial XY function for the SmartMatrix; use a different XY
+// function for different matrix grids. See XYMatrix example for code.
+uint16_t XY(uint8_t x, uint8_t y)
+{
+  uint16_t i;
+  uint8_t reverse;
+  if (WIDTH >= HEIGHT) {
+    if (y & 0x01)
+    {
+      // Odd rows run backwards
+      reverse = (WIDTH - 1) - x;
+      i = (y * WIDTH) + reverse;
+    }
+    else
+    {
+      // Even rows run forwards
+      i = (y * WIDTH) + x;
+    }
+  } else {
+    if (x & 0x01)
+    {
+      // Odd rows run backwards
+      reverse = (HEIGHT - 1) - y;
+      i = (x * HEIGHT) + reverse;
+    }
+    else
+    {
+      // Even rows run forwards
+      i = (x * HEIGHT) + y;
+    }
+  }
+
+  return i;
 }
