@@ -258,8 +258,12 @@ void saveDefaults() {
     
   strcpy(apName, DEFAULT_AP_NAME);
   strcpy(apPass, DEFAULT_AP_PASS);
+  strcpy(ssid, NETWORK_SSID);
+  strcpy(pass, NETWORK_PASS);
   setSoftAPName(String(apName));
   setSoftAPPass(String(apPass));
+  setSsid(String(ssid));
+  setPass(String(pass));
   
   strcpy(ntpServerName, DEFAULT_NTP_SERVER);
   setNtpServer(String(ntpServerName));
@@ -638,7 +642,7 @@ bool getUseAlarmSound() {
 }
 
 byte getAlarmDuration() { 
-  return constrain(EEPROMread(25),1,10);
+  return constrain(EEPROMread(26),1,10);
 }
 
 byte getMaxAlarmVolume() { 
