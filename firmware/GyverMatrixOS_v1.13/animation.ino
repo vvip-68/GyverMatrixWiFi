@@ -24,6 +24,7 @@ void animation(byte n) {
   if (loadingFlag) {
     loadingFlag = false;
     modeCode = MC_IMAGE;
+    frameNum = 0;
   }
   bool isReady = gifTimer.isReady();
   if (isReady) {
