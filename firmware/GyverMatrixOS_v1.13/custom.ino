@@ -281,6 +281,7 @@ void setTimersForMode(byte aMode) {
   if (runningFlag || aMode == DEMO_TEXT_0 || aMode == DEMO_TEXT_1 || aMode == DEMO_TEXT_2) {
     // Это бегущий текст  
     scrollSpeed = getScrollSpeed();
+    if (scrollSpeed == 0) scrollSpeed = 1;
     scrollTimer.setInterval(scrollSpeed);
   } 
   else if (aMode == DEMO_PAINTBALL) {
@@ -292,12 +293,14 @@ void setTimersForMode(byte aMode) {
     byte tmp_effect = mapModeToEffect(aMode);
     if (tmp_effect != 255) {
       effectSpeed = getEffectSpeed(tmp_effect);
+      if (effectSpeed == 0) effectSpeed = 1;
       effectTimer.setInterval(effectSpeed);
       gifTimer.setInterval(effectSpeed);
     } else {
       byte tmp_game = mapModeToGame(aMode);
       if (tmp_game != 255) {
         gameSpeed = getGameSpeed(game);
+        if (gameSpeed == 0) gameSpeed = 1;
         gameTimer.setInterval(gameSpeed);
       }
     }

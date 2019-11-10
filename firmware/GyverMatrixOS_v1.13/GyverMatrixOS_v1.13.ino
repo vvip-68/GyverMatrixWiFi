@@ -82,11 +82,11 @@ byte IP_STA[] = {192, 168, 0, 106};          // Статический адре�
 #define STRIP_DIRECTION 0     // направление ленты из угла: 0 - вправо, 1 - вверх, 2 - влево, 3 - вниз
 #define USE_MP3 1             // поставьте 0, если у вас нет звуковой карты MP3 плеера
 #define USE_PHOTO 1           // поставьте 0, если вы не используете фоторезистор как датчик освещенности
-
-#define PHOTO_PIN A0          // пин фоторезистора
-#define LED_PIN D4            // физический D2 пин ленты
-#define PIN_BTN D6            // кнопка подключена сюда (PIN --- КНОПКА --- GND)
-#define SRX D2                // физический D4 is RX of ESP8266, connect to TX of DFPlayer
+ 
+#define PHOTO_PIN 0           // пин фоторезистора
+#define LED_PIN 2             // физический D2 пин ленты
+#define PIN_BTN 12            // физический D6 кнопка подключена сюда (PIN --- КНОПКА --- GND)
+#define SRX D4                // физический D4 is RX of ESP8266, connect to TX of DFPlayer
 #define STX D3                // физический D3 is TX of ESP8266, connect to RX of DFPlayer module
 
 /*
@@ -197,6 +197,12 @@ byte CALENDAR_X = CAL_X;
 byte CALENDAR_Y = CAL_Y;
 byte CLOCK_X = CLOCK_X_H;     // Для вертикальных часов CLOCK_X_V и CLOCK_Y_V
 byte CLOCK_Y = CLOCK_Y_H;
+
+// Часы могут отображаться: 
+// - вертикальные при высоте матрицы >= 11 и ширине >= 7; 
+// - горизонтальные при ширене матрицы >= 15 и высоте >= 5
+bool allowVertical = WIDTH >= 7 && HEIGHT >= 11;
+bool allowHorizontal = WIDTH >= 15 && HEIGHT >= 7;
 
 // Режим цвета часов
 byte COLOR_MODE = 0;
@@ -479,7 +485,8 @@ timerMinim dawnTimer(4294967295);                       // Таймер шага
 
 // ---- MP3 плеер для проигрывания звуков будильника
 
-SoftwareSerial mp3Serial;
+SoftwareSerial mp3Serial(SRX, STX); // 2.5.2
+//SoftwareSerial mp3Serial;         // 2.6
 
 DFRobotDFPlayerMini dfPlayer;
 bool isDfPlayerOk = false;
@@ -560,7 +567,7 @@ void setup() {
   delay(10);
 
   Serial.println(FIRMWARE_VER);
-  
+
   // Инициализация EEPROM и загрузка сохраненных параметров
   EEPROM.begin(512);
   loadSettings();

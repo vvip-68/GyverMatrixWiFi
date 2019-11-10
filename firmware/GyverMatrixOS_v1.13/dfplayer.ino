@@ -1,5 +1,7 @@
 void InitializeDfPlayer1() {
-  mp3Serial.begin(9600, SRX, STX, (SoftwareSerialConfig)SERIAL_8N1, false, 64);   
+  mp3Serial.begin(9600);   // 2.5.2
+//mp3Serial.begin(9600, SRX, STX, (SoftwareSerialConfig)SERIAL_8N1, false, 64);   // 2.6.0
+  
   dfPlayer.begin(mp3Serial, true, true);
   dfPlayer.setTimeOut(2000);
   dfPlayer.EQ(DFPLAYER_EQ_NORMAL);
@@ -160,6 +162,7 @@ void PlayDawnSound() {
     fadeSoundDirection = 1;   
     fadeSoundStepCounter = maxAlarmVolume;
     if (fadeSoundStepCounter <= 0) fadeSoundStepCounter = 1;
+    if (realDawnDuration <= 0) realDawnDuration = 1;
     fadeSoundTimer.setInterval(realDawnDuration * 60L * 1000L / fadeSoundStepCounter);
     alarmSoundTimer.setInterval(4294967295);
   } else {
@@ -186,5 +189,6 @@ void StopSound(int duration) {
   if (fadeSoundStepCounter <= 0) fadeSoundStepCounter = 1;
     
   fadeSoundDirection = -1;   
+  if (duration < fadeSoundStepCounter) duration = fadeSoundStepCounter;
   fadeSoundTimer.setInterval(duration / fadeSoundStepCounter);
 }

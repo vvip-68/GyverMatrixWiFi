@@ -95,7 +95,7 @@ boolean overlayAllowed() {
   if (gamemodeFlag) return false;
 
   // Часы влазят на матрицу?
-  if (WIDTH < 15 && HEIGHT < 11 || HEIGHT < 5) return false;
+  if (!(allowHorizontal || allowVertical)) return false;
   
   // Оверлей разрешен текущими параметрами спец.режима?
   if (specialMode) return specialClock;
@@ -884,26 +884,26 @@ void SetAutoMode(byte amode) {
 }
 
 void checkClockOrigin() {
-  if (CLOCK_X < 0) CLOCK_X = 0;
-  if (CLOCK_Y < 0) CLOCK_Y = 0;
-  
-  // Если высота матрицы не позволяет расположить часы вертикально - переключить в горизонтальный режим
-  if (CLOCK_ORIENT == 1 && HEIGHT < 11) {
-    CLOCK_ORIENT == 0;
-    saveClockOrientation(CLOCK_ORIENT);
-  }
-  
-  // Если размеры матрицы не позволяют показывать оверлей часов - отключить 
-  if (WIDTH < 15 && HEIGHT < 11 || HEIGHT < 5) {
+
+  if (allowVertical || allowHorizontal) {
+    // Если ширина матрицы не позволяет расположить часы горизонтально - переключить в вертикальный режим
+    if (CLOCK_ORIENT == 1 && !allowVertical) {
+      CLOCK_ORIENT == 0;
+      saveClockOrientation(CLOCK_ORIENT);
+    }
+    // Если высота матрицы не позволяет расположить часы вертикально - переключить в горизонтальный режим
+    if (CLOCK_ORIENT == 0 && !allowHorizontal) {
+      CLOCK_ORIENT == 1;
+      saveClockOrientation(CLOCK_ORIENT);
+    }
+  } else {
     overlayEnabled = false;
     saveClockOverlayEnabled(overlayEnabled);
+    return;
   }
 
-  // Если высота матрицы не позволяет показывать календарь в две строки - отключить 
-  if (showDateInClock && HEIGHT < 11) {
-    showDateInClock = false;
-    setShowDateInClock(showDateInClock);
-  }
+  if (CLOCK_X < 0) CLOCK_X = 0;
+  if (CLOCK_Y < 0) CLOCK_Y = 0;
 
   // ширина и высота отображения часов  
   byte cw = CLOCK_ORIENT == 0 ? 4*3 + 3*1 : 2*3 + 1; // гориз: 4 цифры * (шрифт 3 пикс шириной) 3 + пробела между цифрами) // ширина горизонтальных часов

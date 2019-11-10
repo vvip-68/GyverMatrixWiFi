@@ -342,6 +342,8 @@ void parsing() {
   byte alarmDay;
   byte alarmHourVal;
   byte alarmMinuteVal;
+  bool allowHorizontal;
+  bool allowVertical;
 
   /*
     Протокол связи, посылка начинается с режима. Режимы:
@@ -703,7 +705,9 @@ void parsing() {
         // intData[3] : действие = 1: 0 - стоп 1 - старт; действие = 2: 0 - выкл; 1 - вкл;
         if (intData[1] == 0 || intData[1] == 1) {          
           // Если в приложении выбраны часы, но они недоступны из за размеров матрицы - брать следующий эффект
-          if (effect == EFFECT_CLOCK && ((WIDTH < 15 && HEIGHT < 11) || HEIGHT < 5)) effect++;
+          if (effect == EFFECT_CLOCK){
+             if (!(allowHorizontal || allowVertical)) effect++;
+          }
           setEffect(effect);
           BTcontrol = true;
           loadingFlag = intData[1] == 0;
@@ -884,7 +888,7 @@ void parsing() {
              saveEffectClock(intData[2], intData[3] == 1);
              break;
            case 1:               // $19 1 X; - сохранить настройку X "Часы в эффектах"
-             overlayEnabled = (WIDTH < 15 && HEIGHT < 11 || HEIGHT < 5) ? false : intData[2] == 1;
+             overlayEnabled = (CLOCK_ORIENT == 0 && allowHorizontal || CLOCK_ORIENT == 1 && allowVertical) ? intData[2] == 1 : false;
              saveClockOverlayEnabled(overlayEnabled);
              break;
            case 2:               // $19 2 X; - Использовать синхронизацию часов NTP  X: 0 - нет, 1 - да
@@ -906,19 +910,18 @@ void parsing() {
              }
              break;
            case 4:               // $19 4 X; - Ориентация часов  X: 0 - горизонтально, 1 - вертикально
-             CLOCK_ORIENT = intData[2] == 1 ? 1  : 0;
-             // Если высота матрицы меньше минимальной для режима вертикальных часов (11 точек) положение "Вертикально не может быть задано
-             if (CLOCK_ORIENT == 1 && HEIGHT < 11) CLOCK_ORIENT == 0;
-             // Центрируем часы по горизонтали/вертикали по ширине / высоте матрицы
-             if (CLOCK_ORIENT == 0) {
-               CLOCK_X = CLOCK_X_H;
-               CLOCK_Y = CLOCK_Y_H;
+             CLOCK_ORIENT = intData[2] == 1 ? 1  : 0;             
+             if (allowHorizontal || allowVertical) {
+               if (CLOCK_ORIENT == 0 && !allowHorizontal) CLOCK_ORIENT = 1;
+               if (CLOCK_ORIENT == 1 && !allowVertical) CLOCK_ORIENT = 0;              
              } else {
-               CLOCK_X = CLOCK_X_V;
-               CLOCK_Y = CLOCK_Y_V;
-             }
+               overlayEnabled = false;
+               saveClockOverlayEnabled(overlayEnabled);
+             }             
+             // Центрируем часы по горизонтали/вертикали по ширине / высоте матрицы
              checkClockOrigin();
              saveClockOrientation(CLOCK_ORIENT);
+             break;
              break;
            case 5:               // $19 5 X; - Режим цвета часов  X: 0 - горизонтально, 1 - вертикально
              COLOR_MODE = intData[2];
@@ -926,8 +929,13 @@ void parsing() {
              saveClockColorMode(COLOR_MODE);
              break;
            case 6:               // $19 6 X; - Показывать дату в режиме часов  X: 0 - нет, 1 - да
-             showDateInClock = intData[2] == 1;
-             if (showDateInClock && HEIGHT < 11) showDateInClock == 0;
+             if (allowHorizontal || allowVertical) {
+               showDateInClock = intData[2] == 1;
+             } else {
+               overlayEnabled = false;
+               showDateInClock = false;
+               saveClockOverlayEnabled(overlayEnabled);
+             }
              setShowDateInClock(showDateInClock);
              break;
            case 7:               // $19 7 D I; - Продолжительность отображения даты / часов (в секундах)
@@ -1325,8 +1333,9 @@ void sendPageParams(int page) {
   // PW:число    ограничение по току в миллиамперах
   
   String str = "", color, text;
-  boolean allowed;
+  boolean allowed, allowVertical, allowHorizontal;
   byte b_tmp;
+
   switch (page) { 
     case 1:  // Настройки. Вернуть: Ширина/Высота матрицы; Яркость; Деморежм и Автосмена; Время смены режимов
       str="$18 W:"+String(WIDTH)+"|H:"+String(HEIGHT)+"|DM:";
@@ -1402,7 +1411,13 @@ void sendPageParams(int page) {
       str+=";";
       break;
     case 7:  // Настройки часов. Вернуть: Оверлей вкл/выкл
-      str="$18 CE:"+String(getClockOverlayEnabled()) + "|CC:" + String(COLOR_MODE) + "|CO:" + String(CLOCK_ORIENT) + "|NP:"; 
+      // Часы могут отображаться: 
+      // - вертикальные при высоте матрицы >= 11 и ширине >= 7; 
+      // - горизонтальные при ширене матрицы >= 15 и высоте >= 5
+      // Настройки часов можно отображать только если часы доступны по размерам: - или вертикальные или горизонтальные часы влазят на матрицу
+      // Настройки ориентации имеют смыcл только когда И горизонтальные И вертикальные часы могут быть отображены на матрице; В противном случае - смысла нет, так как выбор очевиден (только одby вариант)
+      str="$18 CE:" + (allowVertical || allowHorizontal ? String(getClockOverlayEnabled()) : "X") + "|CC:" + String(COLOR_MODE) +
+             "|CO:" + (allowVertical && allowHorizontal ? String(CLOCK_ORIENT) : "X") + "|NP:"; 
       if (useNtp)  str+="1|NT:"; else str+="0|NT:";
       str+=String(SYNC_TIME_PERIOD) + "|NZ:" + String(timeZoneOffset) + "|DC:"; 
       if (showDateInClock)  str+="1|DD:"; else str+="0|DD:";

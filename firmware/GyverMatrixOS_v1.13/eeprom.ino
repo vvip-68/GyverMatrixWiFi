@@ -92,6 +92,9 @@ void loadSettings() {
     scrollSpeed = getScrollSpeed();
     effectSpeed = map(EEPROMread(3),0,255,D_EFFECT_SPEED_MIN,D_EFFECT_SPEED_MAX);
     gameSpeed = map(EEPROMread(4),0,255,D_GAME_SPEED_MIN,D_GAME_SPEED_MAX); 
+    if (scrollSpeed == 0) scrollSpeed = 1;
+    if (effectSpeed == 0) effectSpeed = 1;
+    if (gameSpeed == 0) gameSpeed = 1;
     AUTOPLAY = getAutoplay();
     autoplayTime = getAutoplayTime();
     idleTime = getIdleTime();        
@@ -483,9 +486,10 @@ int8_t getTimeZone() {
 
 byte getClockOrientation() {
   byte val = EEPROMread(13) == 1 ? 1 : 0;
-  // Для вертикальной ориентации нужно минимум 11 точек высота.
-  // Если условие не соблюдено - считать ориентацию горизонтальной
-  if (val == 1 && HEIGHT < 11) val == 0;
+
+  if (val == 0 && !allowHorizontal) val == 0;
+  if (val == 1 && !allowVertical) val == 0;
+  
   return val;
 }
 
