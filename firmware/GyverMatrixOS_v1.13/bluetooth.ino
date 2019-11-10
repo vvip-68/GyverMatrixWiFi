@@ -1333,7 +1333,7 @@ void sendPageParams(int page) {
   // PW:число    ограничение по току в миллиамперах
   
   String str = "", color, text;
-  boolean allowed, allowVertical, allowHorizontal;
+  boolean allowed;
   byte b_tmp;
 
   switch (page) { 
