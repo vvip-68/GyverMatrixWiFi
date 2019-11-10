@@ -884,16 +884,15 @@ void SetAutoMode(byte amode) {
 }
 
 void checkClockOrigin() {
-
   if (allowVertical || allowHorizontal) {
     // Если ширина матрицы не позволяет расположить часы горизонтально - переключить в вертикальный режим
     if (CLOCK_ORIENT == 1 && !allowVertical) {
-      CLOCK_ORIENT == 0;
+      CLOCK_ORIENT = 0;
       saveClockOrientation(CLOCK_ORIENT);
     }
     // Если высота матрицы не позволяет расположить часы вертикально - переключить в горизонтальный режим
     if (CLOCK_ORIENT == 0 && !allowHorizontal) {
-      CLOCK_ORIENT == 1;
+      CLOCK_ORIENT = 1;
       saveClockOrientation(CLOCK_ORIENT);
     }
   } else {
