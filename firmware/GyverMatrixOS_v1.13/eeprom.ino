@@ -487,7 +487,7 @@ int8_t getTimeZone() {
 byte getClockOrientation() {
   byte val = EEPROMread(13) == 1 ? 1 : 0;
 
-  if (val == 0 && !allowHorizontal) val == 0;
+  if (val == 0 && !allowHorizontal) val == 1;
   if (val == 1 && !allowVertical) val == 0;
   
   return val;
