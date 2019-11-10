@@ -1,5 +1,5 @@
 void InitializeDfPlayer1() {
-  mp3Serial.begin(9600);  
+  mp3Serial.begin(9600, SRX, STX, (SoftwareSerialConfig)SERIAL_8N1, false, 64);   
   dfPlayer.begin(mp3Serial, true, true);
   dfPlayer.setTimeOut(2000);
   dfPlayer.EQ(DFPLAYER_EQ_NORMAL);

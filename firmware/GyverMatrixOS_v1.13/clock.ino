@@ -513,10 +513,11 @@ void calculateDawnTime() {
     // "Сегодня" время будильника уже прошло? 
     if (alrmWeekDay == w && (h * 60L + w > alrmHour * 60L + alrmMinute)) {
       alrmWeekDay++;
+      if (alrmWeekDay == 8) alrmWeekDay = cnt == 1 ? 1 : 7;
     }
   }
 
-  // Serial.printf("Alarm: h:%d m:%d wd:%d\n", alrmWeekDay, alrmHour, alrmMinute);
+  // Serial.printf("Alarm: h:%d m:%d wd:%d\n", alrmHour, alrmMinute, alrmWeekDay);
   
   // расчёт времени рассвета
   if (alrmMinute > dawnDuration) {                  // если минут во времени будильника больше продолжительности рассвета
@@ -532,9 +533,16 @@ void calculateDawnTime() {
       if (dawnWeekDay == 0) dawnWeekDay = 7;                           
     }
     dawnMinute = 60 - (dawnDuration - alrmMinute);  // находим минуту рассвета в новом часе
+    if (dawnMinute == 60) {
+      dawnMinute=0; dawnHour++;
+      if (dawnHour == 24) {
+        dawnHour=0; dawnWeekDay++;
+        if (dawnWeekDay == 8) dawnWeekDay = 1;
+      }
+    }
   }
 
-  // Serial.printf("Dawn: h:%d m:%d wd:%d\n", dawnWeekDay, dawnHour, dawnMinute);
+  // Serial.printf("Dawn: h:%d m:%d wd:%d\n", dawnHour, dawnMinute, dawnWeekDay);
 
   Serial.print(String(F("Следующий рассвет в "))+String(dawnHour)+ F(":") + String(dawnMinute));
   switch(dawnWeekDay) {
@@ -584,13 +592,9 @@ void checkAlarmTime() {
          saveThisMode = thisMode;
          saveRunningFlag = runningFlag;
          // Включить будильник
-         specialMode = false;
-         specialModeId = -1;
-         isAlarming = true;
+         isAlarming = true; 
          isAlarmStopped = false;
-         loadingFlag = true;  
-         gamemodeFlag = false;
-         thisMode = DEMO_DAWN_ALARM;
+         setEffect(EFFECT_DAWN_ALARM);
          // Реальная продолжительность рассвета
          realDawnDuration = (alrmHour * 60L + alrmMinute) - (dawnHour * 60L + dawnMinute);
          if (realDawnDuration > dawnDuration) realDawnDuration = dawnDuration;
@@ -609,9 +613,12 @@ void checkAlarmTime() {
       Serial.println(String(F("Рассвет Авто-ВЫКЛ в "))+String(h)+ ":" + String(m));
       isAlarming = false;
       isAlarmStopped = false;
-      setSpecialMode(1);
-      if (useAlarmSound) {
+      if (isDfPlayerOk && useAlarmSound) {
+        setSpecialMode(1);
         PlayAlarmSound();
+      } else {
+        isAlarmStopped = true;
+        setModeByModeId(saveThisMode);
       }
       sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
     }
@@ -631,14 +638,14 @@ void checkAlarmTime() {
     alarmSoundTimer.setInterval(4294967295);
     StopSound(1500);   
 
-    resetModes();  
+    resetModes();
 
     BTcontrol = false;
     AUTOPLAY = true;
 
     if (saveSpecialMode){
        setSpecialMode(saveSpecialModeId);
-    } else {
+    } else {       
        setModeByModeId(saveThisMode);
     }
 
@@ -704,7 +711,6 @@ void stopAlarm() {
 }
 
 void setModeByModeId(byte aMode) {
-
   if (saveRunningFlag) {
     thisMode = aMode;
     startRunningText();

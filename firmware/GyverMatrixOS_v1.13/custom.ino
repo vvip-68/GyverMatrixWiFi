@@ -278,7 +278,7 @@ void prevModeHandler() {
 }
 
 void setTimersForMode(byte aMode) {
-  if (aMode == DEMO_TEXT_0 || aMode == DEMO_TEXT_1 || aMode == DEMO_TEXT_2) {
+  if (runningFlag || aMode == DEMO_TEXT_0 || aMode == DEMO_TEXT_1 || aMode == DEMO_TEXT_2) {
     // Это бегущий текст  
     scrollSpeed = getScrollSpeed();
     scrollTimer.setInterval(scrollSpeed);

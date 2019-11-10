@@ -79,7 +79,7 @@ void bluetoothRoutine() {
       }
     }
 
-    if (useAutoBrightness && autoBrightnessTimer.isReady()) {
+    if (USE_PHOTO == 1 && useAutoBrightness && autoBrightnessTimer.isReady()) {
       // Во время работы будильника-рассвет, ночных часов, если матрица "выключена" или один из режимов "лампы" - освещения
       // авторегулировки яркости нет.    
       if (!(isAlarming || isNightClock || isTurnedOff || specialModeId == 2 || specialModeId == 3 || specialModeId == 6 || specialModeId == 7 || thisMode == DEMO_DAWN_ALARM)) {
@@ -134,7 +134,7 @@ void bluetoothRoutine() {
     else if (drawingFlag && !isAlarming) {
       
     }
-    else if (effectsFlag) {
+    else if (effectsFlag || (thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2)) {
       // Сформировать и вывести на матрицу текущий демо-режим      
       customRoutine();
     }            
@@ -651,7 +651,7 @@ void parsing() {
               isAlarming = false;
               isAlarmStopped = false;
               
-              // Настройки содержат 17 элеиентов (см. формат выше)
+              // Настройки содержат 17 элементов (см. формат выше)
               tmp_eff = CountTokens(str, ' ');
               if (tmp_eff == 17) {
               
@@ -1623,9 +1623,6 @@ void setEffect(byte eff) {
   resetModes();
   loadingFlag = true;
   effectsFlag = true;
-    
-  effectSpeed = getEffectSpeed(effect);
-  effectTimer.setInterval(effectSpeed);
 
   // Найти соответствие thisMode указанному эффекту. 
   byte b_tmp = mapEffectToMode(effect);           
@@ -1650,10 +1647,7 @@ void startGame(byte game, bool newGame, bool paused) {
       
     gamemodeFlag = true;
     gamePaused = paused;  
-  
-    gameSpeed = getGameSpeed(game);
-    gameTimer.setInterval(gameSpeed);        
-    
+      
     thisMode = b_tmp;
     if (!useAutoBrightness) {
       FastLED.setBrightness(globalBrightness);      
@@ -1671,7 +1665,6 @@ void startGame(byte game, bool newGame, bool paused) {
 }
 
 void startRunningText() {
-
   runningFlag = true;  
   effectsFlag = false;
   
