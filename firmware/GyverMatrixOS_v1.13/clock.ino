@@ -600,7 +600,9 @@ void checkAlarmTime() {
          if (realDawnDuration > dawnDuration) realDawnDuration = dawnDuration;
          // Отключмить таймер автоперехода в демо-режим
          idleTimer.setInterval(4294967295);
+         #if (USE_MP3 ==1)
          if (useAlarmSound) PlayDawnSound();
+         #endif
          sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
          Serial.println(String(F("Рассвет ВКЛ в "))+String(h)+ ":" + String(m));
        }
@@ -612,6 +614,7 @@ void checkAlarmTime() {
     if (alrmWeekDay == w && alrmHour == h && alrmMinute == m && isAlarming) {
       Serial.println(String(F("Рассвет Авто-ВЫКЛ в "))+String(h)+ ":" + String(m));
       isAlarming = false;
+      #if (USE_MP3 == 1)
       isAlarmStopped = false;
       if (isDfPlayerOk && useAlarmSound) {
         setSpecialMode(1);
@@ -620,6 +623,9 @@ void checkAlarmTime() {
         isAlarmStopped = true;
         setModeByModeId(saveThisMode);
       }
+      #else
+      isAlarmStopped = true;
+      #endif
       sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
     }
 
@@ -656,7 +662,8 @@ void checkAlarmTime() {
 
   delay(0); // Для предотвращения ESP8266 Watchdog Timer
 
-  //Плавное изменение громкости будильника
+  // Плавное изменение громкости будильника
+  #if (USE_MP3 == 1)
   if (fadeSoundTimer.isReady() && isDfPlayerOk) {
     if (fadeSoundDirection > 0) {
       // увеличение громкости
@@ -678,11 +685,12 @@ void checkAlarmTime() {
       }
     }
     delay(0); // Для предотвращения ESP8266 Watchdog Timer    
-  }  
+  }
+  #endif  
 }
 
 void stopAlarm() {
-  
+  #if (USE_MP3 == 1)  
   if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) {
     Serial.println(String(F("Рассвет ВЫКЛ в ")) + String(hour())+ ":" + String(minute()));
     isAlarming = false;
@@ -708,6 +716,7 @@ void stopAlarm() {
     delay(0);    
     sendPageParams(95);  // Параметры, статуса IsAlarming (AL:1), чтобы изменить в смартфоне отображение активности будильника
   }
+  #endif
 }
 
 void setModeByModeId(byte aMode) {

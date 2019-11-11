@@ -79,7 +79,8 @@ void bluetoothRoutine() {
       }
     }
 
-    if (USE_PHOTO == 1 && useAutoBrightness && autoBrightnessTimer.isReady()) {
+    #if (USE_PHOTO == 1)
+    if (useAutoBrightness && autoBrightnessTimer.isReady()) {
       // Во время работы будильника-рассвет, ночных часов, если матрица "выключена" или один из режимов "лампы" - освещения
       // авторегулировки яркости нет.    
       if (!(isAlarming || isNightClock || isTurnedOff || specialModeId == 2 || specialModeId == 3 || specialModeId == 6 || specialModeId == 7 || thisMode == DEMO_DAWN_ALARM)) {
@@ -99,6 +100,7 @@ void bluetoothRoutine() {
         if (drawingFlag) FastLED.show();
       }
     }
+    #endif
     
     // При яркости = 1 остаются гореть только красные светодиоды и все эффекты теряют вид.
     // поэтому отображать эффект "ночные часы"
@@ -284,8 +286,10 @@ void bluetoothRoutine() {
       // ... и т.д.
     }
 
+    #if (USE_MP3 == 1)
+
     // Есть ли изменение статуса MP3-плеера?
-    if (USE_MP3 == 1 && dfPlayer.available()) {
+    if (dfPlayer.available()) {
 
       // Вывести детали об изменении статуса в лог
       byte msg_type = dfPlayer.readType();      
@@ -304,7 +308,8 @@ void bluetoothRoutine() {
         if (!isDfPlayerOk) Serial.println(F("MP3 плеер недоступен."));
       }
     }
-
+    #endif
+    
     // Проверить - если долгое время не было ручного управления - переключиться в автоматический режим
     if (!(isAlarming || isPlayAlarmSound)) checkIdleState();
 
@@ -643,11 +648,13 @@ void parsing() {
               // MMx   - минуты дня недели x (1-пн..7-вс)
               //
               // Остановить будильник, если он сработал
+              #if (USE_MP3 == 1)
               if (isDfPlayerOk) { 
                 dfPlayer.stop();
               }
               soundFolder = 0;
               soundFile = 0;
+              #endif
               isAlarming = false;
               isAlarmStopped = false;
               
@@ -957,6 +964,7 @@ void parsing() {
             }
             break;
           case 2:
+            #if (USE_MP3 == 1)
             if (isDfPlayerOk) {
               // $20 2 X DD VV MA MB;
               //    X    - исп звук будильника X=0 - нет, X=1 - да 
@@ -977,8 +985,10 @@ void parsing() {
               dawnSound = intData[6] - 2;   // Индекс от приложения: 0 - нет; 1 - случайно; 2 - 1-й файл; 3 - ... -> -1 - нет; 0 - случайно; 1 - 1-й файл и т.д
               saveAlarmSounds(useAlarmSound, alarmDuration, maxAlarmVolume, alarmSound, dawnSound);
             }
+            #endif
             break;
           case 3:
+            #if (USE_MP3 == 1)
             if (isDfPlayerOk) {
               // $20 3 X NN VV; - пример звука будильника
               //  X  - 1 играть 0 - остановить
@@ -1002,9 +1012,11 @@ void parsing() {
                   soundFile = 0;
                 }
               }
-            }  
+            }
+            #endif  
             break;
           case 4:
+            #if (USE_MP3 == 1)
             if (isDfPlayerOk) {
              // $20 4 X NN VV; - пример звука рассвета
              //    X  - 1 играть 0 - остановить
@@ -1029,14 +1041,17 @@ void parsing() {
                 }
               }
             }
+            #endif
             break;
           case 5:
+            #if (USE_MP3 == 1)
             if (isDfPlayerOk && soundFolder > 0) {
-             // $20 5 VV; - установить уровень громкости проигрывания примеров (когда уже играет)
-             //    VV - уровень громкости
-             maxAlarmVolume = constrain(intData[2],0,30);
-             dfPlayer.volume(maxAlarmVolume);
+              // $20 5 VV; - установить уровень громкости проигрывания примеров (когда уже играет)
+              //    VV - уровень громкости
+              maxAlarmVolume = constrain(intData[2],0,30);
+              dfPlayer.volume(maxAlarmVolume);
             }
+            #endif
             break;
         }
         if (intData[1] == 0) {
@@ -1165,7 +1180,7 @@ void parsing() {
       }
       Serial.print(F(", порт "));
       Serial.println(udp.remotePort());
-      if (udp.remotePort() == localPort) {
+      if (udp.remotePort() == udp_port) {
         Serial.print(F("Содержимое: "));
         Serial.println(incomeBuffer);
       }
@@ -1434,8 +1449,9 @@ void sendPageParams(int page) {
       for (int i=0; i<7; i++) {      
             str+="|AT:"+String(i+1)+" "+String(alarmHour[i])+" "+String(alarmMinute[i]);
       }
-      str+="|AE:" + String(mapEffectToAlarm(alarmEffect) + 1); // Индекс в списке в приложении смартфона начинается с 1
+      str+="|AE:" + String(mapEffectToAlarm(alarmEffect) + 1); // Индекс в списке в приложении смартфона начинается с 1      
       str+="|MX:" + String(isDfPlayerOk ? "1" : "0");          // 1 - MP3 доступен; 0 - MP3 не доступен
+      #if (USE_MP3 == 1)
       str+="|MU:" + String(useAlarmSound ? "1" : "0");         // 1 - использовать звук; 0 - MP3 не использовать звук
       str+="|MD:" + String(alarmDuration); 
       str+="|MV:" + String(maxAlarmVolume); 
@@ -1448,6 +1464,7 @@ void sendPageParams(int page) {
         str+="|MA:" + String(alarmSound+2);                      // Знач: -1 - нет; 0 - случайно; 1 и далее - файлы; -> В списке индексы: 1 - нет; 2 - случайно; 3 и далее - файлы
       }
       str+="|MP:" + String(soundFolder) + '~' + String(soundFile+2); 
+      #endif
       str+=";";
       break;
     case 9:  // Настройки подключения
@@ -1472,8 +1489,10 @@ void sendPageParams(int page) {
       cmd95 = str;
       break;
     case 96:  // Ответ демо-режима звука - сообщение по инициативе сервера
+      #if (USE_MP3 == 1)
       str ="$18 MP:" + String(soundFolder) + '~' + String(soundFile+2) + ";"; 
       cmd96 = str;
+      #endif
       break;
     case 97:  // Запрос списка эффектов для будильника
       str="$18 LA:[" + String(ALARM_LIST).substring(0,UDP_PACKET_MAX_SIZE-12) + "];"; 

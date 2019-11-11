@@ -120,10 +120,13 @@ void loadSettings() {
     }
 
     dawnDuration = getDawnDuration();
+    
+    #if (USE_MP3 == 1)
     useAlarmSound = getUseAlarmSound();    
     alarmSound = getAlarmSound();
     dawnSound = getDawnSound();
     maxAlarmVolume = getMaxAlarmVolume();
+    #endif
 
     globalColor = getGlobalColor();
 
@@ -170,11 +173,15 @@ void loadSettings() {
     dawnDuration = 20;
     alarmEffect = EFFECT_DAWN_ALARM;
     useSoftAP = false;
-    useAlarmSound = false;
     alarmDuration = 1;
+
+    #if (USE_MP3 == 1)
+    useAlarmSound = false;
     alarmSound = 1;
     dawnSound = 1;
     maxAlarmVolume = 30;
+    #endif
+        
     useAutoBrightness = false;
     autoBrightnessMin = 1;
     globalColor = 0xFFFFFF;
