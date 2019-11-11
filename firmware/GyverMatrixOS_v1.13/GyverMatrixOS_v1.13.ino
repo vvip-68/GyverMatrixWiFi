@@ -11,11 +11,11 @@
 #define FASTLED_ALLOW_INTERRUPTS 0
 
 // Подключение используемых библиотек
+#include <SoftwareSerial.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 #include <TimeLib.h>
 #include <EEPROM.h>
-#include <SoftwareSerial.h>
 #include "FastLED.h"
 #include "DFRobotDFPlayerMini.h"     // Установите в менеджере библиотек стандартную библиотеку DFRobotDFPlayerMini ("DFPlayer - A Mini MP3 Player For Arduino" )
 #include "timerMinim.h"
@@ -485,8 +485,8 @@ timerMinim dawnTimer(4294967295);                       // Таймер шага
 
 // ---- MP3 плеер для проигрывания звуков будильника
 
-SoftwareSerial mp3Serial(SRX, STX); // 2.5.2
-//SoftwareSerial mp3Serial;         // 2.6
+//SoftwareSerial mp3Serial(SRX, STX); // Используйте этот вариант, если у вас библиотека ядра ESP8266 версии 2.5.2
+SoftwareSerial mp3Serial;             // Используйте этот вариант, если у вас библиотека ядра ESP8266 версии 2.6
 
 DFRobotDFPlayerMini dfPlayer;
 bool isDfPlayerOk = false;

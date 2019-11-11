@@ -342,8 +342,6 @@ void parsing() {
   byte alarmDay;
   byte alarmHourVal;
   byte alarmMinuteVal;
-  bool allowHorizontal;
-  bool allowVertical;
 
   /*
     Протокол связи, посылка начинается с режима. Режимы:
