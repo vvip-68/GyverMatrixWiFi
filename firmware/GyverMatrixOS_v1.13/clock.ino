@@ -412,7 +412,8 @@ boolean needUnwrap() {
       modeCode == MC_STARFALL ||
       modeCode == MC_BALLS ||
       modeCode == MC_FIRE ||
-      modeCode == MC_PAINTBALL) return true;
+      modeCode == MC_PAINTBALL ||
+      modeCode == MC_SWIRL) return true;
   else return false;
 }
 #endif
@@ -459,6 +460,7 @@ void setOverlayColors() {
       case MC_NOISE_PLASMA:
       case MC_LIGHTERS:
       case MC_PAINTBALL:
+      case MC_SWIRL:
         contrastClock();
         break;
       case MC_SNOW:

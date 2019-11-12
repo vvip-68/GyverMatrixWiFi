@@ -6,7 +6,7 @@
 // Дальнейшее развитие: vvip, 2019
 // https://AlexGyver.ru/
 
-#define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.13.2019.1111")
+#define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.13.2019.1112")
 #define FASTLED_INTERRUPT_RETRY_COUNT 0
 #define FASTLED_ALLOW_INTERRUPTS 0
 
@@ -126,8 +126,8 @@ byte IP_STA[] = {192, 168, 0, 106};          // Статический адре�
 // Список и порядок эффектов и игр, передаваймый в приложение на смартфоне. Данные списки попадают в комбобокс выбора,
 // чей индекс передается из приложения в контроллер матрицы для выбора, поэтому порядок должен соответствовать
 // спискам эффектов и игр, определенному ниже в DEMO_XXXXXX
-#define EFFECT_LIST F("Снегопад,Шарик,Радуга,Пейнтбол,Огонь,The Matrix,Шарики,Часы,Звездопад,Конфетти,Радуга диагональная,Цветной шум,Облака,Лава,Плазма,Радужные переливы,Полосатые переливы,Зебра,Шумящий лес,Морской прибой,Светлячки,Лампа,Рассвет,Анимация") /* 1,Анимация 2,Анимация 3,Анимация 4,Анимация 5*/
-#define ALARM_LIST  F("Снегопад,Шарик,Радуга,Пейнтбол,Огонь,The Matrix,Шарики,Звездопад,Конфетти,Радуга диагональная,Цветной шум,Облака,Лава,Плазма,Радужные переливы,Полосатые переливы,Зебра,Шумящий лес,Морской прибой,Светлячки,Рассвет,Анимация") /* 1,Анимация 2,Анимация 3,Анимация 4,Анимация 5*/
+#define EFFECT_LIST F("Снегопад,Шарик,Радуга,Пейнтбол,Огонь,The Matrix,Шарики,Часы,Звездопад,Конфетти,Радуга диагональная,Цветной шум,Облака,Лава,Плазма,Радужные переливы,Полосатые переливы,Зебра,Шумящий лес,Морской прибой,Светлячки,Водоворот,Лампа,Рассвет,Анимация") /* 1,Анимация 2,Анимация 3,Анимация 4,Анимация 5*/
+ #define ALARM_LIST  F("Снегопад,Шарик,Радуга,Пейнтбол,Огонь,The Matrix,Шарики,Звездопад,Конфетти,Радуга диагональная,Цветной шум,Облака,Лава,Плазма,Радужные переливы,Полосатые переливы,Зебра,Шумящий лес,Морской прибой,Светлячки,Водоворот,Рассвет,Анимация") /* 1,Анимация 2,Анимация 3,Анимация 4,Анимация 5*/
 #define GAME_LIST   F("Змейка,Тетрис,Лабиринт,Runner,Арканоид")
 
 #define D_TEXT_SPEED 100      // скорость бегущего текста по умолчанию (мс)
@@ -239,24 +239,25 @@ bool useRandomSequence = true;   // Использовать случайный 
 #define DEMO_FIRE               20
 #define DEMO_LIGHTERS           21
 #define DEMO_PAINTBALL          22
-#define DEMO_SNAKE              23
-#define DEMO_TETRIS             24
-#define DEMO_MAZE               25
-#define DEMO_RUNNER             26
-#define DEMO_ARKANOID           27
-#define DEMO_CLOCK              28
-#define DEMO_FILL_COLOR         29  // Заливка матрицы одним цветом
-#define DEMO_DAWN_ALARM         30  // Режим эффекта будильника "Рассвет"
+#define DEMO_SWIRL              23
+#define DEMO_SNAKE              24
+#define DEMO_TETRIS             25
+#define DEMO_MAZE               26
+#define DEMO_RUNNER             27
+#define DEMO_ARKANOID           28
+#define DEMO_CLOCK              29
+#define DEMO_FILL_COLOR         30  // Заливка матрицы одним цветом
+#define DEMO_DAWN_ALARM         31  // Режим эффекта будильника "Рассвет"
 // ---------------------------------
-#define DEMO_ANIMATION_1        31
-//#define DEMO_ANIMATION_2        32
-//#define DEMO_ANIMATION_3        33
-//#define DEMO_ANIMATION_4        34
-//#define DEMO_ANIMATION_5        35
+#define DEMO_ANIMATION_1        32
+//#define DEMO_ANIMATION_2        33
+//#define DEMO_ANIMATION_3        34
+//#define DEMO_ANIMATION_4        35
+//#define DEMO_ANIMATION_5        36
 
 // не забудьте указать количество режимов для корректного переключения с последнего на первый
 // количество кастомных режимов (которые переключаются сами или кнопкой)
-#define MODES_AMOUNT 32 // 36
+#define MODES_AMOUNT 33 // 37
 
 // ---------------------------------
 #define DEMO_DAWN_ALARM_SPIRAL 253  // Специальный режим, вызывается из DEMO_DAWN_ALARM для ламп на круговой матрице - огонек по спирали
@@ -285,15 +286,16 @@ bool useRandomSequence = true;   // Использовать случайный 
 #define EFFECT_NOISE_FOREST        18
 #define EFFECT_NOISE_OCEAN         19
 #define EFFECT_LIGHTERS            20
-#define EFFECT_FILL_COLOR          21
-#define EFFECT_DAWN_ALARM          22
-#define EFFECT_ANIMATION_1         23
-//#define EFFECT_ANIMATION_2         24
-//#define EFFECT_ANIMATION_3         25
-//#define EFFECT_ANIMATION_4         26
-//#define EFFECT_ANIMATION_5         27
+#define EFFECT_SWIRL               21
+#define EFFECT_FILL_COLOR          22
+#define EFFECT_DAWN_ALARM          23
+#define EFFECT_ANIMATION_1         24
+//#define EFFECT_ANIMATION_2         25
+//#define EFFECT_ANIMATION_3         26
+//#define EFFECT_ANIMATION_4         27
+//#define EFFECT_ANIMATION_5         28
 
-#define MAX_EFFECT                 24 // 28 // количество эффектов, определенных в прошивке
+#define MAX_EFFECT                 25 // 29 // количество эффектов, определенных в прошивке
 #define MAX_SPEC_EFFECT            10       // количество эффектов быстрого доступа -> 0..9
 
 // Сквозная нумерация (ID) игр в группе игр
@@ -331,7 +333,8 @@ bool useRandomSequence = true;   // Использовать случайный 
 #define MC_FILL_COLOR           22
 #define MC_IMAGE                23
 #define MC_PAINTBALL            24
-#define MC_LIGHTERS             25
+#define MC_SWIRL                25
+#define MC_LIGHTERS             26
 
 // Типы эффектов (см. выше), в которых могут отображаться часы в наложении
 #if (OVERLAY_CLOCK == 1)
@@ -355,6 +358,7 @@ byte overlayList[] = {
   MC_RAINBOW_DIAG,
   MC_FIRE,
   MC_PAINTBALL,
+  MC_SWIRL,
   MC_LIGHTERS,
   MC_DAWN_ALARM,
   MC_FILL_COLOR,
@@ -367,8 +371,8 @@ byte overlayList[] = {
 const byte ALARM_LIST_IDX[] PROGMEM = {EFFECT_SNOW, EFFECT_BALL, EFFECT_RAINBOW, EFFECT_PAINTBALL, EFFECT_FIRE, EFFECT_MATRIX, EFFECT_BALLS,
                                        EFFECT_STARFALL, EFFECT_SPARKLES, EFFECT_RAINBOW_DIAG, EFFECT_NOISE_MADNESS, EFFECT_NOISE_CLOUD,
                                        EFFECT_NOISE_LAVA, EFFECT_NOISE_PLASMA, EFFECT_NOISE_RAINBOW, EFFECT_NOISE_RAINBOW_STRIP,
-                                       EFFECT_NOISE_ZEBRA, EFFECT_NOISE_FOREST, EFFECT_NOISE_OCEAN, EFFECT_LIGHTERS, EFFECT_DAWN_ALARM,
-                                       EFFECT_ANIMATION_1
+                                       EFFECT_NOISE_ZEBRA, EFFECT_NOISE_FOREST, EFFECT_NOISE_OCEAN, EFFECT_LIGHTERS, EFFECT_SWIRL,
+                                       EFFECT_DAWN_ALARM, EFFECT_ANIMATION_1
                                        //, EFFECT_ANIMATION_2, EFFECT_ANIMATION_3, EFFECT_ANIMATION_4, EFFECT_ANIMATION_5
                                       };
 

@@ -155,6 +155,7 @@ void customModes(byte aMode) {
     case DEMO_FILL_COLOR:          fillColorProcedure(); break;
     case DEMO_LIGHTERS:            lightersRoutine(); break;
     case DEMO_PAINTBALL:           lightBallsRoutine(); break;
+    case DEMO_SWIRL:               swirlRoutine(); break;
 
     case DEMO_ANIMATION_1:         animation(1); break;
     /*
@@ -289,6 +290,13 @@ void setTimersForMode(byte aMode) {
     effectSpeed = getEffectSpeed(EFFECT_PAINTBALL);  // В этом эффекте параметр "скорость" влияет на количество шариков 1..4 
     effectTimer.setInterval(10);                     // Эффект работает только на высокой скорости
   } 
+  /*
+  else if (aMode == DEMO_SWIRL) {
+    // Это эффект Swirl
+    effectSpeed = getEffectSpeed(EFFECT_SWIRL);      // 
+    effectTimer.setInterval(10);                     // Этот эффект работает только на высокой скорости
+  } 
+  */
   else {
     byte tmp_effect = mapModeToEffect(aMode);
     if (tmp_effect != 255) {
@@ -434,6 +442,7 @@ byte mapEffectToMode(byte effect) {
     case EFFECT_NOISE_FOREST:        tmp_mode = DEMO_NOISE_FOREST; break;         // forestNoise();
     case EFFECT_NOISE_OCEAN:         tmp_mode = DEMO_NOISE_OCEAN; break;          // oceanNoise();
     case EFFECT_PAINTBALL:           tmp_mode = DEMO_PAINTBALL; break;            // lightBallsRoutine()
+    case EFFECT_SWIRL:               tmp_mode = DEMO_SWIRL; break;                // swirlRoutine()
     case EFFECT_LIGHTERS:            tmp_mode = DEMO_LIGHTERS; break;             // lightersRoutine()
     case EFFECT_DAWN_ALARM:          tmp_mode = DEMO_DAWN_ALARM; break;           // dawnProcedure();
     case EFFECT_FILL_COLOR:          tmp_mode = DEMO_FILL_COLOR; break;           // fillColorProcedure();
@@ -473,6 +482,7 @@ byte mapEffectToModeCode(byte effect) {
     case EFFECT_NOISE_FOREST:        tmp_mode = MC_NOISE_FOREST; break;         // forestNoise();
     case EFFECT_NOISE_OCEAN:         tmp_mode = MC_NOISE_OCEAN; break;          // oceanNoise();
     case EFFECT_PAINTBALL:           tmp_mode = MC_PAINTBALL; break;            // lightBallsRoutine()
+    case EFFECT_SWIRL:               tmp_mode = MC_SWIRL; break;                // swirlRoutine()
     case EFFECT_LIGHTERS:            tmp_mode = MC_LIGHTERS; break;             // lightersRoutine()
     case EFFECT_ANIMATION_1:         tmp_mode = MC_IMAGE; break;                // animation(1);
     /*
@@ -528,6 +538,7 @@ byte mapModeToEffect(byte aMode) {
     case DEMO_DAWN_ALARM:           tmp_effect = EFFECT_DAWN_ALARM; break;          // alarmProcedure();
     case DEMO_FILL_COLOR:           tmp_effect = EFFECT_FILL_COLOR; break;          // fillColorProcedure();
     case DEMO_PAINTBALL:            tmp_effect = EFFECT_PAINTBALL;  break;          // lightBallsRoutine()
+    case DEMO_SWIRL:                tmp_effect = EFFECT_SWIRL; break;               // swirlRoutine()
     case DEMO_LIGHTERS:             tmp_effect = EFFECT_LIGHTERS;  break;           // lightersRoutine()
     
     case DEMO_ANIMATION_1:          tmp_effect = EFFECT_ANIMATION_1; break;         // animation(1);
@@ -576,6 +587,7 @@ byte mapModeToGame(byte aMode) {
     case DEMO_DAWN_ALARM:           break;       // dawnProcedure(); 
     case DEMO_FILL_COLOR:           break;       // fillColorProcedure(); 
     case DEMO_PAINTBALL:            break;       // lightBallsRoutine()
+    case DEMO_SWIRL:                break;       // swirlRoutine()
     case DEMO_LIGHTERS:             break;       // lightersRoutine()
     case DEMO_ANIMATION_1:          break;       // animation(1);
     /*

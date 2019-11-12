@@ -764,6 +764,7 @@ void lightersRoutine() {
 }
 
 // ------------- ПЕЙНТБОЛ -------------
+
 const uint8_t BorderWidth = 1U;
 void lightBallsRoutine() {
   if (loadingFlag) {
