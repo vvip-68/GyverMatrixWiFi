@@ -513,7 +513,7 @@ void calculateDawnTime() {
     alrmMinute = alarmMinute[alrmWeekDay-1];
   
     // "Сегодня" время будильника уже прошло? 
-    if (alrmWeekDay == w && (h * 60L + w > alrmHour * 60L + alrmMinute)) {
+    if (alrmWeekDay == w && (h * 60L + m > alrmHour * 60L + alrmMinute)) {
       alrmWeekDay++;
       if (alrmWeekDay == 8) alrmWeekDay = cnt == 1 ? 1 : 7;
     }
