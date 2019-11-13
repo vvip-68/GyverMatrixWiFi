@@ -14,7 +14,7 @@ String pictureLine;
 char replyBuffer[8];                           // ответ клиенту - подтверждения получения команды: "ack;/r/n/0"
 char incomeBuffer[UDP_PACKET_MAX_SIZE];        // Буфер для приема строки команды из wifi udp сокета. Также буфер используется для отправки строк в смартфон
                                                // Строка со списком эффектов может быть длинной, плюс кириллица в UTF занимает 2 байта - буфер должен быть большим.
-unsigned long ackCounter = 0;
+byte ackCounter = 0;
 String receiveText = "", s_tmp = "";
 byte tmpSaveMode = 0;
 

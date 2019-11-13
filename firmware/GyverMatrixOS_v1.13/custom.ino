@@ -50,6 +50,7 @@
     animation(<n>);                   // пример анимации
 */
 
+byte lastOverlayMode;
 void customRoutine() {
 
   if (!gamemodeFlag || isAlarming) {
@@ -79,7 +80,7 @@ void doEffectWithOverlay(byte aMode) {
     bool loadFlag2;
     bool needOverlay = modeCode != MC_TEXT && overlayAllowed();
 
-    if (needOverlay) {
+    if (needOverlay && lastOverlayMode == thisMode) {
       if (!loadingFlag && needUnwrap()) {
         if (showDateInClock && showDateState) {
             calendarOverlayUnwrap(CALENDAR_X, CALENDAR_Y);
@@ -111,6 +112,7 @@ void doEffectWithOverlay(byte aMode) {
         else  
           clockOverlayWrapV(CLOCK_X, CLOCK_Y);
       }
+      lastOverlayMode = thisMode;
       if (loadFlag2) {
         setOverlayColors();
         loadFlag2 = false;
