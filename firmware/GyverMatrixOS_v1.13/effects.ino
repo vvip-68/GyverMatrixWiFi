@@ -832,3 +832,43 @@ uint16_t XY(uint8_t x, uint8_t y)
 
   return i;
 }
+
+// ------------- ВОДОВОРОТ -------------
+
+void swirlRoutine() {
+  if (loadingFlag) {
+    loadingFlag = false;
+    modeCode = MC_SWIRL;
+    FastLED.clear();  // очистить
+  }
+
+  // Apply some blurring to whatever's already on the matrix
+  // Note that we never actually clear the matrix, we just constantly
+  // blur it repeatedly.  Since the blurring is 'lossy', there's
+  // an automatic trend toward black -- by design.
+  uint8_t blurAmount = beatsin8(2,10,255);
+  blur2d( leds, WIDTH, HEIGHT, blurAmount);
+
+  // Use two out-of-sync sine waves
+  uint8_t  i = beatsin8( 27, BorderWidth, HEIGHT - BorderWidth);
+  uint8_t  j = beatsin8( 41, BorderWidth, WIDTH - BorderWidth);
+  
+  // Also calculate some reflections
+  uint8_t ni = (WIDTH-1)-i;
+  uint8_t nj = (HEIGHT-1)-j;
+
+  int16_t idx, wh = WIDTH * HEIGHT;
+  
+  // The color of each point shifts over time, each at a different speed.
+  uint32_t ms = millis();  
+  idx = XY2( i, j); if (idx < wh) leds[idx] += CHSV( ms / 11, 200, 255);
+  idx = XY2( j, i); if (idx < wh) leds[idx] += CHSV( ms / 13, 200, 255);
+  idx = XY2(ni,nj); if (idx < wh) leds[idx] += CHSV( ms / 17, 200, 255);
+  idx = XY2(nj,ni); if (idx < wh) leds[idx] += CHSV( ms / 29, 200, 255);
+  idx = XY2( i,nj); if (idx < wh) leds[idx] += CHSV( ms / 37, 200, 255);
+  idx = XY2(ni, j); if (idx < wh) leds[idx] += CHSV( ms / 41, 200, 255);    
+}
+
+uint16_t XY2( uint8_t x, uint8_t y) { 
+  return (y * WIDTH) + x; 
+}
