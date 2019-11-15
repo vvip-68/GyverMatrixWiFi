@@ -738,6 +738,9 @@ void setModeByModeId(byte aMode) {
         startRunningText();
         loadingFlag = true;
       }
+      else {
+        setEffect(EFFECT_FIRE);  
+      }
     }
   }
   FastLED.setBrightness(globalBrightness);

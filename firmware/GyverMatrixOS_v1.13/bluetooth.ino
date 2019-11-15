@@ -19,7 +19,7 @@ String receiveText = "", s_tmp = "";
 byte tmpSaveMode = 0;
 
 void bluetoothRoutine() {  
-  
+
   parsing();                                    // принимаем данные
 
   if (tmpSaveMode != thisMode) {
@@ -115,17 +115,35 @@ void bluetoothRoutine() {
       if (wifi_print_ip && (wifi_current_ip.length() > 0)) {
         txt = wifi_current_ip;     
         txtColor = 0xffffff;
+      } else {
+        if (thisMode == DEMO_TEXT_0) {
+          txtColor = globalColor; 
+        } else if (thisMode == DEMO_TEXT_1) {
+          txtColor = 1;
+        } else if (thisMode == DEMO_TEXT_2) {
+          txtColor = 2;
+        } else {
+          txtColor = globalColor;  
+        }
       }
       if (txt.length() == 0) {
-         txt = init_time
-           ? clockCurrentText() + " " + dateCurrentTextLong()  // + dateCurrentTextShort()
-           : TEXT_1; 
+        if (thisMode == DEMO_TEXT_0) {
+          txt = TEXT_1;
+        } else if (thisMode == DEMO_TEXT_1) {
+          txt = TEXT_2;
+        } else if (thisMode == DEMO_TEXT_2) {
+          txt = TEXT_3;
+        } else {
+            txt = init_time
+              ? clockCurrentText() + " " + dateCurrentTextLong()  // + dateCurrentTextShort()
+              : TEXT_1; 
+        }
       }  
       fillString(txt, txtColor); 
     }
     
     // Один из режимов игры. На игры эффекты не накладываются
-    else if (gamemodeFlag && (!gamePaused || loadingFlag) && !isAlarming) {
+    else if (gamemodeFlag && !isAlarming) {
       // Для игр отключаем бегущую строку и эффекты
       effectsFlag = false;
       runningFlag = false;
@@ -139,8 +157,8 @@ void bluetoothRoutine() {
     else if (effectsFlag || (thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2)) {
       // Сформировать и вывести на матрицу текущий демо-режим      
       customRoutine();
-    }            
-
+    }
+       
     checkAlarmTime();
     checkAutoMode1Time();
     checkAutoMode2Time();
@@ -830,14 +848,9 @@ void parsing() {
           if (runningFlag) loadingFlag = true;       
           // если false - при переключении с эффекта бегущий текст на демо-режим "бегущий текст" текст демо режима не сначала, а с позиции где бежал текст эффекта
           // если true - текст начинает бежать сначала, потом плавно затухает на смену режима и потом опять начинает сначала.
-          // И так и так не хорошо. Как починить? 
-          
-          runningFlag = false;
+          // И так и так не хорошо. Как починить?           
           controlFlag = false;      // После начала игры пока не трогаем кнопки - игра автоматическая 
           drawingFlag = false;
-          gamemodeFlag = false;
-          gamePaused = false;
-          specialMode = false;
         } else {
           // Если при переключении в ручной режим был демонстрационный режим бегущей строки - включить ручной режим бегщей строки
           if (intData[1] == 0 || (intData[1] == 1 && (thisMode == DEMO_TEXT_0 || thisMode == DEMO_TEXT_1 || thisMode == DEMO_TEXT_2))) {
@@ -1660,39 +1673,43 @@ void setEffect(byte eff) {
   byte b_tmp = mapEffectToMode(effect);           
   if (b_tmp != 255) {
     thisMode = b_tmp;
-    if (!useAutoBrightness) {
+
+    if (!AUTOPLAY) setCurrentManualMode((int8_t)thisMode);    
+    setCurrentSpecMode(-1);
+  
+    if (!useAutoBrightness) 
       FastLED.setBrightness(globalBrightness);      
-    }  
   }
-  setCurrentSpecMode(-1);
-  if (!AUTOPLAY) setCurrentManualMode((int8_t)thisMode);
+    
   setTimersForMode(thisMode);
 }
 
 void startGame(byte game, bool newGame, bool paused) {
-
   // Найти соответствие thisMode указанной игре. 
   byte b_tmp = mapGameToMode(game);
   
   if (b_tmp != 255) {
+    
     resetModes();
       
     gamemodeFlag = true;
     gamePaused = paused;  
       
     thisMode = b_tmp;
-    if (!useAutoBrightness) {
+
+    if (!useAutoBrightness) 
       FastLED.setBrightness(globalBrightness);      
-    }
+
+    if (!AUTOPLAY) setCurrentManualMode((int8_t)thisMode);
+    setCurrentSpecMode(-1);    
   
-    if (newGame) {  
+    if (newGame) {        
       loadingFlag = true;                                                                  
       FastLED.clear(); 
       FastLED.show(); 
     }    
-  }  
-  setCurrentSpecMode(-1);
-  if (!AUTOPLAY) setCurrentManualMode((int8_t)thisMode);
+  } 
+
   setTimersForMode(thisMode);
 }
 

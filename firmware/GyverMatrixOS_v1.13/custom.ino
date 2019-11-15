@@ -68,8 +68,8 @@ void customRoutine() {
 
   // Игры - таймер внутри игр
   else {
-    customModes(thisMode);
-  }  
+    if (!gamePaused) customModes(thisMode);
+  }
 }
 
 void doEffectWithOverlay(byte aMode) {
@@ -125,6 +125,7 @@ void doEffectWithOverlay(byte aMode) {
 }
 
 void customModes(byte aMode) {  
+
   switch (aMode) {    
     case DEMO_TEXT_0:              fillString(TEXT_1, CRGB::RoyalBlue); break;
     case DEMO_TEXT_1:              fillString(TEXT_2, 1); break;
@@ -223,14 +224,8 @@ void nextModeHandler() {
     ESP.wdtFeed();  
   }
 
-  setTimersForMode(thisMode);
-
-  byte tmp_effect = mapModeToEffect(thisMode);  
-  byte tmp_game = mapModeToGame(thisMode);
-  gamemodeFlag = tmp_game != 255;
-  effectsFlag = tmp_effect != 255;
-  if (gamemodeFlag) game = tmp_game;
-  if (effectsFlag) effect = tmp_effect;
+  setModeByModeId(thisMode); 
+  autoplayTimer = millis();
 
   FastLED.clear();
   FastLED.show();
@@ -264,16 +259,8 @@ void prevModeHandler() {
     ESP.wdtFeed(); 
   }
   
-  loadingFlag = true;
+  setModeByModeId(thisMode); 
   autoplayTimer = millis();
-  setTimersForMode(thisMode);
-
-  byte tmp_effect = mapModeToEffect(thisMode);  
-  byte tmp_game = mapModeToGame(thisMode);
-  gamemodeFlag = tmp_game != 255;
-  effectsFlag = tmp_effect != 255;
-  if (gamemodeFlag) game = tmp_game;
-  if (effectsFlag) effect = tmp_effect;
   
   FastLED.clear();
   FastLED.show();
@@ -390,11 +377,9 @@ void checkIdleState() {
       if (modeCode == MC_TEXT && SHOW_FULL_TEXT) {    // режим текста
         if (fullTextFlag) {
           fullTextFlag = false;
-          autoplayTimer = millis();
           nextMode();
         }
       } else {
-        autoplayTimer = millis();
         nextMode();
       }
     }
