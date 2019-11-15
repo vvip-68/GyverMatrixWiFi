@@ -35,6 +35,9 @@ void newGameArkan() {
   posY_ark = 15;
   velX_ark = random(1, 4);
   velY_ark = (long)sqrt(sq(VELOCITY) - sq(velX_ark));
+  for (byte i = shelf_x; i < shelf_x + SHELF_LENGTH; i++) {
+      drawPixelXY(i, 0, GLOBAL_COLOR_2);
+  }
 }
 
 void arkanoidRoutine() {
