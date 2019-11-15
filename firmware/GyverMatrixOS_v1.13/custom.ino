@@ -68,7 +68,7 @@ void customRoutine() {
 
   // Игры - таймер внутри игр
   else {
-    if (!gamePaused) customModes(thisMode);
+    if (!gamePaused || loadingFlag) customModes(thisMode);
   }
 }
 
