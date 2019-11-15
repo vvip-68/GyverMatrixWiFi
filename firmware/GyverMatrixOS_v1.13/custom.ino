@@ -374,6 +374,7 @@ void checkIdleState() {
     }
     
     if ((millis() - autoplayTimer > autoplayTime) && AUTOPLAY) {    // таймер смены режима
+      autoplayTimer = millis();
       if (modeCode == MC_TEXT && SHOW_FULL_TEXT) {    // режим текста
         if (fullTextFlag) {
           fullTextFlag = false;
