@@ -21,23 +21,14 @@ void snakeRoutine() {
     newGameSnake();
     gamemodeFlag = true;
     modeCode = MC_GAME;
+    putApple();
   }  
   
   buttonsTickSnake();
 
   if (gameTimer.isReady()) {
-    // БЛОК ГЕНЕРАЦИИ ЯБЛОКА
-    while (!apple_flag) {                         // пока яблоко не создано
-      appleX = random(0, WIDTH);                  // взять случайные координаты
-      appleY = random(0, HEIGHT);
 
-      // проверить, не совпадает ли координата с телом змеи
-      if ((long)getPixColorXY(appleX, appleY) == 0) {
-        apple_flag = true;                        // если не совпадает, считаем что яблоко создано
-        drawPixelXY(appleX, appleY, GLOBAL_COLOR_2);        // и рисуем
-        FastLED.show();
-      }
-    }
+    if (!apple_flag) putApple();
 
     // запоминаем, куда повернули голову
     // 0 - право, 1 - лево, 2 - вверх, 3 - вниз
@@ -122,6 +113,22 @@ void snakeRoutine() {
     FastLED.show();
     newGameSnake();                          // миша, всё ху.я, давай по новой
   }
+}
+
+void putApple() {
+  // БЛОК ГЕНЕРАЦИИ ЯБЛОКА
+  while (!apple_flag) {                         // пока яблоко не создано
+    appleX = random(0, WIDTH);                  // взять случайные координаты
+    appleY = random(0, HEIGHT);
+
+    // проверить, не совпадает ли координата с телом змеи
+    if ((long)getPixColorXY(appleX, appleY) == 0) {
+      apple_flag = true;                        // если не совпадает, считаем что яблоко создано
+      drawPixelXY(appleX, appleY, GLOBAL_COLOR_2);        // и рисуем
+      FastLED.show();
+      delay(10);
+    }
+  }  
 }
 
 void snakeDemo() {

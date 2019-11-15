@@ -45,6 +45,7 @@ void arkanoidRoutine() {
     modeCode = MC_GAME;
     newGameArkan();
     FastLED.show();
+    delay(10);
   }
 
   if (gameDemo) {

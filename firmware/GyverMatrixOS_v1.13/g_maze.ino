@@ -44,6 +44,7 @@ void newGameMaze() {
         }
       }
       FastLED.show();
+      delay(25);
     }
   } else {
     for (byte y = 0; y < FOV; y++) {
@@ -59,7 +60,9 @@ void newGameMaze() {
     }
   }
   drawPixelXY(playerPos[0], playerPos[1], GLOBAL_COLOR_2);
+
   FastLED.show();
+  delay(25);
 
   labTimer = millis();
 }
@@ -73,7 +76,7 @@ void mazeRoutine() {
     modeCode = MC_GAME;
   }
 
-  if (gameDemo) demoMaze();
+  if (gameDemo && !gamePaused) demoMaze();
   buttonsTickMaze();
 }
 
