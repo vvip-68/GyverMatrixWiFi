@@ -239,7 +239,8 @@ bool DFRobotDFPlayerMini::available(){
         _receivedIndex ++;
       }
     }
-    else{
+    else
+    {
       _received[_receivedIndex] = _serial->read();
 #ifdef _DEBUG
       Serial.print(_received[_receivedIndex],HEX);
@@ -263,13 +264,15 @@ bool DFRobotDFPlayerMini::available(){
           if (_received[_receivedIndex] != 0xEF) {
             return handleError(WrongStack);
           }
-          else{
+          else
+          {
             if (validateStack()) {
               _receivedIndex = 0;
               parseStack();
               return _isAvailable;
             }
-            else{
+            else
+            {
               return handleError(WrongStack);
             }
           }
