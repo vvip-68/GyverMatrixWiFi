@@ -609,7 +609,7 @@ void parsing() {
   
         str.toCharArray(incomeBuffer, str.length()+1);    
         udp.beginPacket(udp.remoteIP(), udp.remotePort());
-        udp.write(incomeBuffer, str.length()+1);
+        udp.write((const uint8_t*)incomeBuffer, str.length()+1);
         udp.endPacket();
         delay(0);
         break;
@@ -1522,7 +1522,7 @@ void sendPageParams(int page) {
     // Отправить клиенту запрошенные параметры страницы / режимов
     str.toCharArray(incomeBuffer, str.length()+1);    
     udp.beginPacket(udp.remoteIP(), udp.remotePort());
-    udp.write(incomeBuffer, str.length()+1);
+    udp.write((const uint8_t*) incomeBuffer, str.length()+1);
     udp.endPacket();
     delay(0);
     Serial.println(String(F("Ответ на ")) + udp.remoteIP().toString() + ":" + String(udp.remotePort()) + " >> " + String(incomeBuffer));
@@ -1540,7 +1540,7 @@ void sendAcknowledge() {
   reply += "ack" + String(ackCounter++) + ";";  
   reply.toCharArray(replyBuffer, reply.length()+1);    
   udp.beginPacket(udp.remoteIP(), udp.remotePort());
-  udp.write(replyBuffer, reply.length()+1);
+  udp.write((const uint8_t*) replyBuffer, reply.length()+1);
   udp.endPacket();
   delay(0);
   if (isCmd) {

@@ -221,7 +221,9 @@ void nextModeHandler() {
       if (thisMode >= MODES_AMOUNT) thisMode = 0;
       break;
     }  
+    #if defined(ESP8266)
     ESP.wdtFeed();  
+    #endif
   }
 
   setModeByModeId(thisMode); 
@@ -256,7 +258,10 @@ void prevModeHandler() {
       if (thisMode >= MODES_AMOUNT) thisMode = MODES_AMOUNT - 1;
       break;
     }   
+    
+    #if defined(ESP8266)    
     ESP.wdtFeed(); 
+    #endif
   }
   
   setModeByModeId(thisMode); 

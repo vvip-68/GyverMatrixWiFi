@@ -78,11 +78,18 @@ void parseNTP() {
 void getNTP() {
   if (!wifi_connected) return;
   WiFi.hostByName(ntpServerName, timeServerIP);
+  IPAddress ip;
+  ip.fromString(F("0.0.0.0"));
+#if defined(ESP8266)
   if (!timeServerIP.isSet()) timeServerIP.fromString(F("192.36.143.130"));  // Один из ru.pool.ntp.org // 195.3.254.2
+#endif
+#if defined(ESP32)
+  if (timeServerIP==ip) timeServerIP.fromString(F("192.36.143.130"));  // Один из ru.pool.ntp.org // 195.3.254.2
+#endif
   printNtpServerName();
   sendNTPpacket(timeServerIP); // send an NTP packet to a time server
   // wait to see if a reply is available
-  ntp_t = millis();
+  ntp_t = millis();  
 }
 
 boolean overlayAllowed() {

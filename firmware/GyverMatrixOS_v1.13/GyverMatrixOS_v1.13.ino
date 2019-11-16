@@ -6,7 +6,7 @@
 // Дальнейшее развитие: vvip, 2019
 // https://AlexGyver.ru/
 
-#define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.13.2019.1115")
+#define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.13.2019.1116")
 #define FASTLED_INTERRUPT_RETRY_COUNT 0
 #define FASTLED_ALLOW_INTERRUPTS 0
 
@@ -97,8 +97,37 @@ byte IP_STA[] = {192, 168, 0, 106};          // Статический адре�
 #define STX D3                // не используется, но требуется для компиляции скетча
 */
 
+/*
+ * NodeMCU ESP32
+ * Физическое подключение:
+ * Матрица зигзаг, левый нижний угол, направление вапрво
+ * Пин ленты    - 2
+ * Пин кнопки   - 4
+ * MP3Player    - 17 к RX, 16 к TX плеера 
+ * TM1637       - 23 к DIO, 22 к CLK
+ * В менеджере плат выбрано "ESP32 Dev Module"
+ */ 
+#if defined(ESP32)
+#define WIDTH 16              // ширина матрицы
+#define HEIGHT 16             // высота матрицы
+#define SEGMENTS 1            // диодов в одном "пикселе" (для создания матрицы из кусков ленты)
+#define MATRIX_TYPE 0         // тип матрицы: 0 - зигзаг, 1 - параллельная
+#define CONNECTION_ANGLE 0    // угол подключения: 0 - левый нижний, 1 - левый верхний, 2 - правый верхний, 3 - правый нижний
+#define STRIP_DIRECTION 0     // направление ленты из угла: 0 - вправо, 1 - вверх, 2 - влево, 3 - вниз
+#define USE_MP3 1             // поставьте 0, если у вас нет звуковой карты MP3 плеера
+
+#define LED_PIN (2U)          // пин ленты, физически подключена к пину D2 на плате
+#define PIN_BTN (4U)          // кнопка подключена сюда (PIN --- КНОПКА --- GND)
+#define SRX (16U)             // 16 is RX of ESP32, connect to TX of DFPlayer
+#define STX (17U)             // 17 is TX of ESP32, connect to RX of DFPlayer module
+#endif
+
 // Подключение используемых библиотек
-#include <ESP8266WiFi.h>
+#if defined(ESP8266)
+  #include <ESP8266WiFi.h>
+#endif
+
+// Подключение используемых библиотек
 #include <WiFiUdp.h>
 #include <TimeLib.h>
 #include <EEPROM.h>
@@ -108,8 +137,8 @@ byte IP_STA[] = {192, 168, 0, 106};          // Статический адре�
 #include "GyverFilters.h"
 
 #if (USE_MP3 == 1)
-#include <SoftwareSerial.h>
-#include "DFRobotDFPlayerMini.h"     // Установите в менеджере библиотек стандартную библиотеку DFRobotDFPlayerMini ("DFPlayer - A Mini MP3 Player For Arduino" )
+#include "DFRobotDFPlayerMini.h"      // Установите в менеджере библиотек стандартную библиотеку DFRobotDFPlayerMini ("DFPlayer - A Mini MP3 Player For Arduino" )
+#include <SoftwareSerial.h>          // Установите в менеджере библиотек "EspSoftwareSerial" для ESP8266/ESP32 https://github.com/plerup/espsoftwareserial/
 #endif
 
 #include "fonts.h"
@@ -118,6 +147,16 @@ byte IP_STA[] = {192, 168, 0, 106};          // Статический адре�
 //#include "bitmap3.h"
 //#include "bitmap4.h"
 //#include "bitmap5.h"
+
+#if defined(ESP32)
+  #include <WiFi.h>
+#ifndef min
+  #define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+#ifndef max
+  #define max(a,b) (((a) > (b)) ? (a) : (b))
+#endif
+#endif
 
 #define COLOR_ORDER GRB       // порядок цветов на ленте. Если цвет отображается некорректно - меняйте. Начать можно с RGB
 
@@ -487,8 +526,14 @@ timerMinim dawnTimer(4294967295);                       // Таймер шага
 // ---- MP3 плеер для проигрывания звуков будильника
 
 #if (USE_MP3 == 1)
+
+#if defined(ESP8266)
 //SoftwareSerial mp3Serial(SRX, STX); // Используйте этот вариант, если у вас библиотека ядра ESP8266 версии 2.5.2
-SoftwareSerial mp3Serial;             // Используйте этот вариант, если у вас библиотека ядра ESP8266 версии 2.6
+  SoftwareSerial mp3Serial;           // Используйте этот вариант, если у вас библиотека ядра ESP8266 версии 2.6
+#endif
+#if defined(ESP32)
+  SoftwareSerial mp3Serial;
+#endif
 
 DFRobotDFPlayerMini dfPlayer;
 int16_t alarmSoundsCount = 0;      // Кол-во файлов звуков в папке '01' на SD-карте
@@ -567,7 +612,9 @@ static const byte maxDim = max(WIDTH, HEIGHT);
 void setup() {
 
   // Watcdog Timer - 8 секунд
+#if defined(ESP8266)
   ESP.wdtEnable(WDTO_8S);
+#endif
 
   // Инициализация последовательного порта
   Serial.begin(115200);
@@ -588,7 +635,9 @@ void setup() {
   #endif
 
   // WiFi всегда включен
-  WiFi.setSleepMode(WIFI_NONE_SLEEP);
+  #if defined(ESP8266)
+    WiFi.setSleepMode(WIFI_NONE_SLEEP);
+  #endif
 
   // Выполнить подключение к сети / создание точки доступа
   connectToNetwork();
@@ -661,8 +710,6 @@ void setup() {
 
 void loop() {
   bluetoothRoutine();
-  ESP.wdtFeed();   // пнуть собаку
-  yield();
 }
 
 // -----------------------------------------
@@ -695,8 +742,7 @@ void startWiFi() {
         Serial.println(WiFi.localIP());
         break;
       }
-      ESP.wdtFeed();
-      delay(1000);
+      delay(500);
       Serial.print(".");
     }
     Serial.println();
@@ -734,8 +780,7 @@ void startSoftAP() {
 
     WiFi.enableAP(false);
     WiFi.softAPdisconnect(true);
-    ESP.wdtFeed();
-    delay(1000);
+    delay(500);
 
     Serial.print(".");
     ap_connected = WiFi.softAP(apName, apPass);
