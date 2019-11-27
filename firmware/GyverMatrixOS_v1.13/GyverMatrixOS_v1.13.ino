@@ -7,8 +7,6 @@
 // https://AlexGyver.ru/
 
 #define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.13.2019.1116")
-#define FASTLED_INTERRUPT_RETRY_COUNT 0
-#define FASTLED_ALLOW_INTERRUPTS 0
 
 // ************************ МАТРИЦА *************************
 

@@ -309,7 +309,6 @@ void ballsRoutine() {
     }
   }
 
-
   if (!BALL_TRACK)    // если режим БЕЗ следов шариков
     FastLED.clear();  // очистить
   else {              // режим со следами
