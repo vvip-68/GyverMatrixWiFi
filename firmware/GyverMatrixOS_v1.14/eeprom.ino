@@ -255,13 +255,11 @@ void saveDefaults() {
   EEPROMwrite(39, (byte)-1);            // Текущий спец-режим - это не спец-режим
   
   // Настройки по умолчанию для эффектов
-  int addr = EFFECT_EEPROM;
   for (int i = 0; i < MAX_EFFECT; i++) {
     saveEffectParams(i, effectSpeed, true, true);
   }
 
   // Настройки по умолчанию для игр
-  addr = GAME_EEPROM;
   for (int i = 0; i < MAX_GAME; i++) {
     saveGameParams(i, gameSpeed, true);
   }
@@ -444,9 +442,7 @@ boolean getEffectClock(byte effect) {
 }
 
 boolean getClockOverlayEnabled() {
-  boolean val = EEPROMread(5) == 1;
-  if (WIDTH < 15 && HEIGHT < 11 || HEIGHT < 5) val = false;
-  return val;
+  return (EEPROMread(5) == 1) && (allowVertical || allowHorizontal);
 }
 
 void saveClockOverlayEnabled(boolean enabled) {
@@ -494,8 +490,8 @@ int8_t getTimeZone() {
 byte getClockOrientation() {
   byte val = EEPROMread(13) == 1 ? 1 : 0;
 
-  if (val == 0 && !allowHorizontal) val == 1;
-  if (val == 1 && !allowVertical) val == 0;
+  if (val == 0 && !allowHorizontal) val = 1;
+  if (val == 1 && !allowVertical) val = 0;
   
   return val;
 }
@@ -520,7 +516,7 @@ void saveClockColorMode(byte ColorMode) {
 
 bool getShowDateInClock() {
   bool val = EEPROMread(16) == 1;
-  if (val && HEIGHT < 11) val == 0;
+  if (val && HEIGHT < 11) val = 0;
   return val;
 }
 
@@ -599,7 +595,7 @@ void setAlarmTime(byte day, byte hour, byte minute) {
     EEPROMwrite(40 + 2 * (day - 1), constrain(hour, 0, 23));
     eepromModified = true;
   }
-  if (hour != minute != getAlarmMinute(day)) {
+  if (minute != getAlarmMinute(day)) {
     EEPROMwrite(40 + 2 * (day - 1) + 1, constrain(minute, 0, 59));
     eepromModified = true;
   }

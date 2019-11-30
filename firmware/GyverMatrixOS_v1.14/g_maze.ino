@@ -170,7 +170,7 @@ boolean checkPath(int8_t x, int8_t y) {
 // функция, перегенерирующая лабиринт до тех пор,
 // пока он не будет соответствовать требованиям "интересности"
 void smartMaze() {
-  byte sum, line;
+  byte sum = 0, line;
   int attempt;
   while (sum < MIN_PATH) {                  // пока длина пути меньше заданной
     attempt++;
@@ -204,7 +204,7 @@ void smartMaze() {
 // функция, делающая отверстия в стенках для "неидеальности" лабиринта
 void makeHoles() {
   byte holes = 0;
-  byte attempt;
+  byte attempt = 0;
   while (holes < HOLES) {                           // пока текущее число дыр меньше заданного
     attempt++;                                      // прибавляем число попыток
     if (attempt > 200) break;                       // если совершено более 200 попыток, завершить алгоритм (если зависнет)
@@ -299,7 +299,7 @@ void SolveMaze(char *maze, int width, int height) {
   count = 0;
   x = 1;
   y = 1;
-  unsigned int attempts;
+  unsigned int attempts = 0;
   while (x != width - 2 || y != height - 2) {
     if (attempts++ > maxSolves) {   // если решатель не может найти решение (maxSolves в 5 раз больше числа клеток лабиринта)
       break;                        // прервать решение

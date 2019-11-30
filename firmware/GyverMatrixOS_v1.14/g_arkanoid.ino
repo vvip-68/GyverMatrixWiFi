@@ -69,7 +69,7 @@ void arkanoidRoutine() {
   }
 
   if (lastSpeed != gameSpeed) {
-    lastSpeed == gameSpeed;
+    lastSpeed = gameSpeed;
     gameTimer.setInterval(gameSpeed / 2);
   }
 

@@ -303,29 +303,29 @@ boolean checkArea(int8_t check_type) {
     // границы поля
     if (check_type == 1 || check_type == 3) {
       if (X + 1 > WIDTH - 1) flag = false;    // смотрим следующий справа
-      uint32_t getColor;
+      uint32_t getColor = 0;
       if (Y < HEIGHT)
         getColor = getPixColorXY(X + offset, Y);
-      if (getColor != color && getColor != 0x000000) {
+      if ((getColor != color) && (getColor != 0x000000)) {
         flag = false;         // если не СВОЙ цвет и не чёрный
       }
     }
-
+    
     if (check_type == 2 || check_type == 3) {
       if (X - 1 < 0) flag = false;    // смотрим следующий слева
-      uint32_t getColor;
+      uint32_t getColor = 0;
       if (Y < HEIGHT)
         getColor = getPixColorXY(X - offset, Y);
-      if (getColor != color && getColor != 0x000000) {
+      if ((getColor != color) && (getColor != 0x000000)) {
         flag = false;         // если не СВОЙ цвет и не чёрный
       }
     }
 
     if (check_type == 0 || check_type == 3) {
-      uint32_t getColor;
+      uint32_t getColor = 0;
       if (Y < HEIGHT) {
         getColor = getPixColorXY(X, Y - 1);
-        if (getColor != color && getColor != 0x000000) {
+        if ((getColor != color) && (getColor != 0x000000)) {
           flag = false;         // если не СВОЙ цвет и не чёрный
         }
       }

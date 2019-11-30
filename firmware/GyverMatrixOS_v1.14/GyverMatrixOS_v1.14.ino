@@ -6,7 +6,7 @@
 // Дальнейшее развитие: vvip, 2019
 // https://AlexGyver.ru/
 
-#define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.14.2019.1127")
+#define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.14.2019.1130")
 
 // ************************ МАТРИЦА *************************
 
@@ -687,10 +687,11 @@ void setup() {
   if (spc_mode >= 0 && spc_mode < MAX_SPEC_EFFECT)
     setSpecialMode(spc_mode);
   else {
-    thisMode = getCurrentManualMode();
-    if (thisMode < 0 || AUTOPLAY) {
+    int8_t m_mode = getCurrentManualMode();
+    if (m_mode < 0 || AUTOPLAY) {
       setRandomMode2();
     } else {
+      thisMode = m_mode;
       while (1) {
         // Если режим отмечен флагом "использовать" - используем его, иначе берем следующий (и проверяем его)
         if (getUsageForMode(thisMode)) break;
