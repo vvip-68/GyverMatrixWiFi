@@ -133,12 +133,16 @@ void bluetoothRoutine() {
           txt = TEXT_2;
         } else if (thisMode == DEMO_TEXT_2) {
           txt = TEXT_3;
-        } else {
-            txt = init_time
-              ? clockCurrentText() + " " + dateCurrentTextLong()  // + dateCurrentTextShort()
-              : TEXT_1; 
         }
-      }  
+      }
+      if (txt.length() == 0) {
+          txt = init_time
+            ? clockCurrentText() + " " + dateCurrentTextLong()  // + dateCurrentTextShort()
+            : TEXT_1; 
+      }      
+      if (txt.length() == 0) {
+          txt = String(F("Матрица на адресных светодиодах"));
+      }      
       fillString(txt, txtColor); 
     }
     
