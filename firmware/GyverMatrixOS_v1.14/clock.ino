@@ -922,8 +922,8 @@ void checkClockOrigin() {
     return;
   }
 
-  CLOCK_X = CLOCK_ORIENT == 0 ? CLOCK_X_H : CLOCK_X_Y;
-  CLOCK_Y = CLOCK_ORIENT == 0 ? CLOCK_Y_H : CLOCK_Y_Y;
+  CLOCK_X = CLOCK_ORIENT == 0 ? CLOCK_X_H : CLOCK_X_V;
+  CLOCK_Y = CLOCK_ORIENT == 0 ? CLOCK_Y_H : CLOCK_Y_V;
 
   // ширина и высота отображения часов  
   byte cw = CLOCK_ORIENT == 0 ? 4*3 + 3*1 : 2*3 + 1; // гориз: 4 цифры * (шрифт 3 пикс шириной) 3 + пробела между цифрами) // ширина горизонтальных часов
