@@ -1360,6 +1360,8 @@ void sendPageParams(int page) {
   // AM2M:MM     минуты включения режима 2  00..59
   // AM2E:NN     номер эффекта режима 1:   -2 - не используется; -1 - выключить матрицу; 0 - включить случайный с автосменой; 1 - номер режима из спписка ALARM_LIST
   // PW:число    ограничение по току в миллиамперах
+  // S1:[список] список звуков будильника, разделенный запятыми, ограничители [] обязательны        
+  // S2:[список] список звуков рассвета, разделенный запятыми, ограничители [] обязательны        
   
   String str = "", color, text;
   boolean allowed;
@@ -1499,6 +1501,14 @@ void sendPageParams(int page) {
              "|AM2T:"+String(AM2_hour)+" "+String(AM2_minute)+"|AM2A:"+String(AM2_effect_id); 
       str+=";";
       break;
+#if (USE_MP3 == 1)
+    case 93:  // Запрос списка звуков будильника
+      str="$18 S1:[" + String(ALARM_SOUND_LIST).substring(0,UDP_PACKET_MAX_SIZE-12) + "];"; 
+      break;
+    case 94:  // Запрос списка звуков рассвета
+      str="$18 S2:[" + String(DAWN_SOUND_LIST).substring(0,UDP_PACKET_MAX_SIZE-12) + "];"; 
+      break;
+#endif      
     case 95:  // Ответ состояния будильника - сообщение по инициативе сервера
       str = "$18 AL:"; 
       if ((isAlarming || isPlayAlarmSound) && !isAlarmStopped) str+="1;"; else str+="0;";
