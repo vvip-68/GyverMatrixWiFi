@@ -123,7 +123,11 @@ void bluetoothRoutine() {
         } else if (thisMode == DEMO_TEXT_2) {
           txtColor = 2;
         } else {
-          txtColor = globalColor;  
+          switch (textColorMode) {
+            case 1:  txtColor = 1; break;            // Радуга
+            case 2:  txtColor = 2; break;            // Цветные буквы
+            default: txtColor = globalColor; break;  // Указанный цвет для всей строки
+          } 
         }
       }
       if (txt.length() == 0) {
@@ -142,7 +146,7 @@ void bluetoothRoutine() {
       }      
       if (txt.length() == 0) {
           txt = String(F("Матрица на адресных светодиодах"));
-      }      
+      }            
       fillString(txt, txtColor); 
     }
     
@@ -389,10 +393,11 @@ void parsing() {
         5 - пароль к точке доступа
         6 - настройки будильников
     7 - управление текстом: 
-        $7 1 пуск; 
-        $7 0 стоп; 
-        $7 2 использовать в демо-режиме; 
-        $7 3 НЕ использовать в демо-режиме; 
+        $7 1   - пуск; 
+        $7 0   - стоп; 
+        $7 2   - использовать в демо-режиме; 
+        $7 3   - НЕ использовать в демо-режиме; 
+        $7 4 X - цветовой режим отображения, где X  0 - один цвет; 1 - радугаж 2 - каждая буква своим цветом
     8 - эффект
       - $8 0 номер эффекта;
       - $8 1 N X старт/стоп; N - номер эффекта, X=0 - стоп X=1 - старт 
@@ -721,6 +726,11 @@ void parsing() {
         else if (intData[1] == 2 || intData[1] == 3) {
           // Вкл/Выкл "Использовать в демо-режиме": 2 - вкл; 3 - выкл;
           setUseTextInDemo(intData[1] == 2);
+        }
+        else if (intData[1] == 4) {
+          // Режим цвета бегущей строки: 0 - монохром (globalColor); 1 - радуга; 2 - цветные буквы
+          textColorMode = intData[2];
+          setTextColorMode(textColorMode);
         }
         sendAcknowledge();
         break;
@@ -1403,6 +1413,7 @@ void sendPageParams(int page) {
       if (getUseTextInDemo())  str+="1"; else str+="0";
       str+="|BU:" + String(useAutoBrightness ? "1" : "0");    
       str+="|BY:" + String(autoBrightnessMin);       
+      str+="|TM:" + String(textColorMode);       
       str+=";";
       break;
     case 5:  // Эффекты. Вернуть: Номер эффекта, Остановлен или играет; Яркость; Скорость эффекта; Оверлей часов; Использовать в демо 

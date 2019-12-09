@@ -67,7 +67,8 @@ void loadSettings() {
   //  154 - Случайная последовательность включения эффектов
   //  155 - Последний включенный вручную эффект
   //  156,157 - ограничение по току 
-  //  158-159 - зарезервировано 
+  //  158 - Режим цвета бегущей строки: 0 - globalColor; 1 - радуга; 2 - цветные буквы
+  //  159 - зарезервировано 
   // ....
   //  160 - 160+(Nигр*2)   - скорость игры
   //  160 - 160+(Nигр*2)+1 - использовать игру в демо-режиме
@@ -129,6 +130,7 @@ void loadSettings() {
     #endif
 
     globalColor = getGlobalColor();
+    textColorMode = getTextColorMode();
 
     useSoftAP = getUseSoftAP();
     getSoftAPName().toCharArray(apName, 10);        //  54-63   - имя точки доступа    ( 9 байт макс) + 1 байт '\0'
@@ -186,6 +188,8 @@ void loadSettings() {
     autoBrightnessMin = 1;
     globalColor = 0xFFFFFF;
     useRandomSequence = true;
+
+    textColorMode = 0;
 
     AM1_hour = 0;
     AM1_minute = 0;
@@ -284,6 +288,7 @@ void saveDefaults() {
   EEPROMwrite(154, useRandomSequence ? 1 : 0);
 
   setPowerLimit(CURRENT_LIMIT);
+  setTextColorMode(textColorMode);
   
   eepromModified = true;
 }
@@ -932,6 +937,19 @@ void setPowerLimit(uint16_t limit) {
 uint16_t getPowerLimit() {
   uint16_t val = (uint16_t)EEPROM_int_read(156);
   if (val !=0 && val < 1000) val = 1000;
+  return val;
+}
+
+void setTextColorMode(byte cMode) {
+  if (cMode != getTextColorMode()) {
+    EEPROMwrite(158, cMode);
+    eepromModified = true;
+  }
+}
+
+byte getTextColorMode() {
+  byte val = EEPROMread(158);
+  if (val > 2) val = 0;
   return val;
 }
 
