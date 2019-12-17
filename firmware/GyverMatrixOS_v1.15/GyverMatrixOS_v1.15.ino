@@ -6,7 +6,7 @@
 // Дальнейшее развитие: vvip, 2019
 // https://AlexGyver.ru/
 
-#define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.14.2019.1209")
+#define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.15.2019.1217")
 
 // ************************ МАТРИЦА *************************
 
