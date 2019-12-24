@@ -165,7 +165,6 @@ void loadSettings() {
     overlayEnabled = true;
     useNtp = true;
     SYNC_TIME_PERIOD = 60;
-    timeZoneOffset = 7;
     CLOCK_ORIENT = 0;
     COLOR_MODE = 0;
     showDateInClock = true;  
