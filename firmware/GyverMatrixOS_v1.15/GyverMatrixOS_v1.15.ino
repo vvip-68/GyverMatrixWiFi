@@ -741,7 +741,9 @@ void startWiFi() {
     if (IP_STA[0] + IP_STA[1] + IP_STA[2] + IP_STA[3] > 0) {
       WiFi.config(IPAddress(IP_STA[0], IP_STA[1], IP_STA[2], IP_STA[3]),  // 192.168.0.106
                   IPAddress(IP_STA[0], IP_STA[1], IP_STA[2], 1),          // 192.168.0.1
-                  IPAddress(255, 255, 255, 0));
+                  IPAddress(255, 255, 255, 0),                            // Mask
+                  IPAddress(IP_STA[0], IP_STA[1], IP_STA[2], 1),          // DNS1 192.168.0.1
+                  IPAddress(8, 8, 8, 8));                                 // DNS2 8.8.8.8                  
     }
     WiFi.begin(ssid, pass);
 
