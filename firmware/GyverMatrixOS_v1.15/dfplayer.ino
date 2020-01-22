@@ -9,7 +9,7 @@ void InitializeDfPlayer1() {
 //mp3Serial.begin(9600, SRX, STX);                 // Используйте этот вариант, если у вас библиотека EspSoftwareSerial v5.4
   mp3Serial.begin(9600, SWSERIAL_8N1, SRX, STX);   // Используйте этот вариант, если у вас библиотека EspSoftwareSerial v6.0
 #endif  
-  dfPlayer.begin(mp3Serial, false, false);
+  dfPlayer.begin(mp3Serial, false, true);
   dfPlayer.setTimeOut(1000);
   dfPlayer.EQ(DFPLAYER_EQ_NORMAL);
   dfPlayer.volume(1);
