@@ -1,5 +1,5 @@
 #include "GyverTimer.h"
-GTimer_ms myTimer;               // создать таймер
+GTimer myTimer(MS);               // создать миллисекундный таймер
 
 void setup() {
   Serial.begin(9600);

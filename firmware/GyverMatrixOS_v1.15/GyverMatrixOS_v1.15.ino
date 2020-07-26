@@ -3,10 +3,10 @@
 // Страница базового проекта (схемы, описания): https://alexgyver.ru/GyverMatrixBT/
 // Страница проекта на GitHub: https://github.com/vvip-68/GyverMatrixWiFi
 // Автор: AlexGyver Technologies, 2018
-// Дальнейшее развитие: vvip, 2019
+// Дальнейшее развитие: vvip, 2019,2020
 // https://AlexGyver.ru/
 
-#define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.15.2019.1217")
+#define FIRMWARE_VER F("\n\nGyverMatrix-WiFi v.1.15.2020.0726")
 
 // ************************ МАТРИЦА *************************
 
