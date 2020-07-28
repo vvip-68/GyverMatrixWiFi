@@ -797,41 +797,6 @@ void lightBallsRoutine() {
   if (cnt <= 4) { idx = XY(m, i); if (idx < wh) leds[idx] += CHSV( ms / 97, 200U, 255U); }
 }
 
-// Trivial XY function for the SmartMatrix; use a different XY
-// function for different matrix grids. See XYMatrix example for code.
-uint16_t XY(uint8_t x, uint8_t y)
-{
-  uint16_t i;
-  uint8_t reverse;
-  if (WIDTH >= HEIGHT) {
-    if (y & 0x01)
-    {
-      // Odd rows run backwards
-      reverse = (WIDTH - 1) - x;
-      i = (y * WIDTH) + reverse;
-    }
-    else
-    {
-      // Even rows run forwards
-      i = (y * WIDTH) + x;
-    }
-  } else {
-    if (x & 0x01)
-    {
-      // Odd rows run backwards
-      reverse = (HEIGHT - 1) - y;
-      i = (x * HEIGHT) + reverse;
-    }
-    else
-    {
-      // Even rows run forwards
-      i = (x * HEIGHT) + y;
-    }
-  }
-
-  return i;
-}
-
 // ------------- ВОДОВОРОТ -------------
 
 void swirlRoutine() {
@@ -860,14 +825,15 @@ void swirlRoutine() {
   
   // The color of each point shifts over time, each at a different speed.
   uint32_t ms = millis();  
-  idx = XY2( i, j); if (idx < wh) leds[idx] += CHSV( ms / 11, 200, 255);
-  idx = XY2( j, i); if (idx < wh) leds[idx] += CHSV( ms / 13, 200, 255);
-  idx = XY2(ni,nj); if (idx < wh) leds[idx] += CHSV( ms / 17, 200, 255);
-  idx = XY2(nj,ni); if (idx < wh) leds[idx] += CHSV( ms / 29, 200, 255);
-  idx = XY2( i,nj); if (idx < wh) leds[idx] += CHSV( ms / 37, 200, 255);
-  idx = XY2(ni, j); if (idx < wh) leds[idx] += CHSV( ms / 41, 200, 255);    
+  idx = XY( i, j); if (idx < wh) leds[idx] += CHSV( ms / 11, 200, 255);
+  idx = XY( j, i); if (idx < wh) leds[idx] += CHSV( ms / 13, 200, 255);
+  idx = XY(ni,nj); if (idx < wh) leds[idx] += CHSV( ms / 17, 200, 255);
+  idx = XY(nj,ni); if (idx < wh) leds[idx] += CHSV( ms / 29, 200, 255);
+  idx = XY( i,nj); if (idx < wh) leds[idx] += CHSV( ms / 37, 200, 255);
+  idx = XY(ni, j); if (idx < wh) leds[idx] += CHSV( ms / 41, 200, 255);    
 }
 
-uint16_t XY2( uint8_t x, uint8_t y) { 
-  return (y * WIDTH) + x; 
+uint16_t XY(uint8_t x, uint8_t y)
+{
+  return getPixelNumber(x, y); 
 }
